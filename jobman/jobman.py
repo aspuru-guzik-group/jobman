@@ -6,23 +6,24 @@ class JobMan(object):
 
     class SubmissionError(Exception): pass
 
-    def __init__(self, db=None, engine=None, logger=None, job_records_ttl=120,
-                 submission_grace_period=None):
+    def __init__(self, db=None, engine=None, logger=None,
+                 job_engine_states_ttl=120, submission_grace_period=None):
         self.db = db
         self.engine = engine
         self.logger = logger or logging
-        self.job_records_ttl = job_records_ttl
+        self.job_engine_states_ttl = job_engine_states_ttl
         self.submission_grace_period = submission_grace_period or \
-                (2 * self.job_records_ttl)
+                (2 * self.job_engine_states_ttl)
+        self._state = {}
 
     def submit_job(self, submission=None):
         self.log_submission(submission=submission)
         try:
             submission_meta = self.engine.submit(submission=submission)
-            job_record = self.create_job_record(job_kwargs={
+            job = self.create_job(job_kwargs={
                 'submission_meta': submission_meta
             })
-            return job_record
+            return job
         except Exception as exc:
             raise self.SubmissionError("Bad submission") from exc
 
@@ -30,58 +31,61 @@ class JobMan(object):
         self.logger.info("submit_job, {submission}".format(
             submission=submission))
 
-    def create_job_record(self, job_kwargs=None):
-        return self.db.create_job_record(job_kwargs=job_kwargs)
+    def create_job(self, job_kwargs=None):
+        return self.db.create_job(job_kwargs=job_kwargs)
 
-    def get_job_record(self, job_key=None):
-        self.update_job_records()
-        return self.db.get_job_record(job_key=job_key)
+    def get_jobs(self, job_keys=None):
+        return self.db.get_jobs(job_keys=job_keys)
 
-    def update_job_records(self):
-        if self.job_records_are_stale(): self._update_job_records()
+    def update_jobs(self):
+        if self.job_engine_states_are_stale():
+            self.update_job_engine_states(jobs=self.db.get_running_jobs())
 
-    def job_records_are_stale(self):
-        job_records_age = self.get_job_records_age()
-        return (job_records_age is None) or \
-                (job_records_age >= self.job_records_ttl)
+    def job_engine_states_are_stale(self):
+        job_engine_states_age = self.get_job_engine_states_age()
+        return (job_engine_states_age is None) or \
+                (job_engine_states_age >= self.job_engine_states_ttl)
 
-    def get_job_records_age(self):
-        return time.time() - self.get_job_records_modified_time()
+    def get_job_engine_states_age(self):
+        return time.time() - \
+                self.get_state_attr(attr='job_engine_states_modified')
 
-    def get_job_records_modified_time(self):
-        if not hasattr(self, '_job_records_modified_time'):
-            self._job_records_modified_time = \
-                    self.db.get_job_records_modified_time()
-        return self._job_records_modified_time
+    def get_state_attr(self, attr=None):
+        # fallback to db if not in _state.
+        if not hasattr(self._state, attr):
+            self._state[attr] = self.db.get_state_attr(attr=attr)
+        return self._state[attr]
 
-    def _update_job_records(self):
-        running_job_records = self.db.get_running_job_records()
-        engine_job_states = self.engine.get_job_states(
-            job_records=running_job_records)
-        for job_record in running_job_records:
-            self.update_job_record_from_engine_job_states(
-                job_record=job_record,
-                engine_job_states=engine_job_states)
-        self.set_job_records_modified_time(value=time.time())
+    def set_state_attr(self, attr=None, value=None):
+        self.db.set_state_attr(attr=attr, value=value)
+        self._state[attr] = value
 
-    def set_job_records_modified_time(self, value=None):
-        self._job_records_modified_time = value
-        self.db.set_job_records_modified_time(value=value)
+    def update_job_engine_states(self, jobs=None):
+        keyed_engine_states = self.engine.get_keyed_engine_states(
+            keyed_engine_metas=self.get_keyed_engine_metas(jobs=jobs))
+        for job in jobs:
+            self.set_job_engine_state(
+                job=job,
+                job_engine_state=keyed_engine_states.get(job['job_key'])
+            )
+        self.set_state_attr(attr='job_engine_states_modified',
+                            value=time.time())
 
-    def update_job_record_from_engine_job_states(self, job_record=None,
-                                                 engine_job_states=None):
-        engine_job_state = engine_job_states.get(job_record['job_key'])
-        if engine_job_state:
-            job_record['status'] = engine_job_state['status']
-            job_record['engine_job_state'] = engine_job_state
-            self.db.save_job_record(job_record=job_record)
-        else: self.process_orphan_job_record(job_record=job_record)
+    def get_keyed_engine_metas(self, jobs=None):
+        keyed_engine_metas = {
+            job['job_key']: job.get('engine_meta') for job in jobs
+        }
+        return keyed_engine_metas
 
-    def process_orphan_job_record(self, job_record=None):
-        job_record_age = self.get_job_record_age(job_record=job_record)
-        if job_record_age > self.submission_grace_period:
-            job_record['status'] = 'COMPLETED'
-            self.db.save_job_record(job_record=job_record)
+    def set_job_engine_state(self, job=None, job_engine_state=None):
+        if job_engine_state is None:
+            if self.job_is_orphaned(job=job): job['status'] = 'COMPLETED'
+        else:
+            job['engine_state'] = job_engine_state
+            job['status'] = job_engine_state['status']
 
-    def get_job_record_age(self, job_record=None):
-        return time.time() - job_record['created']
+    def job_is_orphaned(self, job=None):
+        return (self.get_job_age(job=job) > self.submission_grace_period)
+
+    def get_job_age(self, job=None):
+        return time.time() - job['created']
