@@ -22,6 +22,11 @@ class BaseTestCase(unittest.TestCase):
     def mockify_jobman_attrs(self, attrs=None):
         for attr in attrs: setattr(self.jobman, attr, MagicMock())
 
+class EnsureDbTestCase(BaseTestCase):
+    def test_dispatches_to_dao(self):
+        self.jobman.ensure_db()
+        self.assertEqual(self.jobman.dao.create_db.call_args, call())
+
 class SubmitTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -47,13 +52,15 @@ class SubmitTestCase(BaseTestCase):
         self.engine.submit.side_effect = exception
         with self.assertRaises(self.jobman.SubmissionError): self._submit()
 
-    def test_creates_job_w_submission_meta(self):
+    def test_creates_job_w_engine_meta(self):
         self._submit()
         self.assertEqual(
             self.jobman.create_job.call_args,
             call(
                 job_kwargs={
-                    'submission_meta': self.engine.submit.return_value
+                    'submission': self.submission,
+                    'engine_meta': self.engine.submit.return_value,
+                    'status': 'RUNNING',
                 }
             )
         )
@@ -108,6 +115,13 @@ class UpdateJobsTestCase(BaseTestCase):
         self.jobman.update_jobs()
         self.assertEqual(self.jobman.update_job_engine_states.call_args, None)
 
+    def test_updates_if_job_engine_states_stale_and_force_is_true(self):
+        self.jobman.job_engine_states_are_stale.return_value = False
+        self.jobman.update_jobs(force=True)
+        self.assertEqual(
+            self.jobman.update_job_engine_states.call_args,
+            call(jobs=self.jobman.get_running_jobs.return_value))
+
 class JobsEngineStatesAreStaleTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -155,10 +169,18 @@ class GetKvp(BaseTestCase):
                          self.jobman._kvps[self.key])
 
     def test_returns_from_dao_and_sets_key_if_key_not_set(self):
-        self.assertEqual(self.jobman.get_kvp(key=self.key),
-                         self.jobman.dao.get_kvp(key=self.key))
-        self.assertEqual(self.jobman._kvps[self.key],
-                         self.jobman.dao.get_kvp(key=self.key))
+        result = self.jobman.get_kvp(key=self.key)
+        expected_result = self.jobman.dao.get_kvps.return_value[0]
+        self.assertEqual(
+            self.jobman.dao.get_kvps.call_args,
+            call(query={
+                'filters': [
+                    {'field': 'key', 'operator': '=', 'value': self.key}
+                ]
+            })
+        )
+        self.assertEqual(result, expected_result)
+        self.assertEqual(self.jobman._kvps[self.key], expected_result)
 
 class GetRunningJobsTestCase(BaseTestCase):
     def test_dispatches_to_dao(self):

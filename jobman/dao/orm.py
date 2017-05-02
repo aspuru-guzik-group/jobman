@@ -34,14 +34,15 @@ class ORM(object):
         return column_type
 
     def save_object(self, obj=None, connection=None):
-        self._save_record(record=self._obj_to_record(obj=obj),
-                          connection=connection)
+        saved_record = self._save_record(record=self._obj_to_record(obj=obj),
+                                         connection=connection)
+        return self._record_to_obj(record=saved_record)
 
     def _obj_to_record(self, obj=None, fields=None):
         record = {}
         for field, field_def in self.fields.items():
             record[field] = self._obj_val_to_record_val(
-                field=field_def, value=obj.get(field))
+                field_def=field_def, value=obj.get(field))
         return record
 
     def _obj_val_to_record_val(self, field_def=None, value=None):
@@ -89,15 +90,15 @@ class ORM(object):
         filterable_fields = self._get_filterable_fields()
         for _filter in (query or {}).get('filters', []):
             if _filter['field'] not in filterable_fields:
-                raise Exception(
-                    "Unkown filter field '{field}'.".format(_filter['field']))
+                raise Exception("Unknown filter field '{field}'.".format(
+                    field=_filter['field']))
 
     def _get_filterable_fields(self):
         return [field for field, field_def in self.fields.items()
-                if field_def.get('filterable')]
+                if not field_def.get('unfilterable')]
 
     def _get_records(self, query=None, connection=None):
-        return self.execute_query(query=query, connection=connection)
+        return self._execute_query(query=query, connection=connection)
 
     def _execute_query(self, query=None, connection=None):
         args = []
@@ -126,7 +127,7 @@ class ORM(object):
         obj = {}
         for field, field_def in self.fields.items():
             obj[field] = self._record_val_to_obj_val(field_def=field_def,
-                                                     value=record.get(field))
+                                                     value=record[field])
         return obj
 
     def _record_val_to_obj_val(self, field_def=None, value=None):

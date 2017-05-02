@@ -315,7 +315,7 @@ class _RecordToObjTestCase(BaseTestCase):
         record = MagicMock()
         expected_obj = {
             field: self.orm._record_val_to_obj_val(field_def=field_def,
-                                                   value=record.get(field))
+                                                   value=record[field])
             for field, field_def in self.orm.fields.items()
         }
         obj = self.orm._record_to_obj(record=record)

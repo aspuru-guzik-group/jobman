@@ -7,7 +7,7 @@ from . import orm as _orm
 
 
 class SqliteDAO(BaseDAO):
-    def __init__(self, db_uri=None, sqlite=sqlite3, orm=_orm):
+    def __init__(self, db_uri=':memory:', sqlite=sqlite3, orm=_orm):
         self.db_uri = db_uri
         self.sqlite = sqlite
 
@@ -44,10 +44,10 @@ class SqliteDAO(BaseDAO):
                          'auto_update': self._generate_timestamp}
         }
 
-    def _generate_uuid(self):
+    def _generate_uuid(self, *args, **kwargs):
         return str(uuid.uuid4())
 
-    def _generate_timestamp(self):
+    def _generate_timestamp(self, *args, **kwargs):
         return int(time.time())
 
     @property
@@ -56,7 +56,9 @@ class SqliteDAO(BaseDAO):
         return self._connection
 
     def create_connection(self):
-        return self.sqlite.connect(self.db_uri)
+        connection = self.sqlite.connect(self.db_uri)
+        connection.row_factory = self.sqlite.Row
+        return connection
 
     def create_db(self):
         with self.connection:
@@ -70,7 +72,7 @@ class SqliteDAO(BaseDAO):
         saved_jobs = []
         with self.connection:
             for job in jobs:
-                saved_job = self.orms['job'].save_objects(
+                saved_job = self.orms['job'].save_object(
                     obj=job, connection=self.connection)
                 saved_jobs.append(saved_job)
         return saved_jobs

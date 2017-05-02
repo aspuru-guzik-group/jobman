@@ -65,6 +65,10 @@ class CreateConnectionTestCase(BaseTestCase):
                          call(self.dao.db_uri))
         self.assertEqual(result, self.dao.sqlite.connect.return_value)
 
+    def test_connection_has_row_factory(self):
+        result = self.dao.create_connection()
+        self.assertEqual(result.row_factory, self.dao.sqlite.Row)
+
 class CreateJobTestCase(BaseTestCase):
     def test_dispatches_to_save_jobs(self):
         self.dao.save_jobs = MagicMock()
@@ -78,7 +82,7 @@ class SaveJobsTestCase(BaseTestCase):
         jobs = [MagicMock() for i in range(3)]
         self.dao.save_jobs(jobs=jobs)
         self.assertEqual(
-            self.dao.orms['job'].save_objects.call_args_list,
+            self.dao.orms['job'].save_object.call_args_list,
             [call(obj=job, connection=self.dao.connection)
              for job in jobs]
         )

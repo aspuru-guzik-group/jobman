@@ -16,12 +16,17 @@ class JobMan(object):
                 (2 * self.job_engine_states_ttl)
         self._kvps = {}
 
+    def ensure_db(self):
+        self.dao.create_db()
+
     def submit_job(self, submission=None):
         self.log_submission(submission=submission)
         try:
-            submission_meta = self.engine.submit(submission=submission)
+            engine_meta = self.engine.submit(submission=submission)
             job = self.create_job(job_kwargs={
-                'submission_meta': submission_meta
+                'submission': submission,
+                'engine_meta': engine_meta,
+                'status': 'RUNNING',
             })
             return job
         except Exception as exc:
@@ -41,8 +46,8 @@ class JobMan(object):
             ]
         })
 
-    def update_jobs(self):
-        if self.job_engine_states_are_stale():
+    def update_jobs(self, force=False):
+        if self.job_engine_states_are_stale() or force:
             self.update_job_engine_states(jobs=self.get_running_jobs())
 
     def get_running_jobs(self):
@@ -58,12 +63,21 @@ class JobMan(object):
                 (job_engine_states_age >= self.job_engine_states_ttl)
 
     def get_job_engine_states_age(self):
-        return time.time() - self.get_kvp(key='job_engine_states_modified')
+        try:
+            age = time.time() - self.get_kvp(key='job_engine_states_modified')
+        except KeyError: age = None
+        return age
 
     def get_kvp(self, key=None):
         # fallback to dao if not in _kvps.
-        if key not in self._kvps: self._kvps[key] = self.dao.get_kvp(key=key)
-        return self._kvps[key]
+        try:
+            if key not in self._kvps:
+                self._kvps[key] = self.dao.get_kvps(query={
+                    'filters': [{'field': 'key', 'operator': '=', 'value': key}]
+                })[0]
+            return self._kvps[key]
+        except Exception as exc:
+            raise KeyError(key) from exc
 
     def set_kvp(self, key=None, value=None):
         self.dao.save_kvps(kvps=[{'key': key, 'value': value}])
