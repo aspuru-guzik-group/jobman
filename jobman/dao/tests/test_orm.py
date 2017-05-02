@@ -3,7 +3,7 @@ import textwrap
 import unittest
 from unittest.mock import call, MagicMock
 
-from .. import sqlite_orm
+from .. import orm
 
 
 class BaseTestCase(unittest.TestCase):
@@ -21,7 +21,7 @@ class BaseTestCase(unittest.TestCase):
             'json': MagicMock(),
             **kwargs
         }
-        return sqlite_orm.SqliteORM(**merged_kwargs)
+        return orm.ORM(**merged_kwargs)
 
 class CreateTableTestCase(BaseTestCase):
     def setUp(self):
@@ -103,31 +103,40 @@ class _ObjToRecordTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.obj = MagicMock()
-        self.orm._serialize_json_value = MagicMock()
+        self.orm._obj_val_to_record_val = MagicMock()
 
     def _obj_to_record(self):
         return self.orm._obj_to_record(obj=self.obj)
 
-    def test_copies_values_to_record(self):
+    def test_transforms_values(self):
         self.orm.fields = {i: MagicMock() for i in range(3)}
-        expected_record = {field: self.obj.get(field)
-                           for field in self.orm.fields}
+        expected_record = {
+            field: self.orm._obj_val_to_record_val(field_def=field_def,
+                                                   value=self.obj.get(field))
+            for field, field_def in self.orm.fields.items()
+        }
         record = self._obj_to_record()
         self.assertEqual(record, expected_record)
 
+class _ObjValToRecordValTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.field_def = defaultdict(MagicMock)
+        self.value = MagicMock()
+
+    def _obj_val_to_record_val(self):
+        return self.orm._obj_val_to_record_val(field_def=self.field_def,
+                                               value=self.value)
+
     def test_serializes_json_field_values(self):
-        self.orm.fields = {
-            'json_field': {'type': 'JSON'},
-            'non_json_field': MagicMock()
-        }
-        expected_record = {
-            'json_field': self.orm._serialize_json_value.return_value,
-            'non_json_field': self.obj.get('non_json_field')
-        }
-        record = self._obj_to_record()
-        self.assertEqual(self.orm._serialize_json_value.call_args,
-                         call(self.obj.get('json_field')))
-        self.assertEqual(record, expected_record)
+        self.field_def['type'] = 'JSON'
+        self.orm._serialize_json_value = MagicMock()
+        val = self._obj_val_to_record_val()
+        self.assertEqual(val, self.orm._serialize_json_value.return_value)
+
+    def test_passes_through_other_fields(self):
+        val = self._obj_val_to_record_val()
+        self.assertEqual(val, self.value)
 
 class _SaveRecordTestCase(BaseTestCase):
     def setUp(self):
@@ -234,159 +243,100 @@ class GetObjectsTestCase(BaseTestCase):
              for record in self.orm._get_records.return_value]
         )
 
-class ExecuteQueryTestCase(BaseTestCase):
+class _ExecuteQueryTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.orm._get_where_section = MagicMock(return_value={
+            'content': 'some_where_content',
+            'args': [MagicMock() for i in range(3)]
+        })
+        self.query = {'filters': [MagicMock() for i in range(3)]}
+
     def _execute_query(self):
-        self.result = self.orm._execute_query(query=self.query,
-                                              connection=self.connection)
+        return self.orm._execute_query(query=self.query,
+                                       connection=self.connection)
 
     def test_executes_query_w_filters(self):
-        self.query = {'filters': [MagicMock() for i in range(3)]}
+        self._execute_query()
+        expected_where_section = self.orm._get_where_section(query=self.query)
         expected_statement = textwrap.dedent(
             '''
-            SELECT * FROM {table}
-            WHERE status=?
+            SELECT {fields} FROM {table}
+            WHERE {where_content}
             '''
         ).strip().format(
+            table=self.orm.name,
             fields=self.query.get('fields', '*'),
-            table=self.orm.name
+            where_content=expected_where_section['content']
         )
-        expected_values = [self.query['filters'][0]['value']]
-        self.assertEqual(self.dao.connection.execute.call_args,
-                         call(expected_statement, expected_values))
+        expected_args = expected_where_section['args']
+        self.assertEqual(self.connection.execute.call_args,
+                         call(expected_statement, expected_args))
 
     def test_returns_query_results(self):
-        self.assertEqual(self.result, self.dao.connection.execute.return_value)
+        result = self._execute_query()
+        self.assertEqual(result, self.connection.execute.return_value)
 
-class _JobRecordToJobTestCase(BaseTestCase):
+class _GetWhereSectionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.dao._deserialize_value = MagicMock()
-        self.job_record = MagicMock()
-        self.result = self.dao._job_record_to_job(job_record=self.job_record)
+        self.orm._filter_to_where_clause = MagicMock(return_value='some_clause')
+        self.query = {'filters': [MagicMock() for i in range(3)]}
 
-    def test_copies_expected_fielsd(self):
-        expected_values = {field: self.job_record.get(field)
-                           for field in self.dao.JOB_RECORD_FIELDS['to_copy']}
-        actual_values = {field: self.result[field]
-                         for field in self.dao.JOB_RECORD_FIELDS['to_copy']}
-        self.assertEqual(actual_values, expected_values)
+    def _get_where_section(self):
+        return self.orm._get_where_section(query=self.query)
 
-    def test_deserializes_expected_fields(self):
-        expected_values = {
-            field: self.dao._deserialize_value(self.job_record.get(field, {}))
-            for field in self.dao.JOB_RECORD_FIELDS['to_serialize']
+    def test_generates_expected_where_section(self):
+        where_section = self._get_where_section()
+        expected_where_section = {
+            'content': ' AND '.join([
+                self.orm._filter_to_where_clause(_filter=_filter)
+                for _filter in self.query['filters']
+            ]),
+            'args': [_filter['value'] for _filter in self.query['filters']]
         }
-        actual_values = {
-            field: self.result[field]
-            for field in self.dao.JOB_RECORD_FIELDS['to_serialize']
-        }
-        self.assertEqual(actual_values, expected_values)
+        self.assertEqual(where_section, expected_where_section)
 
-class SaveKvpsTestCase(BaseTestCase):
+class _FilterToWhereClauseTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.kvps = [MagicMock() for i in range(3)]
-        for attr in ['_kvp_to_kvp_record', '_save_kvp_records']:
-            setattr(self.dao, attr, MagicMock())
-        self.result = self.dao.save_kvps(kvps=self.kvps)
+        self.filter = {'field': 'field', 'operator': 'operator'}
+        self.result = self.orm._filter_to_where_clause(_filter=self.filter)
 
-    def test_converts_kvps_to_kvp_records(self):
-        self.assertEqual(self.dao._kvp_to_kvp_record.call_args_list,
-                         [call(kvp=kvp) for kvp in self.kvps])
+    def test_returns_expected_clause(self):
+        expected_clause = ''.join([
+            self.filter['field'], self.filter['operator'], '?'])
+        self.assertEqual(self.result, expected_clause)
 
-    def test_saves_kvp_records(self):
-        self.assertEqual(
-            self.dao._save_kvp_records.call_args,
-            call(kvp_records=[self.dao._kvp_to_kvp_record.return_value
-                              for kvp in self.kvps])
-        )
+class _RecordToObjTestCase(BaseTestCase):
+    def test_transforms_values(self):
+        self.orm._record_val_to_obj_val = MagicMock()
+        self.orm.fields = {i: MagicMock() for i in range(3)}
+        record = MagicMock()
+        expected_obj = {
+            field: self.orm._record_val_to_obj_val(field_def=field_def,
+                                                   value=record.get(field))
+            for field, field_def in self.orm.fields.items()
+        }
+        obj = self.orm._record_to_obj(record=record)
+        self.assertEqual(obj, expected_obj)
 
-class _KvpToKvpRecordTestCase(BaseTestCase):
+class _RecordValToObjValTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.dao._serialize_value = MagicMock()
-        self.kvp = MagicMock()
-        self.result = self.dao._kvp_to_kvp_record(kvp=self.kvp)
+        self.field_def = defaultdict(MagicMock)
+        self.value = MagicMock()
 
-    def test_copies_expected_fielsd(self):
-        expected_values = {field: self.kvp.get(field)
-                           for field in self.dao.KVP_RECORD_FIELDS['to_copy']}
-        actual_values = {field: self.result[field]
-                         for field in self.dao.KVP_RECORD_FIELDS['to_copy']}
-        self.assertEqual(actual_values, expected_values)
+    def _record_val_to_obj_val(self):
+        return self.orm._record_val_to_obj_val(field_def=self.field_def,
+                                               value=self.value)
 
-    def test_serializes_expected_fields(self):
-        expected_values = {
-            field: self.dao._serialize_value(self.kvp.get(field, {}))
-            for field in self.dao.KVP_RECORD_FIELDS['to_serialize']
-        }
-        actual_values = {
-            field: self.result[field]
-            for field in self.dao.KVP_RECORD_FIELDS['to_serialize']
-        }
-        self.assertEqual(actual_values, expected_values)
+    def test_deserializes_json_values(self):
+        self.field_def['type'] = 'JSON'
+        self.orm._deserialize_json_value = MagicMock()
+        obj_val = self._record_val_to_obj_val()
+        self.assertEqual(obj_val, self.orm._deserialize_json_value.return_value)
 
-class SaveKvpRecordsTestCase(BaseTestCase):
-    def test_dispatches_to__save_kvp_record(self):
-        self.fail()
-
-class _SaveKvpRecordTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.dao.generate_timestamp = MagicMock()
-
-    def test_ensures_created_timestamp(self):
-        record_w_created = defaultdict(MagicMock, {'created': 'some_created'})
-        result_for_w_created = self.dao._save_kvp_record(
-            kvp_record=record_w_created)
-        self.assertEqual(record_w_created['created'],
-                         result_for_w_created['created'])
-
-        record_sans_created = defaultdict(MagicMock)
-        result_for_sans_created = self.dao._save_kvp_record(
-            kvp_record=record_sans_created)
-        self.assertEqual(result_for_sans_created['created'],
-                         self.dao.generate_timestamp.return_value)
-
-    def test_updates_modified_timestamp(self):
-        record = defaultdict(MagicMock)
-        result = self.dao._save_kvp_record(kvp_record=record)
-        self.assertEqual(result['modified'],
-                         self.dao.generate_timestamp.return_value)
-
-    def test_writes_record_to_db(self):
-        kvp_record = defaultdict(MagicMock)
-        result = self.dao._save_kvp_record(kvp_record=kvp_record)
-        expected_statement = textwrap.dedent(
-            '''
-            INSERT OR REPLACE INTO kvps
-                ({csv_fields})
-                VALUES ({csv_placeholders})
-            '''
-        ).strip().format(
-            csv_fields=(','.join(self.dao.KVP_RECORD_FIELDS['all'])),
-            csv_placeholders=(','.join(['?' for field in
-                                        self.dao.KVP_RECORD_FIELDS['all']])),
-        )
-        expected_statement_args = [result.get(field) for field in
-                                   self.dao.KVP_RECORD_FIELDS['all']]
-        self.assertEqual(self.dao.connection.execute.call_args,
-                         call(expected_statement, expected_statement_args))
-
-class GetKvpsTestCase(BaseTestCase):
-    def test_gets_kvp_records(self):
-        self.fail()
-
-    def test_converts_kvp_records_to_kvps(self):
-        self.fail()
-
-class GetKvpRecordsTestCase(BaseTestCase):
-    def test_executes_query(self):
-        self.fail()
-
-class _KvpRecordToKvpTestCase(BaseTestCase):
-    def test_copies_expected_fields(self):
-        self.fail()
-
-    def test_serializes_expected_fields(self):
-        self.fail()
+    def test_passes_through_other_values(self):
+        obj_val = self._record_val_to_obj_val()
+        self.assertEqual(obj_val, self.value)

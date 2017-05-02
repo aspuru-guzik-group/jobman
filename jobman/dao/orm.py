@@ -2,10 +2,11 @@ import json
 import textwrap
 
 
-class SqliteORM(object):
+class ORM(object):
     def __init__(self, name=None, fields=None, json=json):
         self.name = name
         self.fields = fields
+        self.json = json
 
     def create_table(self, connection=None):
         create_statement = 'CREATE TABLE {table} ({column_defs})'.format(
@@ -39,11 +40,14 @@ class SqliteORM(object):
     def _obj_to_record(self, obj=None, fields=None):
         record = {}
         for field, field_def in self.fields.items():
-            value = obj.get(field)
-            if field_def.get('type') == 'JSON':
-                value = self._serialize_json_value(value)
-            record[field] = value
+            record[field] = self._obj_val_to_record_val(
+                field=field_def, value=obj.get(field))
         return record
+
+    def _obj_val_to_record_val(self, field_def=None, value=None):
+        if field_def.get('type') == 'JSON':
+            value = self._serialize_json_value(value)
+        return value
 
     def _serialize_json_value(self, value=None):
         return self.json.dumps(value)
@@ -88,39 +92,47 @@ class SqliteORM(object):
                 raise Exception(
                     "Unkown filter field '{field}'.".format(_filter['field']))
 
+    def _get_filterable_fields(self):
+        return [field for field, field_def in self.fields.items()
+                if field_def.get('filterable')]
+
     def _get_records(self, query=None, connection=None):
         return self.execute_query(query=query, connection=connection)
 
-    def execute_query(self, query=None, connection=None):
+    def _execute_query(self, query=None, connection=None):
         args = []
         statement = 'SELECT {fields} FROM {table}'.format( 
             fields=query.get('fields', '*'),
             table=self.name
         )
-        where_clauses = []
-        for _filter in ('filters' or []):
-            where_clauses.append(self._filter_to_where_clause(_filter=_filter))
-            args.append(_filter['value'])
-        if where_clauses:
-            statement += '\nWHERE ' + ' AND '.join(where_clauses)
+        where_section = self._get_where_section(query=query)
+        if where_section.get('content'):
+            statement += '\nWHERE ' + where_section['content']
+            args.extend(where_section['args'])
         return connection.execute(statement, args)
 
-    def _get_filterable_fields(self):
-        return [field for field, field_def in self.fields.items()
-                if field_def.get('filterable')]
+    def _get_where_section(self, query=None):
+        clauses = []
+        args = []
+        for _filter in query.get('filters', []):
+            clauses.append(self._filter_to_where_clause(_filter=_filter))
+            args.append(_filter['value'])
+        return {'content': ' AND '.join(clauses), 'args': args}
 
-    
     def _filter_to_where_clause(self, _filter=None):
         return ''.join([_filter['field'], _filter['operator'], '?'])
 
-
-    def _record_to_obj(self, record=None, fields=None):
+    def _record_to_obj(self, record=None):
         obj = {}
         for field, field_def in self.fields.items():
-            value = record.get(field)
-            if field_def['type'] == 'JSON':
-                value = self._deserialize_json_value(value)
-            obj[field] = value
+            obj[field] = self._record_val_to_obj_val(field_def=field_def,
+                                                     value=record.get(field))
+        return obj
+
+    def _record_val_to_obj_val(self, field_def=None, value=None):
+        if field_def.get('type') == 'JSON':
+            value = self._deserialize_json_value(value)
+        return value
 
     def _deserialize_json_value(self, serialized_value=None):
         if serialized_value is None or serialized_value == '': return None
