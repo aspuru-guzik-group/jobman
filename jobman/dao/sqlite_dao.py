@@ -63,10 +63,17 @@ class SqliteDAO(BaseDAO):
             for orm in self.orms.values():
                 orm.create_table(connection=self.connection)
 
+    def create_job(self, job_kwargs=None):
+        return self.save_jobs(jobs=[job_kwargs])[0]
+
     def save_jobs(self, jobs=None):
+        saved_jobs = []
         with self.connection:
             for job in jobs:
-                self.orms['job'].save_obj(obj=job, connection=self.connection)
+                saved_job = self.orms['job'].save_objects(
+                    obj=job, connection=self.connection)
+                saved_jobs.append(saved_job)
+        return saved_jobs
 
     def get_jobs(self, query=None):
         return self.orms['job'].get_objects(query=query,
@@ -75,7 +82,8 @@ class SqliteDAO(BaseDAO):
     def save_kvps(self, kvps=None):
         with self.connection:
             for kvp in kvps:
-                self.orms['kvp'].save_obj(obj=kvp, connection=self.connection)
+                self.orms['kvp'].save_object(obj=kvp,
+                                             connection=self.connection)
 
     def get_kvps(self, query=None):
         return self.orms['kvp'].get_objects(query=query,

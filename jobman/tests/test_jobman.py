@@ -8,12 +8,12 @@ from .. import jobman as _jobman
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.engine = MagicMock()
-        self.db = MagicMock()
+        self.dao = MagicMock()
         self.jobman = self.generate_jobman()
 
     def generate_jobman(self, **kwargs):
         default_kwargs = {
-            'db': self.db,
+            'dao': self.dao,
             'engine': self.engine
         }
         jobman = _jobman.JobMan(**{**default_kwargs, **kwargs})
@@ -70,31 +70,38 @@ class CreateJobTestCase(BaseTestCase):
     def _create(self):
         return self.jobman.create_job(job_kwargs=self.job_kwargs)
 
-    def test_dispatches_to_db(self):
+    def test_dispatches_to_dao(self):
         self._create()
-        self.assertEqual(self.jobman.db.create_job.call_args,
+        self.assertEqual(self.jobman.dao.create_job.call_args,
                          call(job_kwargs=self.job_kwargs))
 
 class GetJobsTestCase(BaseTestCase):
-    def test_dispatches_to_db(self):
+    def test_dispatches_to_dao(self):
         job_keys = MagicMock()
         result = self.jobman.get_jobs(job_keys=job_keys)
-        self.assertEqual(self.jobman.db.get_jobs.call_args,
-                         call(job_keys=job_keys))
-        self.assertEqual(result, self.jobman.db.get_jobs.return_value)
+        self.assertEqual(
+            self.jobman.dao.get_jobs.call_args,
+            call(query={
+                'filters': [
+                    {'field': 'job_key', 'operator': 'in', 'value': job_keys}
+                ]
+            })
+        )
+        self.assertEqual(result, self.jobman.dao.get_jobs.return_value)
 
 class UpdateJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_jobman_attrs(attrs=['job_engine_states_are_stale',
-                                         'update_job_engine_states'])
+                                         'update_job_engine_states',
+                                         'get_running_jobs'])
 
     def test_updates_job_engine_states_if_stale(self):
         self.jobman.job_engine_states_are_stale.return_value = True
         self.jobman.update_jobs()
         self.assertEqual(
             self.jobman.update_job_engine_states.call_args,
-            call(jobs=self.jobman.db.get_running_jobs.return_value))
+            call(jobs=self.jobman.get_running_jobs.return_value))
 
     def test_does_not_update_job_engine_states_if_not_stale(self):
         self.jobman.job_engine_states_are_stale.return_value = False
@@ -124,40 +131,53 @@ class JobsEngineStatesAreStaleTestCase(BaseTestCase):
 class GetJobEngineStatesAge(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mockify_jobman_attrs(attrs=['get_state_attr'])
-        self.jobman.get_state_attr.return_value = 999
+        self.mockify_jobman_attrs(attrs=['get_kvp'])
+        self.jobman.get_kvp.return_value = 999
 
     @patch.object(_jobman, 'time')
     def test_returns_age(self, mock_time):
         mock_time.time.return_value = 123
         age = self.jobman.get_job_engine_states_age()
-        self.assertEqual(self.jobman.get_state_attr.call_args,
-                         call(attr='job_engine_states_modified'))
+        self.assertEqual(self.jobman.get_kvp.call_args,
+                         call(key='job_engine_states_modified'))
         expected_age = mock_time.time() - \
-                self.jobman.get_state_attr.return_value
+                self.jobman.get_kvp.return_value
         self.assertEqual(age, expected_age)
 
-class GetStateAttr(BaseTestCase):
+class GetKvp(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.attr = 'some_attr'
+        self.key = 'some_key'
 
     def test_returns_from__state_if_set(self):
-        self.jobman._state[self.attr] = MagicMock()
-        self.assertEqual(self.jobman.get_state_attr(attr=self.attr),
-                         self.jobman._state[self.attr])
+        self.jobman._kvps[self.key] = MagicMock()
+        self.assertEqual(self.jobman.get_kvp(key=self.key),
+                         self.jobman._kvps[self.key])
 
-    def test_returns_from_db_and_sets_attr_if_attr_not_set(self):
-        self.assertEqual(self.jobman.get_state_attr(attr=self.attr),
-                         self.jobman.db.get_state_attr(attr=self.attr))
-        self.assertEqual(self.jobman._state[self.attr],
-                         self.jobman.db.get_state_attr(attr=self.attr))
+    def test_returns_from_dao_and_sets_key_if_key_not_set(self):
+        self.assertEqual(self.jobman.get_kvp(key=self.key),
+                         self.jobman.dao.get_kvp(key=self.key))
+        self.assertEqual(self.jobman._kvps[self.key],
+                         self.jobman.dao.get_kvp(key=self.key))
+
+class GetRunningJobsTestCase(BaseTestCase):
+    def test_dispatches_to_dao(self):
+        result = self.jobman.get_running_jobs()
+        self.assertEqual(
+            self.dao.get_jobs.call_args,
+            call(query={
+                'filters': [
+                    {'field': 'status', 'operator': '=', 'value': 'RUNNING'}
+                ]
+            })
+        )
+        self.assertEqual(result, self.dao.get_jobs.return_value)
 
 class UpdateJobEngineStatesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.jobs = [MagicMock() for i in range(3)]
-        self.mockify_jobman_attrs(attrs=['set_state_attr',
+        self.mockify_jobman_attrs(attrs=['set_kvp',
                                          'get_keyed_engine_metas',
                                          'set_job_engine_state'])
 
@@ -186,12 +206,17 @@ class UpdateJobEngineStatesTestCase(BaseTestCase):
         self.assertEqual(self.jobman.set_job_engine_state.call_args_list,
                          expected_call_args_list)
 
+    def test_saves_jobs(self):
+        self._update()
+        self.assertEqual(self.jobman.dao.save_jobs.call_args,
+                         call(jobs=self.jobs))
+
     @patch.object(_jobman, 'time')
     def test_updates_jobs_modified_time(self, mock_time):
         self._update()
         self.assertEqual(
-            self.jobman.set_state_attr.call_args,
-            call(attr='job_engine_states_modified', value=mock_time.time()))
+            self.jobman.set_kvp.call_args,
+            call(key='job_engine_states_modified', value=mock_time.time()))
 
 class SetJobEngineState(BaseTestCase):
     def setUp(self):
@@ -248,5 +273,22 @@ class GetJobAge(BaseTestCase):
         job = MagicMock()
         self.assertEqual(self.jobman.get_job_age(job=job),
                          (mock_time.time() - job['created']))
+
+class SetKvpTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.key = MagicMock()
+        self.value = MagicMock()
+        self._set_kvp()
+
+    def _set_kvp(self):
+        self.jobman.set_kvp(key=self.key, value=self.value)
+
+    def test_saves_kvp_via_dao(self):
+        self.assertEqual(self.jobman.dao.save_kvps.call_args,
+                         call(kvps=[{'key': self.key, 'value': self.value}]))
+
+    def test_saves_to_local_kvp(self):
+        self.assertEqual(self.jobman._kvps[self.key], self.value)
 
 if __name__ == '__main__': unittest.main()

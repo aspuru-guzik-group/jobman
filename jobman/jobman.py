@@ -6,15 +6,15 @@ class JobMan(object):
 
     class SubmissionError(Exception): pass
 
-    def __init__(self, db=None, engine=None, logger=None,
+    def __init__(self, dao=None, engine=None, logger=None,
                  job_engine_states_ttl=120, submission_grace_period=None):
-        self.db = db
+        self.dao = dao
         self.engine = engine
         self.logger = logger or logging
         self.job_engine_states_ttl = job_engine_states_ttl
         self.submission_grace_period = submission_grace_period or \
                 (2 * self.job_engine_states_ttl)
-        self._state = {}
+        self._kvps = {}
 
     def submit_job(self, submission=None):
         self.log_submission(submission=submission)
@@ -32,14 +32,25 @@ class JobMan(object):
             submission=submission))
 
     def create_job(self, job_kwargs=None):
-        return self.db.create_job(job_kwargs=job_kwargs)
+        return self.dao.create_job(job_kwargs=job_kwargs)
 
     def get_jobs(self, job_keys=None):
-        return self.db.get_jobs(job_keys=job_keys)
+        return self.dao.get_jobs(query={
+            'filters': [
+                {'field': 'job_key', 'operator': 'in', 'value': job_keys}
+            ]
+        })
 
     def update_jobs(self):
         if self.job_engine_states_are_stale():
-            self.update_job_engine_states(jobs=self.db.get_running_jobs())
+            self.update_job_engine_states(jobs=self.get_running_jobs())
+
+    def get_running_jobs(self):
+        return self.dao.get_jobs(query={
+            'filters': [
+                {'field': 'status', 'operator': '=', 'value': 'RUNNING'}
+            ]
+        })
 
     def job_engine_states_are_stale(self):
         job_engine_states_age = self.get_job_engine_states_age()
@@ -47,18 +58,16 @@ class JobMan(object):
                 (job_engine_states_age >= self.job_engine_states_ttl)
 
     def get_job_engine_states_age(self):
-        return time.time() - \
-                self.get_state_attr(attr='job_engine_states_modified')
+        return time.time() - self.get_kvp(key='job_engine_states_modified')
 
-    def get_state_attr(self, attr=None):
-        # fallback to db if not in _state.
-        if not hasattr(self._state, attr):
-            self._state[attr] = self.db.get_state_attr(attr=attr)
-        return self._state[attr]
+    def get_kvp(self, key=None):
+        # fallback to dao if not in _kvps.
+        if key not in self._kvps: self._kvps[key] = self.dao.get_kvp(key=key)
+        return self._kvps[key]
 
-    def set_state_attr(self, attr=None, value=None):
-        self.db.set_state_attr(attr=attr, value=value)
-        self._state[attr] = value
+    def set_kvp(self, key=None, value=None):
+        self.dao.save_kvps(kvps=[{'key': key, 'value': value}])
+        self._kvps[key] = value
 
     def update_job_engine_states(self, jobs=None):
         keyed_engine_states = self.engine.get_keyed_engine_states(
@@ -68,8 +77,8 @@ class JobMan(object):
                 job=job,
                 job_engine_state=keyed_engine_states.get(job['job_key'])
             )
-        self.set_state_attr(attr='job_engine_states_modified',
-                            value=time.time())
+        self.dao.save_jobs(jobs=jobs)
+        self.set_kvp(key='job_engine_states_modified', value=time.time())
 
     def get_keyed_engine_metas(self, jobs=None):
         keyed_engine_metas = {

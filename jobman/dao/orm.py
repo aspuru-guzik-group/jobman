@@ -33,7 +33,7 @@ class ORM(object):
         if field_type == 'JSON': column_type = 'TEXT'
         return column_type
 
-    def save_obj(self, obj=None, connection=None):
+    def save_object(self, obj=None, connection=None):
         self._save_record(record=self._obj_to_record(obj=obj),
                           connection=connection)
 

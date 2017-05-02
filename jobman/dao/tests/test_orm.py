@@ -84,13 +84,13 @@ class _GetColumnTypeTestCase(BaseTestCase):
         column_type = self.orm._get_column_type(field_type=field_type)
         self.assertEqual(column_type, 'TEXT')
 
-class SaveObjTestCase(BaseTestCase):
+class SaveObjectTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         for attr in ['_obj_to_record', '_save_record']: 
             setattr(self.orm, attr, MagicMock())
         self.obj = MagicMock()
-        self.orm.save_obj(obj=self.obj, connection=self.connection)
+        self.orm.save_object(obj=self.obj, connection=self.connection)
 
     def test_converts_to_record_and_saves(self):
         self.assertEqual(self.orm._obj_to_record.call_args,

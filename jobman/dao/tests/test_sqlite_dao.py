@@ -65,12 +65,20 @@ class CreateConnectionTestCase(BaseTestCase):
                          call(self.dao.db_uri))
         self.assertEqual(result, self.dao.sqlite.connect.return_value)
 
+class CreateJobTestCase(BaseTestCase):
+    def test_dispatches_to_save_jobs(self):
+        self.dao.save_jobs = MagicMock()
+        job_kwargs = MagicMock()
+        result = self.dao.create_job(job_kwargs=job_kwargs)
+        self.assertEqual(self.dao.save_jobs.call_args, call(jobs=[job_kwargs]))
+        self.assertEqual(result, self.dao.save_jobs.return_value[0])
+
 class SaveJobsTestCase(BaseTestCase):
     def test_dispatches_to_orm(self):
         jobs = [MagicMock() for i in range(3)]
         self.dao.save_jobs(jobs=jobs)
         self.assertEqual(
-            self.dao.orms['job'].save_obj.call_args_list,
+            self.dao.orms['job'].save_objects.call_args_list,
             [call(obj=job, connection=self.dao.connection)
              for job in jobs]
         )
@@ -83,20 +91,12 @@ class GetJobsTestCase(BaseTestCase):
                          call(query=query, connection=self.dao.connection))
         self.assertEqual(result, self.dao.orms['job'].get_objects.return_value)
 
-    def save_kvps(self, kvps=None):
-        with self.connection:
-            for kvp in kvps:
-                self.orms['kvp'].save_obj(obj=kvp, connection=self.connection)
-
-    def get_kvps(self, query=None):
-        return self.orms['job'].execute_query(query=query)
-
 class SaveKvpsTestCase(BaseTestCase):
     def test_dispatches_to_orm(self):
         kvps = [MagicMock() for i in range(3)]
         self.dao.save_kvps(kvps=kvps)
         self.assertEqual(
-            self.dao.orms['kvp'].save_obj.call_args_list,
+            self.dao.orms['kvp'].save_object.call_args_list,
             [call(obj=kvp, connection=self.dao.connection)
              for kvp in kvps]
         )
