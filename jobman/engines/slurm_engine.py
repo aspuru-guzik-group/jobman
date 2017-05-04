@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import subprocess
+import types
 
 from .base_engine import BaseEngine
 
@@ -19,8 +20,19 @@ class SlurmEngine(BaseEngine):
     }
 
     def __init__(self, process_runner=None, logger=None):
-        self.process_runner = process_runner or subprocess.run
+        self.process_runner = process_runner or \
+                self._generate_default_process_runner()
         self.logger = logger or logging
+
+    def _generate_default_process_runner(self):
+        process_runner = types.SimpleNamespace()
+        def run_process(cmd=None, **kwargs):
+            return subprocess.run(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, **kwargs)
+        process_runner.run_process = run_process
+        process_runner.CalledProcessError = subprocess.CalledProcessError
+        return process_runner
 
     def submit(self, submission=None):
         workdir = submission['dir']
@@ -31,17 +43,16 @@ class SlurmEngine(BaseEngine):
         try:
             completed_proc = self.process_runner.run_process(
                 cmd=cmd, check=True)
+            slurm_job_id = self.parse_sbatch_stdout(completed_proc.stdout)
+            engine_meta = {'job_id': slurm_job_id}
+            return engine_meta
         except self.process_runner.CalledProcessError as called_proc_err:
-            print("yo")
             error_msg = ("Submission error:\n"
                          "\tstdout: {stdout}\n"
                          "\tstderr: {stderr}\n").format(
                              stdout=called_proc_err.stdout,
                              stderr=called_proc_err.stderr)
             raise self.SubmissionError(error_msg) from called_proc_err
-        slurm_job_id = self.parse_sbatch_stdout(completed_proc.stdout)
-        engine_meta = {'job_id': slurm_job_id}
-        return engine_meta
 
     def parse_sbatch_stdout(self, sbatch_stdout=None):
         match = re.match(r'Submitted batch job (\d+)', sbatch_stdout)

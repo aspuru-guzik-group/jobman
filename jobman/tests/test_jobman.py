@@ -25,7 +25,7 @@ class BaseTestCase(unittest.TestCase):
 class EnsureDbTestCase(BaseTestCase):
     def test_dispatches_to_dao(self):
         self.jobman.ensure_db()
-        self.assertEqual(self.jobman.dao.create_db.call_args, call())
+        self.assertEqual(self.jobman.dao.ensure_db.call_args, call())
 
 class SubmitTestCase(BaseTestCase):
     def setUp(self):

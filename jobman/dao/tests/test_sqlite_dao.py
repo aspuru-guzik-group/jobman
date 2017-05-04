@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call, MagicMock
+from unittest.mock import call, MagicMock, patch
 
 from .. import sqlite_dao
 
@@ -36,6 +36,24 @@ class InitTestCase(BaseTestCase):
         expected_orms = {'job': self.orm.ORM.return_value,
                          'kvp': self.orm.ORM.return_value}
         self.assertEqual(self.dao.orms, expected_orms)
+
+class EnsureDbTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.dao.create_db = MagicMock()
+
+    @patch.object(sqlite_dao, 'os')
+    def test_creates_db_for_file_uri_if_file_not_exists(self, mock_os):
+        self.dao.db_uri = '/some/file.sqlite.db'
+        mock_os.path.exists.return_value = False
+        self.dao.ensure_db()
+        self.assertEqual(mock_os.path.exists.call_args, call(self.dao.db_uri))
+        self.assertEqual(self.dao.create_db.call_args, call())
+
+    def test_creates_db_for_memory_uri(self):
+        self.dao.db_uri = ':memory:'
+        self.dao.ensure_db()
+        self.assertEqual(self.dao.create_db.call_args, call())
 
 class CreateDbTestCase(BaseTestCase):
     def test_dispatches_to_orms(self):

@@ -1,23 +1,33 @@
 import logging
+import os
 import time
 
 
 class JobMan(object):
-
     class SubmissionError(Exception): pass
 
     def __init__(self, dao=None, engine=None, logger=None,
                  job_engine_states_ttl=120, submission_grace_period=None):
-        self.dao = dao
-        self.engine = engine
+        self.dao = dao or self._generate_dao()
+        self.engine = engine or self._generate_engine()
         self.logger = logger or logging
         self.job_engine_states_ttl = job_engine_states_ttl
         self.submission_grace_period = submission_grace_period or \
                 (2 * self.job_engine_states_ttl)
+        self.ensure_db()
         self._kvps = {}
 
+    def _generate_dao(self):
+        from .dao.sqlite_dao import SqliteDAO
+        db_uri = os.path.join(os.path.expanduser('~'), '.jobman.sqlite.db')
+        return SqliteDAO(db_uri=db_uri)
+
+    def _generate_engine(self):
+        from .engines.slurm_engine import SlurmEngine
+        return SlurmEngine()
+
     def ensure_db(self):
-        self.dao.create_db()
+        self.dao.ensure_db()
 
     def submit_job(self, submission=None):
         self.log_submission(submission=submission)

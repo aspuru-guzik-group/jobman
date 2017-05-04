@@ -8,6 +8,7 @@ from .. import slurm_engine
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.process_runner = MagicMock()
+        self.process_runner.CalledProcessError = Exception
         self.engine = self.generate_engine()
 
     def generate_engine(self, **kwargs):

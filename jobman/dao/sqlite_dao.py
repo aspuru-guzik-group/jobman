@@ -1,4 +1,5 @@
-import sqlite3 as sqlite3
+import os
+import sqlite3
 import time
 import uuid
 
@@ -59,6 +60,12 @@ class SqliteDAO(BaseDAO):
         connection = self.sqlite.connect(self.db_uri)
         connection.row_factory = self.sqlite.Row
         return connection
+
+    def ensure_db(self):
+        should_create = False
+        if self.db_uri == ':memory': should_create = True
+        elif not os.path.exists(self.db_uri): should_create = True
+        if should_create: self.create_db()
 
     def create_db(self):
         with self.connection:
