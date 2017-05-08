@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3
 import time
@@ -8,7 +9,9 @@ from . import orm as _orm
 
 
 class SqliteDAO(BaseDAO):
-    def __init__(self, db_uri=':memory:', sqlite=sqlite3, orm=_orm):
+    def __init__(self, db_uri=':memory:', logger=None, sqlite=sqlite3,
+                 orm=_orm):
+        self.logger = logger or logging
         self.db_uri = db_uri
         self.sqlite = sqlite
 
@@ -17,8 +20,10 @@ class SqliteDAO(BaseDAO):
 
     def _generate_orms(self, orm=None):
         return {
-            'job': orm.ORM(name='job', fields=self._generate_job_fields()),
-            'kvp': orm.ORM(name='kvp', fields=self._generate_kvp_fields()),
+            'job': orm.ORM(name='job', fields=self._generate_job_fields(),
+                           logger=self.logger),
+            'kvp': orm.ORM(name='kvp', fields=self._generate_kvp_fields(),
+                           logger=self.logger),
         }
 
     def _generate_job_fields(self):
@@ -28,6 +33,9 @@ class SqliteDAO(BaseDAO):
             'status': {'type': 'TEXT'},
             'engine_meta': {'type': 'JSON'},
             'engine_state': {'type': 'JSON'},
+            'source': {'type': 'TEXT'},
+            'source_meta': {'type': 'JSON'},
+            'submission': {'type': 'JSON'},
             **self._generate_timestamp_fields()
         }
 
@@ -97,3 +105,6 @@ class SqliteDAO(BaseDAO):
     def get_kvps(self, query=None):
         return self.orms['kvp'].get_objects(query=query,
                                             connection=self.connection)
+
+    def flush(self):
+        os.remove(self.db_uri)

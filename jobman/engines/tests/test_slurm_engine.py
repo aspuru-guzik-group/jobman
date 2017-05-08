@@ -33,7 +33,7 @@ class SubmitTestCase(BaseTestCase):
         workdir = self.submission['dir']
         entrypoint_path = os.path.join(workdir,
                                        self.submission.get('entrypoint'))
-        expected_cmd = ['sbatch', '--workdir="%s"' % workdir, entrypoint_path]
+        expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint_path]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
 
@@ -64,38 +64,39 @@ class SubmitTestCase(BaseTestCase):
         with self.assertRaises(self.engine.SubmissionError):
             self._submit()
 
-class GetKeyedJobStatesTestCase(BaseTestCase):
+class GetKeyedEngineStatesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mockify_engine_attrs(attrs=['get_slurm_jobs',
-                                         'slurm_job_to_job_state'])
+        self.mockify_engine_attrs(attrs=['get_slurm_jobs_by_id',
+                                         'slurm_job_to_engine_state'])
         self.keyed_engine_metas = {i: MagicMock() for i in range(3)}
         self.expected_job_ids = [
             engine_meta['job_id']
             for engine_meta in self.keyed_engine_metas.values()
         ]
-        self.mock_slurm_jobs = {
+        self.mock_slurm_jobs_by_id = {
             job_id: MagicMock() for job_id in self.expected_job_ids
         }
-        self.engine.get_slurm_jobs.return_value = self.mock_slurm_jobs
+        self.engine.get_slurm_jobs_by_id.return_value = \
+                self.mock_slurm_jobs_by_id
 
     def _get(self):
-        return self.engine.get_keyed_job_states(
+        return self.engine.get_keyed_engine_states(
             keyed_engine_metas=self.keyed_engine_metas)
 
-    def test_gets_slurm_jobs(self):
+    def test_gets_slurm_jobs_by_id(self):
         self._get()
-        self.assertEqual(self.engine.get_slurm_jobs.call_args,
+        self.assertEqual(self.engine.get_slurm_jobs_by_id.call_args,
                          call(job_ids=self.expected_job_ids))
 
-    def test_gets_job_states(self):
+    def test_gets_engine_states(self):
         self._get()
         self.assertEqual(
             self._get_sorted_slurm_job_calls(
-                calls=self.engine.slurm_job_to_job_state.call_args_list),
+                calls=self.engine.slurm_job_to_engine_state.call_args_list),
             self._get_sorted_slurm_job_calls(
                 calls=[call(slurm_job=slurm_job)
-                       for slurm_job in self.mock_slurm_jobs.values()])
+                       for slurm_job in self.mock_slurm_jobs_by_id.values()])
         )
 
     def _get_sorted_slurm_job_calls(self, calls=None):
@@ -104,38 +105,38 @@ class GetKeyedJobStatesTestCase(BaseTestCase):
             elif len(call) == 2: return id(call[1]['slurm_job'])
         return sorted(calls, key=_key_fn)
 
-    def test_returns_keyed_job_states(self):
+    def test_returns_keyed_engine_states(self):
         result = self._get()
         expected_result = {
-            key: self.engine.slurm_job_to_job_state.return_value
+            key: self.engine.slurm_job_to_engine_state.return_value
             for key in self.keyed_engine_metas
         }
         self.assertEqual(result, expected_result)
 
-class GetSlurmJobsTestCase(BaseTestCase):
+class GetSlurmJobsByIdTestCase(BaseTestCase):
+    pass
+
+class GetSlurmJobsViaSacctTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job_ids = ["job_id_%s" % i for i in range(3)]
         self.mock_slurm_jobs = [MagicMock() for job_id in self.job_ids]
-        self.mockify_engine_attrs(attrs=['parse_sacct_stdout'])
-        self.engine.parse_sacct_stdout.return_value = self.mock_slurm_jobs
+        self.engine.parse_sacct_stdout = \
+                MagicMock(return_value={'records': self.mock_slurm_jobs})
 
     def _get(self):
-        return self.engine.get_slurm_jobs(job_ids=self.job_ids)
+        return self.engine.get_slurm_jobs_via_sacct(job_ids=self.job_ids)
 
     def test_makes_expected_process_call(self):
         self._get()
         csv_job_ids = ",".join(self.job_ids)
         expected_cmd = ['sacct', '--jobs=%s' % csv_job_ids, '--long',
-                        '--noconvert', 'parsable2', '--allocations']
+                        '--noconvert', '--parsable2', '--allocations']
         self.assertEqual(self.engine.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
 
-    def test_returns_keyed_parsed_jobs(self):
-        result = self._get()
-        expected_result = {slurm_job['JobID']: slurm_job
-                           for slurm_job in self.mock_slurm_jobs}
-        self.assertEqual(result, expected_result)
+    def test_returns_parsed_jobs(self):
+        self.assertEqual(self._get(), self.mock_slurm_jobs)
 
 class ParseSacctOutputTestCase(BaseTestCase):
     def setUp(self):
@@ -162,18 +163,18 @@ class ParseSacctOutputTestCase(BaseTestCase):
         self.assertEqual(result, expected_result)
 
 class SlurmJobToJobStateTestCase(BaseTestCase):
-    def test_generates_expected_job_state_for_non_null_slurm_job(self):
+    def test_generates_expected_engine_state_for_non_null_slurm_job(self):
         self.engine.slurm_job_to_status = MagicMock()
         slurm_job = MagicMock()
-        result = self.engine.slurm_job_to_job_state(slurm_job=slurm_job)
+        result = self.engine.slurm_job_to_engine_state(slurm_job=slurm_job)
         expected_result = {
             'engine_job_state': slurm_job,
             'status': self.engine.slurm_job_to_status.return_value
         }
         self.assertEqual(result, expected_result)
 
-    def test_generates_expectedd_job_state_for_null_slurm_job(self):
-        result = self.engine.slurm_job_to_job_state(slurm_job=None)
+    def test_generates_expected_engine_state_for_null_slurm_job(self):
+        result = self.engine.slurm_job_to_engine_state(slurm_job=None)
         expected_result = {'engine_job_state': None}
         self.assertEqual(result, expected_result)
 

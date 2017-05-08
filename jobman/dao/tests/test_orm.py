@@ -280,7 +280,10 @@ class _ExecuteQueryTestCase(BaseTestCase):
 class _GetWhereSectionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.orm._filter_to_where_clause = MagicMock(return_value='some_clause')
+        self.orm._filter_to_where_item = MagicMock(return_value={
+            'clause': 'some_clause',
+            'args': [1,2,3]
+        })
         self.query = {'filters': [MagicMock() for i in range(3)]}
 
     def _get_where_section(self):
@@ -288,25 +291,31 @@ class _GetWhereSectionTestCase(BaseTestCase):
 
     def test_generates_expected_where_section(self):
         where_section = self._get_where_section()
+        expected_clauses = []
+        expected_args = []
+        for _filter in self.query['filters']:
+            where_item = self.orm._filter_to_where_item(_filter=_filter)
+            expected_clauses.append(where_item['clause'])
+            expected_args.extend(where_item['args'])
         expected_where_section = {
-            'content': ' AND '.join([
-                self.orm._filter_to_where_clause(_filter=_filter)
-                for _filter in self.query['filters']
-            ]),
-            'args': [_filter['value'] for _filter in self.query['filters']]
+            'content': ' AND '.join(expected_clauses),
+            'args': expected_args,
         }
         self.assertEqual(where_section, expected_where_section)
 
-class _FilterToWhereClauseTestCase(BaseTestCase):
+class _FilterToWhereItemTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.filter = {'field': 'field', 'operator': 'operator'}
-        self.result = self.orm._filter_to_where_clause(_filter=self.filter)
+        self.filter = {'field': 'field', 'operator': 'operator',
+                       'value': 'some_value'}
+        self.result = self.orm._filter_to_where_item(_filter=self.filter)
 
-    def test_returns_expected_clause(self):
-        expected_clause = ''.join([
-            self.filter['field'], self.filter['operator'], '?'])
-        self.assertEqual(self.result, expected_clause)
+    def test_returns_expected_item(self):
+        expected_item = {
+            'clause': '{field} {operator} ?'.format(**self.filter),
+            'args': [self.filter['value']]
+        }
+        self.assertEqual(self.result, expected_item)
 
 class _RecordToObjTestCase(BaseTestCase):
     def test_transforms_values(self):

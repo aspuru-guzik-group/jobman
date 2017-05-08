@@ -29,8 +29,10 @@ class InitTestCase(BaseTestCase):
         self.assertEqual(
             self.orm.ORM.call_args_list,
             [
-                call(name='job', fields=self.dao._generate_job_fields()),
-                call(name='kvp', fields=self.dao._generate_kvp_fields()),
+                call(name='job', fields=self.dao._generate_job_fields(),
+                     logger=self.dao.logger),
+                call(name='kvp', fields=self.dao._generate_kvp_fields(),
+                     logger=self.dao.logger),
             ]
         )
         expected_orms = {'job': self.orm.ORM.return_value,

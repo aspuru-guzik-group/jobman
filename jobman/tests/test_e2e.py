@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import MagicMock
 import uuid
 
 from .. import jobman
@@ -36,17 +35,18 @@ class JobManE2ETest(unittest.TestCase):
             engine=self.engine,
             job_engine_states_ttl=10
         )
-        self.jobman.ensure_db()
 
     def test_job_completions(self):
-        submissions = [MagicMock() for i in range(3)]
+        submissions = [{'some': 'submission'} for i in range(3)]
         jobs = [self.jobman.submit_job(submission=submission)
                 for submission in submissions]
         for i, job in enumerate(jobs):
-            self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()),
-                             self._get_job_keys(jobs[i:]))
+            self.assertEqual(
+                set(self._get_job_keys(self.jobman.get_running_jobs())),
+                set(self._get_job_keys(jobs[i:]))
+            )
             self.engine.complete_job(engine_meta=job['engine_meta'])
-            self.jobman.update_jobs(force=True)
+            self.jobman.update_job_engine_states(jobs=jobs, force=True)
         self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()), [])
 
     def _get_job_keys(self, jobs):
@@ -54,12 +54,12 @@ class JobManE2ETest(unittest.TestCase):
 
     def test_orphaned_job(self):
         self.jobman.submission_grace_period = 0
-        submissions = [MagicMock() for i in range(3)]
+        submissions = [{'some': 'submission'} for i in range(3)]
         jobs = [self.jobman.submit_job(submission=submission)
                 for submission in submissions]
         for i, job in enumerate(jobs):
             self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()),
                              self._get_job_keys(jobs[i:]))
             self.engine.unregister_job(engine_meta=job['engine_meta'])
-            self.jobman.update_jobs(force=True)
+            self.jobman.update_job_engine_states(jobs=jobs, force=True)
         self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()), [])

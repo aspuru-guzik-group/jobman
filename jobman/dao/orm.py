@@ -1,12 +1,14 @@
 import json
+import logging
 import textwrap
 
 
 class ORM(object):
-    def __init__(self, name=None, fields=None, json=json):
+    def __init__(self, name=None, fields=None, json=json, logger=None):
         self.name = name
         self.fields = fields
         self.json = json
+        self.logger = logger or logging
 
     def create_table(self, connection=None):
         create_statement = 'CREATE TABLE {table} ({column_defs})'.format(
@@ -116,12 +118,30 @@ class ORM(object):
         clauses = []
         args = []
         for _filter in query.get('filters', []):
-            clauses.append(self._filter_to_where_clause(_filter=_filter))
-            args.append(_filter['value'])
+            where_item = self._filter_to_where_item(_filter=_filter)
+            clauses.append(where_item['clause'])
+            args.extend(where_item['args'])
         return {'content': ' AND '.join(clauses), 'args': args}
 
-    def _filter_to_where_clause(self, _filter=None):
-        return ''.join([_filter['field'], _filter['operator'], '?'])
+    def _filter_to_where_item(self, _filter=None):
+        if _filter['operator'] == 'IN':
+            return self._filter_to_in_where_item(_filter=_filter)
+        else:
+            where_item = {
+                'clause': '{field} {operator} ?'.format(**_filter),
+                'args': [_filter['value']]
+            }
+        return where_item
+
+    def _filter_to_in_where_item(self, _filter=None):
+        in_where_item = {
+            'clause': '{field} IN ({placeholders})'.format(
+                **_filter,
+                placeholders=(', '.join(['?' for v in _filter['value']])),
+            ),
+            'args': _filter.get('value', [])
+        }
+        return in_where_item
 
     def _record_to_obj(self, record=None):
         obj = {}

@@ -13,16 +13,17 @@ class SlurmEngine(BaseEngine):
     SLURM_STATES_TO_ENGINE_JOB_STATUSES = {
         BaseEngine.JOB_STATUSES.RUNNING: set(['CONFIGURING', 'COMPLETING',
                                               'PENDING', 'RUNNING']),
-        BaseEngine.JOB_STATUSES.COMPLETED: set(['COMPLETED']),
+        BaseEngine.JOB_STATUSES.EXECUTED: set(['COMPLETED']),
         BaseEngine.JOB_STATUSES.FAILED: set(['BOOT_FAIL', 'CANCELLED', 'FAILED',
                                              'NODE_FAIL', 'PREEMPTED',
                                              'TIMEOUT'])
     }
 
-    def __init__(self, process_runner=None, logger=None):
+    def __init__(self, process_runner=None, logger=None, cfg=None):
         self.process_runner = process_runner or \
                 self._generate_default_process_runner()
         self.logger = logger or logging
+        self.cfg = cfg or {}
 
     def _generate_default_process_runner(self):
         process_runner = types.SimpleNamespace()
@@ -39,7 +40,7 @@ class SlurmEngine(BaseEngine):
         entrypoint_name = submission.get('entrypoint',
                                          self.DEFAULT_ENTRYPOINT_NAME)
         entrypoint_path = os.path.join(workdir, entrypoint_name)
-        cmd = ['sbatch', '--workdir="%s"' % workdir, entrypoint_path]
+        cmd = ['sbatch', ('--workdir=%s' % workdir), entrypoint_path]
         try:
             completed_proc = self.process_runner.run_process(
                 cmd=cmd, check=True)
@@ -62,27 +63,74 @@ class SlurmEngine(BaseEngine):
         slurm_job_id = match.group(1)
         return slurm_job_id
 
-    def get_keyed_job_states(self, keyed_engine_metas=None):
+    def get_keyed_engine_states(self, keyed_engine_metas=None):
         keyed_job_ids = {key: engine_meta['job_id']
                          for key, engine_meta in keyed_engine_metas.items()}
         job_ids = list(keyed_job_ids.values())
-        slurm_jobs = self.get_slurm_jobs(job_ids=job_ids)
-        keyed_job_states = {}
+        slurm_jobs_by_id = self.get_slurm_jobs_by_id(job_ids=job_ids)
+        keyed_engine_states = {}
         for key, job_id in keyed_job_ids.items():
-            slurm_job = slurm_jobs.get(job_id)
-            job_state = self.slurm_job_to_job_state(slurm_job=slurm_job)
-            keyed_job_states[key] = job_state
-        return keyed_job_states
+            slurm_job = slurm_jobs_by_id.get(job_id)
+            engine_state = self.slurm_job_to_engine_state(slurm_job=slurm_job)
+            keyed_engine_states[key] = engine_state
+        return keyed_engine_states
 
-    def get_slurm_jobs(self, job_ids=None):
-        csv_job_ids = ','.join(list(job_ids))
-        cmd = ['sacct', '--jobs=%s' % csv_job_ids, '--long', '--noconvert',
-               'parsable2', '--allocations']
-        completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
-        slurm_jobs = self.parse_sacct_stdout(sacct_stdout=completed_proc.stdout)
-        slurm_jobs_by_id = {slurm_job['JobID']: slurm_job
+    def get_slurm_jobs_by_id(self, job_ids=None):
+        if self.cfg.get('use_sacct'):
+            slurm_jobs = self.get_slurm_jobs_via_sacct(job_ids=job_ids)
+        else:
+            slurm_jobs = self.get_slurm_jobs_via_scontrol(job_ids=job_ids)
+        slurm_jobs_by_id = {slurm_job['JobId']: slurm_job
                             for slurm_job in slurm_jobs}
         return slurm_jobs_by_id
+
+    def get_slurm_jobs_via_scontrol(self, job_ids=None):
+        if not job_ids: return {}
+        all_slurm_jobs = self.get_all_slurm_jobs_via_scontrol()
+        return [slurm_job for slurm_job in all_slurm_jobs
+                if slurm_job['JobId'] in job_ids]
+        #return [self.get_slurm_job_via_scontrol(job_id=job_id)
+                #for job_id in job_ids]
+
+    def get_all_slurm_jobs_via_scontrol(self):
+        cmd = ['scontrol', 'show', '--all', '--details', '--oneliner', 'job']
+        completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
+        scontrol_output = completed_proc.stdout
+        slurm_jobs = []
+        if 'No jobs in the system' not in scontrol_output:
+            for scontrol_line in scontrol_output.split("\n"):
+                scontrol_line = scontrol_line.strip()
+                if not scontrol_line: continue
+                slurm_jobs.append(self.parse_scontrol_line(scontrol_line))
+        return slurm_jobs
+
+    def get_slurm_job_via_scontrol(self, job_id=None):
+        cmd = ['scontrol', 'show', '--details', '--oneliner', 'job', job_id]
+        try:
+            completed_proc = self.process_runner.run_process(
+                cmd=cmd, check=True)
+            slurm_job = self.parse_scontrol_line(completed_proc.stdout)
+        except self.process_runner.CalledProcessError as exc:
+            if 'Invalid job id specified' in exc.stderr: slurm_job = None
+            else: raise exc
+        return slurm_job
+
+    def parse_scontrol_line(self, scontrol_line=None):
+        parsed = {}
+        for key_value_str in scontrol_line.split():
+            key, value = key_value_str.split('=', 1)
+            parsed[key] = value
+        return parsed
+
+    def get_slurm_jobs_via_sacct(self, job_ids=None):
+        if not job_ids: return []
+        csv_job_ids = ','.join(list(job_ids))
+        cmd = ['sacct', '--jobs=%s' % csv_job_ids, '--long', '--noconvert',
+               '--parsable2', '--allocations']
+        completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
+        slurm_jobs = self.parse_sacct_stdout(
+            sacct_stdout=completed_proc.stdout)['records']
+        return slurm_jobs
 
     def parse_sacct_stdout(self, sacct_stdout=None):
         sacct_lines = sacct_stdout.split("\n")
@@ -90,6 +138,7 @@ class SlurmEngine(BaseEngine):
         records = [
             self.parse_sacct_line(sacct_line=sacct_line, fields=fields)
             for sacct_line in sacct_lines[1:]
+            if sacct_line
         ]
         return {'fields': fields, 'records': records}
 
@@ -102,11 +151,12 @@ class SlurmEngine(BaseEngine):
             parsed[fields[i]] = value
         return parsed
 
-    def slurm_job_to_job_state(self, slurm_job=None):
-        job_state = {'engine_job_state': slurm_job}
+    def slurm_job_to_engine_state(self, slurm_job=None):
+        engine_state = {'engine_job_state': slurm_job}
         if slurm_job is not None:
-            job_state['status'] = self.slurm_job_to_status(slurm_job=slurm_job)
-        return job_state
+            engine_state['status'] = self.slurm_job_to_status(
+                slurm_job=slurm_job)
+        return engine_state
 
     def slurm_job_to_status(self, slurm_job=None):
         for engine_job_status, slurm_states \

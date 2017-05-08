@@ -31,11 +31,14 @@ class SubmitTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.submission = MagicMock()
-        self.mockify_jobman_attrs(attrs=['log_submission',
-                                               'create_job'])
+        self.source = MagicMock()
+        self.source_meta = MagicMock()
+        self.mockify_jobman_attrs(attrs=['log_submission', 'create_job'])
 
     def _submit(self):
-        return self.jobman.submit_job(submission=self.submission)
+        return self.jobman.submit_job(submission=self.submission,
+                                      source=self.source,
+                                      source_meta=self.source_meta)
 
     def test_logs_submission(self):
         self._submit()
@@ -52,13 +55,15 @@ class SubmitTestCase(BaseTestCase):
         self.engine.submit.side_effect = exception
         with self.assertRaises(self.jobman.SubmissionError): self._submit()
 
-    def test_creates_job_w_engine_meta(self):
+    def test_creates_job_w_metas(self):
         self._submit()
         self.assertEqual(
             self.jobman.create_job.call_args,
             call(
                 job_kwargs={
                     'submission': self.submission,
+                    'source': self.source,
+                    'source_meta': self.source_meta,
                     'engine_meta': self.engine.submit.return_value,
                     'status': 'RUNNING',
                 }
@@ -84,43 +89,104 @@ class CreateJobTestCase(BaseTestCase):
 
 class GetJobsTestCase(BaseTestCase):
     def test_dispatches_to_dao(self):
-        job_keys = MagicMock()
-        result = self.jobman.get_jobs(job_keys=job_keys)
+        query = MagicMock()
+        result = self.jobman.get_jobs(query=query)
         self.assertEqual(
             self.jobman.dao.get_jobs.call_args,
-            call(query={
-                'filters': [
-                    {'field': 'job_key', 'operator': 'in', 'value': job_keys}
-                ]
-            })
+            call(query=query)
         )
         self.assertEqual(result, self.jobman.dao.get_jobs.return_value)
 
-class UpdateJobsTestCase(BaseTestCase):
+class NumFreeSlotsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mockify_jobman_attrs(attrs=['job_engine_states_are_stale',
-                                         'update_job_engine_states',
-                                         'get_running_jobs'])
+        self.jobman.max_running_jobs = 3
+        self.jobman.get_running_jobs = MagicMock(return_value=[1,2])
 
-    def test_updates_job_engine_states_if_stale(self):
-        self.jobman.job_engine_states_are_stale.return_value = True
-        self.jobman.update_jobs()
+    def test_returns_max_running_jobs_less_running_jobs(self):
         self.assertEqual(
-            self.jobman.update_job_engine_states.call_args,
-            call(jobs=self.jobman.get_running_jobs.return_value))
+            self.jobman.num_free_slots,
+            (self.jobman.max_running_jobs - len(self.jobman.get_running_jobs()))
+        )
 
-    def test_does_not_update_job_engine_states_if_not_stale(self):
-        self.jobman.job_engine_states_are_stale.return_value = False
-        self.jobman.update_jobs()
-        self.assertEqual(self.jobman.update_job_engine_states.call_args, None)
+class SaveJobsTestCase(BaseTestCase):
+    def test_dispatches_to_dao(self):
+        jobs = MagicMock()
+        result = self.jobman.save_jobs(jobs=jobs)
+        self.assertEqual(self.jobman.dao.save_jobs.call_args, call(jobs=jobs))
+        self.assertEqual(result, self.jobman.dao.save_jobs.return_value)
 
-    def test_updates_if_job_engine_states_stale_and_force_is_true(self):
-        self.jobman.job_engine_states_are_stale.return_value = False
-        self.jobman.update_jobs(force=True)
+class GetKvp(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.key = 'some_key'
+
+    def test_returns_from__state_if_set(self):
+        self.jobman._kvps[self.key] = MagicMock()
+        self.assertEqual(self.jobman.get_kvp(key=self.key),
+                         self.jobman._kvps[self.key])
+
+    def test_returns_from_dao_and_sets_key_if_key_not_set(self):
+        result = self.jobman.get_kvp(key=self.key)
+        expected_result = self.jobman.dao.get_kvps.return_value[0]['value']
         self.assertEqual(
-            self.jobman.update_job_engine_states.call_args,
-            call(jobs=self.jobman.get_running_jobs.return_value))
+            self.jobman.dao.get_kvps.call_args,
+            call(query={
+                'filters': [
+                    {'field': 'key', 'operator': '=', 'value': self.key}
+                ]
+            })
+        )
+        self.assertEqual(result, expected_result)
+        self.assertEqual(self.jobman._kvps[self.key], expected_result)
+
+class GetRunningJobsTestCase(BaseTestCase):
+    def test_dispatches_to_dao(self):
+        result = self.jobman.get_running_jobs()
+        self.assertEqual(
+            self.dao.get_jobs.call_args,
+            call(query={
+                'filters': [
+                    {'field': 'status', 'operator': '=', 'value': 'RUNNING'}
+                ]
+            })
+        )
+        self.assertEqual(result, self.dao.get_jobs.return_value)
+
+class UpdateJobEngineStatesTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.jobs = MagicMock()
+        self.mockify_jobman_attrs(attrs=['get_jobs',
+                                         'job_engine_states_are_stale',
+                                         '_update_job_engine_states'])
+
+    def test_gets_jobs_if_passed_query(self):
+        query = MagicMock()
+        self.jobman.update_job_engine_states(query=query)
+        self.assertEqual(self.jobman.get_jobs.call_args, call(query=query))
+        self.assertEqual(self.jobman._update_job_engine_states.call_args,
+                         call(jobs=self.jobman.get_jobs.return_value))
+
+    def test_noop_if_jobs_are_empty(self):
+        self.jobman.update_job_engine_states(jobs=None)
+        self.assertEqual(self.jobman._update_job_engine_states.call_args, None)
+
+    def test_noop_if_jobs_and_query_result_are_empty(self):
+        self.jobman.get_jobs.return_value = None
+        self.jobman.update_job_engine_states(jobs=None, query=MagicMock())
+        self.assertEqual(self.jobman._update_job_engine_states.call_args, None)
+
+    def test_noop_if_not_force_and_not_stale(self):
+        self.jobman.job_engine_states_are_stale.return_value = False
+        self.jobman.update_job_engine_states(jobs=self.jobs)
+        self.assertEqual(self.jobman._update_job_engine_states.call_args, None)
+
+    def test_updates_if_force_and_not_stale(self):
+        self.jobman.job_engine_states_are_stale.return_value = False
+        self.jobman.update_job_engine_states(jobs=self.jobs, force=True)
+        self.assertEqual(self.jobman._update_job_engine_states.call_args,
+                         call(jobs=self.jobs))
 
 class JobsEngineStatesAreStaleTestCase(BaseTestCase):
     def setUp(self):
@@ -158,53 +224,15 @@ class GetJobEngineStatesAge(BaseTestCase):
                 self.jobman.get_kvp.return_value
         self.assertEqual(age, expected_age)
 
-class GetKvp(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.key = 'some_key'
-
-    def test_returns_from__state_if_set(self):
-        self.jobman._kvps[self.key] = MagicMock()
-        self.assertEqual(self.jobman.get_kvp(key=self.key),
-                         self.jobman._kvps[self.key])
-
-    def test_returns_from_dao_and_sets_key_if_key_not_set(self):
-        result = self.jobman.get_kvp(key=self.key)
-        expected_result = self.jobman.dao.get_kvps.return_value[0]
-        self.assertEqual(
-            self.jobman.dao.get_kvps.call_args,
-            call(query={
-                'filters': [
-                    {'field': 'key', 'operator': '=', 'value': self.key}
-                ]
-            })
-        )
-        self.assertEqual(result, expected_result)
-        self.assertEqual(self.jobman._kvps[self.key], expected_result)
-
-class GetRunningJobsTestCase(BaseTestCase):
-    def test_dispatches_to_dao(self):
-        result = self.jobman.get_running_jobs()
-        self.assertEqual(
-            self.dao.get_jobs.call_args,
-            call(query={
-                'filters': [
-                    {'field': 'status', 'operator': '=', 'value': 'RUNNING'}
-                ]
-            })
-        )
-        self.assertEqual(result, self.dao.get_jobs.return_value)
-
-class UpdateJobEngineStatesTestCase(BaseTestCase):
+class _UpdateJobEngineStatesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.jobs = [MagicMock() for i in range(3)]
-        self.mockify_jobman_attrs(attrs=['set_kvp',
-                                         'get_keyed_engine_metas',
+        self.mockify_jobman_attrs(attrs=['set_kvp', 'get_keyed_engine_metas',
                                          'set_job_engine_state'])
 
     def _update(self):
-        self.jobman.update_job_engine_states(jobs=self.jobs)
+        self.jobman._update_job_engine_states(jobs=self.jobs)
 
     def test_gets_keyed_engine_states(self):
         self._update()
@@ -257,13 +285,14 @@ class SetJobEngineState(BaseTestCase):
 
     def test_updates_job_status_for_non_null_engine_state(self):
         self._set()
-        self.assertEqual(self.job['status'], self.job_engine_state['status'])
+        self.assertEqual(self.job['status'],
+                         self.job_engine_state.get('status'))
 
-    def test_for_null_engine_state_marks_orphaned_job_as_completed(self):
+    def test_state_marks_orphaned_job_as_executed(self):
         self.job_engine_state = None
         self.jobman.job_is_orphaned.return_value = True
         self._set()
-        self.assertEqual(self.job['status'], 'COMPLETED')
+        self.assertEqual(self.job['status'], 'EXECUTED')
 
     def test_for_null_engine_state_ignores_non_orphaned_jobs(self):
         self.job_engine_state = None
@@ -312,5 +341,27 @@ class SetKvpTestCase(BaseTestCase):
 
     def test_saves_to_local_kvp(self):
         self.assertEqual(self.jobman._kvps[self.key], self.value)
+
+class GetJobStdLogFileContents(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.std_log_files = {i: MagicMock() for i in range(3)}
+        self.job = {
+            'submission': {
+                'dir': 'some_dir',
+                'std_log_files': self.std_log_files
+            }
+        }
+
+    @patch.object(_jobman, 'os')
+    @patch.object(_jobman, 'open')
+    def test_reads_std_log_files(self, mock_open, mock_os):
+        result = self.jobman.get_std_log_contents_for_job(job=self.job)
+        expected_result = {}
+        for log_name, rel_path in self.std_log_files.items():
+            abs_path = mock_os.path.join(self.job['submission']['dir'],
+                                         rel_path)
+            expected_result[log_name] = mock_open(abs_path).read()
+        self.assertEqual(result, expected_result)
 
 if __name__ == '__main__': unittest.main()
