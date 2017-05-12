@@ -41,7 +41,7 @@ class JobMan(object):
 
     def _generate_dao(self):
         from .dao.sqlite_dao import SqliteDAO
-        db_uri = os.path.join(os.path.expanduser('~'), 'jobman.sqlite.db')
+        db_uri = os.path.expanduser('~/jobman.sqlite.db')
         return SqliteDAO(db_uri=db_uri, logger=self.logger)
 
     def _generate_engine(self):
@@ -152,15 +152,6 @@ class JobMan(object):
 
     def get_job_age(self, job=None):
         return time.time() - job['created']
-
-    def get_std_log_contents_for_job(self, job=None):
-        submission = job['submission']
-        std_log_contents = {}
-        for log_name, rel_path in submission.get('std_log_files', {}).items():
-            abs_path = os.path.join(submission['dir'], rel_path)
-            if os.path.exists(abs_path):
-                std_log_contents[log_name] = open(abs_path).read()
-        return std_log_contents
 
     def flush(self):
         self.dao.flush()

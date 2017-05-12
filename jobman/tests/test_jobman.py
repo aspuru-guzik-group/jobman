@@ -342,26 +342,4 @@ class SetKvpTestCase(BaseTestCase):
     def test_saves_to_local_kvp(self):
         self.assertEqual(self.jobman._kvps[self.key], self.value)
 
-class GetJobStdLogFileContents(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.std_log_files = {i: MagicMock() for i in range(3)}
-        self.job = {
-            'submission': {
-                'dir': 'some_dir',
-                'std_log_files': self.std_log_files
-            }
-        }
-
-    @patch.object(_jobman, 'os')
-    @patch.object(_jobman, 'open')
-    def test_reads_std_log_files(self, mock_open, mock_os):
-        result = self.jobman.get_std_log_contents_for_job(job=self.job)
-        expected_result = {}
-        for log_name, rel_path in self.std_log_files.items():
-            abs_path = mock_os.path.join(self.job['submission']['dir'],
-                                         rel_path)
-            expected_result[log_name] = mock_open(abs_path).read()
-        self.assertEqual(result, expected_result)
-
 if __name__ == '__main__': unittest.main()
