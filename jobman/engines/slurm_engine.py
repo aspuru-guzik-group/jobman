@@ -1,15 +1,11 @@
-import logging
 import os
 import re
-import subprocess
-import types
 
 from .base_engine import BaseEngine
 
 
 
 class SlurmEngine(BaseEngine):
-    DEFAULT_ENTRYPOINT_NAME ='job.sh'
     SLURM_STATES_TO_ENGINE_JOB_STATUSES = {
         BaseEngine.JOB_STATUSES.RUNNING: set(['CONFIGURING', 'COMPLETING',
                                               'PENDING', 'RUNNING']),
@@ -18,22 +14,6 @@ class SlurmEngine(BaseEngine):
                                              'NODE_FAIL', 'PREEMPTED',
                                              'TIMEOUT'])
     }
-
-    def __init__(self, process_runner=None, logger=None, cfg=None):
-        self.process_runner = process_runner or \
-                self._generate_default_process_runner()
-        self.logger = logger or logging
-        self.cfg = cfg or {}
-
-    def _generate_default_process_runner(self):
-        process_runner = types.SimpleNamespace()
-        def run_process(cmd=None, **kwargs):
-            return subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                universal_newlines=True, **kwargs)
-        process_runner.run_process = run_process
-        process_runner.CalledProcessError = subprocess.CalledProcessError
-        return process_runner
 
     def submit(self, submission=None):
         workdir = submission['dir']

@@ -12,6 +12,9 @@ class SqliteDAO(BaseDAO):
     def __init__(self, db_uri=':memory:', logger=None, sqlite=sqlite3,
                  orm=_orm):
         self.logger = logger or logging
+        if db_uri == 'sqlite://': db_uri = ':memory:'
+        elif db_uri.startswith('sqlite:///'):
+            db_uri = db_uri.replace('sqlite:///', '')
         self.db_uri = db_uri
         self.sqlite = sqlite
 

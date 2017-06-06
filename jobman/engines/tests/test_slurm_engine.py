@@ -1,3 +1,4 @@
+import collections
 import os
 import unittest
 from unittest.mock import call, MagicMock
@@ -21,7 +22,10 @@ class BaseTestCase(unittest.TestCase):
 class SubmitTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.submission = MagicMock()
+        self.submission = collections.defaultdict(MagicMock, **{
+            'dir': 'some_dir',
+            'entrypoint': 'some_entrypoint'
+        })
 
     def _submit(self):
         return self.engine.submit(submission=self.submission)
@@ -31,8 +35,8 @@ class SubmitTestCase(BaseTestCase):
                 self.generate_successful_sbatch_proc()
         self._submit()
         workdir = self.submission['dir']
-        entrypoint_path = os.path.join(workdir,
-                                       self.submission.get('entrypoint'))
+        entrypoint_path = os.path.join(
+            workdir, self.submission.get('entrypoint'))
         expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint_path]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
@@ -52,8 +56,11 @@ class SubmitTestCase(BaseTestCase):
         self.assertEqual(engine_meta, expected_engine_meta)
 
     def test_handles_failed_submission(self):
-        self.process_runner.CalledProcessError = \
-                slurm_engine.subprocess.CalledProcessError
+        class MockError(Exception):
+            stdout = 'some_stdout'
+            stderr = 'some_stderr'
+
+        self.process_runner.CalledProcessError = MockError
         def simulate_failed_proc(cmd, *args, **kwargs):
             proc = MagicMock()
             proc.returncode = 1
