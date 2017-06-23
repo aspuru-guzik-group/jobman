@@ -50,7 +50,7 @@ class JobManE2ETest(unittest.TestCase):
         self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()), [])
 
     def _get_job_keys(self, jobs):
-        return [job['job_key'] for job in jobs]
+        return [job['key'] for job in jobs]
 
     def test_orphaned_job(self):
         self.jobman.submission_grace_period = 0

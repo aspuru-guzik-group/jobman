@@ -159,21 +159,26 @@ class UpdateJobEngineStatesTestCase(BaseTestCase):
         self.jobs = MagicMock()
         self.mockify_jobman_attrs(attrs=['get_jobs',
                                          'job_engine_states_are_stale',
-                                         '_update_job_engine_states'])
+                                         '_update_job_engine_states',
+                                         'filter_for_incomplete_status'])
 
     def test_gets_jobs_if_passed_query(self):
         query = MagicMock()
         self.jobman.update_job_engine_states(query=query)
         self.assertEqual(self.jobman.get_jobs.call_args, call(query=query))
-        self.assertEqual(self.jobman._update_job_engine_states.call_args,
-                         call(jobs=self.jobman.get_jobs.return_value))
+        self.assertEqual(self.jobman.filter_for_incomplete_status.call_args,
+                         call(items=self.jobman.get_jobs.return_value))
+        self.assertEqual(
+            self.jobman._update_job_engine_states.call_args,
+            call(jobs=self.jobman.filter_for_incomplete_status.return_value)
+        )
 
     def test_noop_if_jobs_are_empty(self):
         self.jobman.update_job_engine_states(jobs=None)
         self.assertEqual(self.jobman._update_job_engine_states.call_args, None)
 
     def test_noop_if_jobs_and_query_result_are_empty(self):
-        self.jobman.get_jobs.return_value = None
+        self.jobman.filter_for_incomplete_status.return_value = None
         self.jobman.update_job_engine_states(jobs=None, query=MagicMock())
         self.assertEqual(self.jobman._update_job_engine_states.call_args, None)
 

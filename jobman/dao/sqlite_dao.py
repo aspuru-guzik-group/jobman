@@ -31,8 +31,8 @@ class SqliteDAO(BaseDAO):
 
     def _generate_job_fields(self):
         return {
-            'job_key': {'type': 'TEXT', 'primary_key': True,
-                        'default': self._generate_uuid},
+            'key': {'type': 'TEXT', 'primary_key': True,
+                    'default': self._generate_uuid},
             'status': {'type': 'TEXT'},
             'engine_meta': {'type': 'JSON'},
             'engine_state': {'type': 'JSON'},

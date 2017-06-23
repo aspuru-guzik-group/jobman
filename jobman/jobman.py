@@ -77,11 +77,9 @@ class JobMan(object):
     def create_job(self, job_kwargs=None):
         return self.dao.create_job(job_kwargs=job_kwargs)
 
-    def get_jobs(self, query=None):
-        return self.dao.get_jobs(query=query)
+    def get_jobs(self, query=None): return self.dao.get_jobs(query=query)
 
-    def save_jobs(self, jobs=None):
-        return self.dao.save_jobs(jobs=jobs)
+    def save_jobs(self, jobs=None): return self.dao.save_jobs(jobs=jobs)
 
     def get_running_jobs(self):
         return self.get_jobs(query={
@@ -117,10 +115,18 @@ class JobMan(object):
         self._kvps[key] = value
 
     def update_job_engine_states(self, jobs=None, force=False, query=None):
-        if not jobs and query: jobs = self.get_jobs(query=query)
+        if not jobs and query:
+            jobs = self.filter_for_incomplete_status(
+                items=self.get_jobs(query=query))
         if not jobs: return
         if force or self.job_engine_states_are_stale():
             self._update_job_engine_states(jobs=jobs)
+
+    def filter_for_incomplete_status(self, items=None):
+        if not items: return
+        def incomplete_status_filter(item):
+            return item.get('status') != 'COMPLETED'
+        return filter(incomplete_status_filter, items)
 
     def _update_job_engine_states(self, jobs=None):
         keyed_engine_states = self.engine.get_keyed_engine_states(
@@ -128,7 +134,7 @@ class JobMan(object):
         for job in jobs:
             self.set_job_engine_state(
                 job=job,
-                job_engine_state=keyed_engine_states.get(job['job_key'])
+                job_engine_state=keyed_engine_states.get(job['key'])
             )
         self.dao.save_jobs(jobs=jobs)
         self.set_kvp(key='job_engine_states_modified', value=time.time())
@@ -136,7 +142,7 @@ class JobMan(object):
     def get_keyed_engine_metas(self, jobs=None):
         jobs = jobs or []
         keyed_engine_metas = {
-            job['job_key']: job.get('engine_meta') for job in jobs
+            job['key']: job.get('engine_meta') for job in jobs
         }
         return keyed_engine_metas
 
