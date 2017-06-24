@@ -126,7 +126,7 @@ class JobMan(object):
         if not items: return
         def incomplete_status_filter(item):
             return item.get('status') != 'COMPLETED'
-        return filter(incomplete_status_filter, items)
+        return list(filter(incomplete_status_filter, items))
 
     def _update_job_engine_states(self, jobs=None):
         keyed_engine_states = self.engine.get_keyed_engine_states(
