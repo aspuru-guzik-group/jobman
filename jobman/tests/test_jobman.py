@@ -347,4 +347,36 @@ class SetKvpTestCase(BaseTestCase):
     def test_saves_to_local_kvp(self):
         self.assertEqual(self.jobman._kvps[self.key], self.value)
 
+class FromCfgTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.setup_mocks()
+        self.cfg = MagicMock()
+        self.result = _jobman.JobMan.from_cfg(cfg=self.cfg)
+
+    def setup_mocks(self):
+        patchers = {'JobMan.__init__': patch.object(_jobman.JobMan, '__init__'),
+                    'getattr': patch.object(_jobman, 'getattr')}
+        self.mocks = {}
+        for key, patcher in patchers.items():
+            self.addCleanup(patcher.stop)
+            self.mocks[key] = patcher.start()
+        self.mocks['JobMan.__init__'].return_value = None
+
+    def test_gets_expected_attrs(self):
+        expected_call_args_list = [call(self.cfg, attr, None)
+                                   for attr in _jobman.JobMan.CFG_PARAMS]
+
+        self.assertEqual(self.mocks['getattr'].call_args_list,
+                         expected_call_args_list)
+
+    def test_creates_jobman_with_kwargs_from_cfg(self):
+        expected_kwargs = {attr: self.mocks['getattr'].return_value
+                           for attr in _jobman.JobMan.CFG_PARAMS}
+        self.assertEqual(self.mocks['JobMan.__init__'].call_args,
+                         call(**expected_kwargs))
+
+    def test_returns_jobman(self):
+        self.assertTrue(isinstance(self.result, _jobman.JobMan))
+
 if __name__ == '__main__': unittest.main()

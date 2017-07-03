@@ -6,13 +6,24 @@ import time
 class JobMan(object):
     class SubmissionError(Exception): pass
 
+    CFG_PARAMS = ['dao', 'engine', 'max_running_jobs', 'job_engine_states_ttl',
+                  'submission_grace_period']
+
+    @classmethod
+    def from_cfg(cls, cfg=None):
+        params_from_cfg = {param: getattr(cfg, param, None)
+                           for param in cls.CFG_PARAMS}
+        return JobMan(**params_from_cfg)
+
     def __init__(self, dao=None, engine=None, logging_cfg=None,
-                 max_running_jobs=50, job_engine_states_ttl=120,
+                 max_running_jobs=..., job_engine_states_ttl=...,
                  submission_grace_period=None):
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
         self.dao = dao or self._generate_dao()
         self.engine = engine or self._generate_engine()
+        if max_running_jobs is ...: max_running_jobs = 50
         self.max_running_jobs = max_running_jobs
+        if job_engine_states_ttl is ...: job_engine_states_ttl = 120
         self.job_engine_states_ttl = job_engine_states_ttl
         self.submission_grace_period = submission_grace_period or \
                 (2 * self.job_engine_states_ttl)
