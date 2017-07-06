@@ -83,8 +83,7 @@ class SqliteDAO(BaseDAO):
             for orm in self.orms.values():
                 orm.create_table(connection=self.connection)
 
-    def create_job(self, job_kwargs=None):
-        return self.save_jobs(jobs=[job_kwargs])[0]
+    def create_job(self, job=None): return self.save_jobs(jobs=[job])[0]
 
     def save_jobs(self, jobs=None):
         saved_jobs = []

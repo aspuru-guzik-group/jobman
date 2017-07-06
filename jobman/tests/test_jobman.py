@@ -22,6 +22,17 @@ class BaseTestCase(unittest.TestCase):
     def mockify_jobman_attrs(self, attrs=None):
         for attr in attrs: setattr(self.jobman, attr, MagicMock())
 
+class _SetupTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.jobman = self.generate_jobman(setup=False)
+
+    def test_calls_get_default_batchable_filters(self):
+        self.mockify_jobman_attrs(attrs=['_get_default_batchable_filters'])
+        self.jobman._setup()
+        self.assertEqual(self.jobman._get_default_batchable_filters.call_args,
+                         call())
+
 class EnsureDbTestCase(BaseTestCase):
     def test_dispatches_to_dao(self):
         self.jobman.ensure_db()
@@ -33,30 +44,153 @@ class SubmitTestCase(BaseTestCase):
         self.submission = MagicMock()
         self.source = MagicMock()
         self.source_meta = MagicMock()
-        self.mockify_jobman_attrs(attrs=['log_submission', 'create_job'])
+        self.mockify_jobman_attrs(attrs=['_submission_to_job',
+                                         '_job_is_batchable', '_create_job'])
+        self.jobman._submission_to_job.return_value = defaultdict(MagicMock)
+        self.expected_job = self.jobman._submission_to_job.return_value
+        self.result = self.jobman.submit(submission=self.submission,
+                                         source=self.source,
+                                         source_meta=self.source_meta)
 
-    def _submit(self):
-        return self.jobman.submit_job(submission=self.submission,
-                                      source=self.source,
-                                      source_meta=self.source_meta)
+    def test_assembles_job_from_submission(self):
+        self.assertEqual(
+            self.jobman._submission_to_job.call_args,
+            call(submission=self.submission, source=self.source,
+                 source_meta=self.source_meta)
+        )
 
-    def test_logs_submission(self):
-        self._submit()
-        self.assertTrue(self.jobman.log_submission.call_args,
-                        call(submission=self.submission))
+    def test_marks_job_as_batchable(self):
+        self.jobman._job_is_batchable.call_args(job=self.expected_job)
+        self.assertEqual(self.expected_job['batchable'],
+                         self.jobman._job_is_batchable.return_value)
+
+    def test_creates_job(self):
+        self.assertEqual(self.jobman._create_job.call_args,
+                         call(job=self.expected_job))
+
+    def test_returns_job_key(self):
+        self.assertEqual(self.result,
+                         self.jobman._create_job.return_value['key'])
+
+class _SubmissionToJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.submission = MagicMock()
+        self.source = MagicMock()
+        self.source_meta = MagicMock()
+        self.result = self.jobman._submission_to_job(
+            submission=self.submission, source=self.source,
+            source_meta=self.source_meta
+        )
+
+    def test_returns_expected_job(self):
+        expected_result = {
+            'submission': self.submission,
+            'source': self.source,
+            'source_meta': self.source_meta,
+            'status': 'PENDING',
+        }
+        self.assertEqual(self.result, expected_result)
+
+class _JobIsBatchableTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job = MagicMock()
+        self.filters = self._generate_filters()
+
+    def _generate_filters(self):
+        def passing_filter(*args, **kwargs): return True
+        def failing_filter(*args, **kwargs): return False
+        return {
+            'passing': passing_filter,
+            'failing': failing_filter,
+        }
+
+    def _job_is_batchable(self):
+        return self.jobman._job_is_batchable(job=self.job)
+
+    def test_returns_true_if_any_filters_match(self):
+        self.jobman.batchable_filters = [
+            self.filters['failing'], self.filters['passing']
+        ]
+        self.assertEqual(self._job_is_batchable(), True)
+
+    def test_returns_false_if_no_filters_match(self):
+        self.jobman.batchable_filters = [
+            self.filters['failing'] for i in range(3)
+        ]
+        self.assertEqual(self._job_is_batchable(), False)
+
+class TickTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_jobman_attrs(attrs=[
+            '_update_stale_engine_states_for_running_jobs',
+            '_process_executed_jobs',
+            '_process_batchable_jobs',
+            '_process_submittable_jobs',
+        ])
+        self.jobman.tick()
+
+    def test_updates_stale_engine_states_for_running_jobs(self):
+        self.assertEqual(
+            self.jobman._update_stale_engine_states_for_running_jobs.call_args,
+            call()
+        )
+
+    def test_processes_executed_jobs(self):
+        self.assertEqual(self.jobman._process_executed_jobs.call_args,
+                         call())
+
+    def test_processes_batchable_jobs(self):
+        self.assertEqual(self.jobman._process_batchable_jobs.call_args,
+                         call())
+
+    def test_processes_submittable_jobs(self):
+        self.assertEqual(self.jobman._process_submittable_jobs.call_args,
+                         call())
+
+class _UpdateStaleEngineStatesForRunningJobs(BaseTestCase):
+    def test_something(self):
+        self.fail()
+
+class _ProcessExecutedJobsTestCase(BaseTestCase):
+    def test_something(self):
+        self.fail()
+
+class _ProcessBatchableJobsTestCase(BaseTestCase):
+    def test_something(self):
+        self.fail()
+
+class _ProcessSubmittableJobsTestCase(BaseTestCase):
+    def test_something(self):
+        self.fail()
+
+class _SubmitJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.submission = MagicMock()
+        self.source = MagicMock()
+        self.source_meta = MagicMock()
+        self.mockify_jobman_attrs(attrs=['create_job'])
+
+    def _submit_job(self):
+        return self.jobman._submit_job(submission=self.submission,
+                                       source=self.source,
+                                       source_meta=self.source_meta)
 
     def test_submits_via_engine(self):
-        self._submit()
+        self._submit_job()
         self.assertEqual(self.engine.submit.call_args,
                          call(submission=self.submission))
 
     def test_raises_exception_for_bad_submission(self):
         exception = Exception("bad submission")
         self.engine.submit.side_effect = exception
-        with self.assertRaises(self.jobman.SubmissionError): self._submit()
+        with self.assertRaises(self.jobman.SubmissionError): self._submit_job()
 
     def test_creates_job_w_metas(self):
-        self._submit()
+        self._submit_job()
         self.assertEqual(
             self.jobman.create_job.call_args,
             call(
