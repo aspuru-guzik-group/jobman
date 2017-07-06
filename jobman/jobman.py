@@ -6,8 +6,8 @@ import time
 class JobMan(object):
     class SubmissionError(Exception): pass
 
-    CFG_PARAMS = ['dao', 'engine', 'max_running_jobs', 'job_engine_states_ttl',
-                  'submission_grace_period']
+    CFG_PARAMS = ['dao', 'jobman_db_uri', 'engine', 'max_running_jobs',
+                  'job_engine_states_ttl', 'submission_grace_period']
 
     @classmethod
     def from_cfg(cls, cfg=None):
@@ -15,15 +15,15 @@ class JobMan(object):
                            for param in cls.CFG_PARAMS}
         return JobMan(**params_from_cfg)
 
-    def __init__(self, dao=None, engine=None, logging_cfg=None,
-                 max_running_jobs=..., job_engine_states_ttl=...,
-                 submission_grace_period=None):
+    def __init__(self, dao=None, jobman_db_uri=None, engine=None,
+                 logging_cfg=None, max_running_jobs=None,
+                 job_engine_states_ttl=None, submission_grace_period=None):
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
-        self.dao = dao or self._generate_dao()
+        self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
         self.engine = engine or self._generate_engine()
-        if max_running_jobs is ...: max_running_jobs = 50
+        if max_running_jobs is None: max_running_jobs = 50
         self.max_running_jobs = max_running_jobs
-        if job_engine_states_ttl is ...: job_engine_states_ttl = 120
+        if job_engine_states_ttl is None: job_engine_states_ttl = 120
         self.job_engine_states_ttl = job_engine_states_ttl
         self.submission_grace_period = submission_grace_period or \
                 (2 * self.job_engine_states_ttl)
@@ -50,10 +50,11 @@ class JobMan(object):
 
         return logger
 
-    def _generate_dao(self):
+    def _generate_dao(self, jobman_db_uri=None):
+        jobman_db_uri = jobman_db_uri or os.path.expanduser(
+            '~/jobman.sqlite.db')
         from .dao.sqlite_dao import SqliteDAO
-        db_uri = os.path.expanduser('~/jobman.sqlite.db')
-        return SqliteDAO(db_uri=db_uri, logger=self.logger)
+        return SqliteDAO(db_uri=jobman_db_uri, logger=self.logger)
 
     def _generate_engine(self):
         from .engines.slurm_engine import SlurmEngine
