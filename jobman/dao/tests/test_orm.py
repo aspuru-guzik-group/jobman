@@ -90,14 +90,16 @@ class SaveObjectTestCase(BaseTestCase):
         for attr in ['_obj_to_record', '_save_record']: 
             setattr(self.orm, attr, MagicMock())
         self.obj = MagicMock()
-        self.orm.save_object(obj=self.obj, connection=self.connection)
+        self.replace = MagicMock()
+        self.orm.save_object(obj=self.obj, replace=self.replace,
+                             connection=self.connection)
 
     def test_converts_to_record_and_saves(self):
         self.assertEqual(self.orm._obj_to_record.call_args,
                          call(obj=self.obj))
         self.assertEqual(self.orm._save_record.call_args,
                          call(record=self.orm._obj_to_record.return_value,
-                              connection=self.connection))
+                              connection=self.connection, replace=self.replace))
 
 class _ObjToRecordTestCase(BaseTestCase):
     def setUp(self):
@@ -142,10 +144,11 @@ class _SaveRecordTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.orm.execute_insert_or_replace = MagicMock()
+        self.replace = MagicMock()
         self.record = defaultdict(MagicMock)
 
     def _save_record(self):
-        return self.orm._save_record(record=self.record,
+        return self.orm._save_record(record=self.record, replace=self.replace,
                                      connection=self.connection)
 
     def test_sets_default_values_if_empty(self):
@@ -166,7 +169,7 @@ class _SaveRecordTestCase(BaseTestCase):
                            for field in expected_fields]
         self.assertEqual(self.orm.execute_insert_or_replace.call_args,
                          call(fields=expected_fields, values=expected_values,
-                              connection=self.connection))
+                              replace=self.replace, connection=self.connection))
 
     def test_sets_autoupdate_values(self):
         self.orm.fields = {
@@ -188,30 +191,49 @@ class _SaveRecordTestCase(BaseTestCase):
                            for field in expected_fields]
         self.assertEqual(self.orm.execute_insert_or_replace.call_args,
                          call(fields=expected_fields, values=expected_values,
-                              connection=self.connection))
+                              replace=self.replace, connection=self.connection))
 
     def test_returns_record(self):
         result = self._save_record()
         self.assertEqual(result, self.record)
 
 class ExecuteInsertOrReplaceTestCase(BaseTestCase):
-    def test_executes_insert_or_replace_statement(self):
-        fields = ["field_%s" % i for i in range(3)]
-        values = [MagicMock() for i in range(3)]
-        self.orm.execute_insert_or_replace(fields=fields, values=values,
-                                           connection=self.connection)
+    def setUp(self):
+        super().setUp()
+        self.fields = ["field_%s" % i for i in range(3)]
+        self.values = [MagicMock() for i in range(3)]
+
+    def _execute_insert_or_replace(self, replace=None):
+        return self.orm.execute_insert_or_replace(
+            fields=self.fields, values=self.values, replace=replace,
+            connection=self.connection)
+
+    def test_executes_insert_if_no_replace(self):
+        replace = None
+        self._execute_insert_or_replace(replace=replace)
+        self._assert_execution(replace=replace)
+
+    def _assert_execution(self, replace=None):
+        replace_sql = ''
+        if replace: replace_sql = 'OR REPLACE'
         expected_statement = textwrap.dedent(
             '''
-            INSERT OR REPLACE INTO {table} ({csv_fields})
+            INSERT {replace_sql} INTO {table} ({csv_fields})
             VALUES ({csv_placeholders})
             '''
         ).strip().format(
-            table=self.name,
-            csv_fields=(','.join(fields)),
-            csv_placeholders=(','.join(['?' for field in fields]))
+            replace_sql=replace_sql,
+            table=self.orm.name,
+            csv_fields=(','.join(self.fields)),
+            csv_placeholders=(','.join(['?' for field in self.fields]))
         )
         self.assertEqual(self.connection.execute.call_args,
-                         call(expected_statement, values))
+                         call(expected_statement, self.values))
+
+    def test_executes_insert_or_replace_if_replace(self):
+        replace = True
+        self._execute_insert_or_replace(replace=replace)
+        self._assert_execution(replace=replace)
 
 class GetObjectsTestCase(BaseTestCase):
     def setUp(self):
@@ -377,3 +399,92 @@ class _RecordValToObjValTestCase(BaseTestCase):
     def test_passes_through_other_values(self):
         obj_val = self._record_val_to_obj_val()
         self.assertEqual(obj_val, self.value)
+
+
+class UpdateObjectsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        for attr in ['_validate_query', '_update_records']:
+            setattr(self.orm, attr, MagicMock())
+        self.updates = {'field_%s' % i: 'value_%s' % i for i in range(3)}
+        self.query = MagicMock()
+        self.result = self.orm.update_objects(updates=self.updates,
+                                              query=self.query,
+                                              connection=self.connection)
+
+    def test_validates_query(self):
+        self.assertEqual(self.orm._validate_query.call_args,
+                         call(query=self.query))
+
+    def test_updates_records(self):
+        self.assertEqual(
+            self.orm._update_records.call_args,
+            call(updates=self.updates, query=self.query,
+                 connection=self.connection)
+        )
+
+    def test_returns_update_result(self):
+        self.assertEqual(self.result, self.orm._update_records.return_value)
+
+class _UpdateRecordsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        for attr in ['_get_updates_section', '_get_where_section']:
+            setattr(self.orm, attr, MagicMock())
+        self.updates = MagicMock()
+        self.query = MagicMock()
+        self.connection = MagicMock()
+        self.result = self._update_records()
+
+    def _update_records(self):
+        return self.orm._update_records(updates=self.updates,
+                                        query=self.query,
+                                        connection=self.connection)
+
+    def test_gets_updates_section(self):
+        self.assertEqual(self.orm._get_updates_section.call_args,
+                         call(updates=self.updates))
+
+    def test_gets_where_section(self):
+        self.assertEqual(self.orm._get_where_section.call_args,
+                         call(query=self.query))
+
+    def test_executes_statement_w_args(self):
+        updates_section = self.orm._get_updates_section.return_value
+        where_section = self.orm._get_where_section.return_value
+        where_content = ' WHERE ' + where_section['content']
+        expected_statement = textwrap.dedent(
+            '''
+            UPDATE {table}
+            SET {updates_content}
+            {where_content}
+            '''
+        ).lstrip().format( 
+            table=self.orm.name,
+            updates_content=updates_section['content'],
+            where_content=where_content
+        )
+        expected_args = [*updates_section['args'], *where_section['args']]
+        self.assertEqual(self.connection.execute.call_args,
+                         call(expected_statement, expected_args))
+
+    def test_returns_rowcount(self):
+        self.assertEqual(
+            self.result,
+            {'rowcount': self.connection.execute.return_value.rowcount}
+        )
+
+    def test_raises_update_error_on_failure(self):
+        self.connection.execute.side_effect = Exception
+        with self.assertRaises(self.orm.UpdateError):
+            self._update_records()
+
+class _GetUpdatesSection(BaseTestCase):
+    def test_returns_expected_result(self):
+        updates = {'field_%s' % i : 'value_%s' % i for i in range(3)}
+        expected_updates_section = {
+            'content': ', '.join(['"%s" = ?' % k for k in updates]),
+            'args': list(updates.values()),
+        }
+        self.assertEqual(self.orm._get_updates_section(updates=updates),
+                         expected_updates_section)

@@ -8,6 +8,9 @@ from . import orm as _orm
 
 
 class SqliteDAO(object):
+    class UpdateError(Exception): pass
+    class InsertError(Exception): pass
+
     def __init__(self, db_uri=':memory:', logger=None, sqlite=sqlite3,
                  orm=_orm):
         self.logger = logger or logging
@@ -31,10 +34,12 @@ class SqliteDAO(object):
     def _generate_job_fields(self):
         return {
             'key': {'type': 'TEXT', 'primary_key': True,
-                    'default': self._generate_uuid},
+                    'default': self.generate_key},
             'status': {'type': 'TEXT'},
             'is_batch': {'type': 'INTEGER'},
             'batch_meta': {'type': 'JSON'},
+            'batchable': {'type': 'INTEGER'},
+            'parent_batch_key': {'type': 'TEXT'},
             'engine_meta': {'type': 'JSON'},
             'engine_state': {'type': 'JSON'},
             'source': {'type': 'TEXT'},
@@ -57,6 +62,8 @@ class SqliteDAO(object):
             'modified': {'type': 'INTEGER',
                          'auto_update': self._generate_timestamp}
         }
+
+    def generate_key(self): return self._generate_uuid()
 
     def _generate_uuid(self, *args, **kwargs):
         return str(uuid.uuid4())
@@ -87,12 +94,15 @@ class SqliteDAO(object):
 
     def create_job(self, job=None): return self.save_jobs(jobs=[job])[0]
 
-    def save_jobs(self, jobs=None):
+    def save_jobs(self, jobs=None, replace=True):
         saved_jobs = []
         with self.connection:
             for job in jobs:
-                saved_job = self.orms['job'].save_object(
-                    obj=job, connection=self.connection)
+                try:
+                    saved_job = self.orms['job'].save_object(
+                        obj=job, replace=replace, connection=self.connection)
+                except self.orms['job'].InsertError as exc:
+                    raise self.InsertError() from exc
                 saved_jobs.append(saved_job)
         return saved_jobs
 
@@ -100,15 +110,32 @@ class SqliteDAO(object):
         return self.orms['job'].get_objects(query=query,
                                             connection=self.connection)
 
-    def save_kvps(self, kvps=None):
+    def save_kvps(self, kvps=None, replace=True):
         with self.connection:
             for kvp in kvps:
-                self.orms['kvp'].save_object(obj=kvp,
-                                             connection=self.connection)
+                try:
+                    self.orms['kvp'].save_object(obj=kvp,
+                                                 connection=self.connection,
+                                                 replace=replace)
+                except self.orms['kvp'].InsertError as exc:
+                    raise self.InsertError() from exc
 
     def get_kvps(self, query=None):
         return self.orms['kvp'].get_objects(query=query,
                                             connection=self.connection)
+
+    def update_kvp(self, key=None, new_value=None, where_prev_value=...):
+        filters = [{'field': 'key', 'operator': '=', 'value': key}]
+        if where_prev_value is not ...:
+            filters.append({'field': 'value', 'operator': '=',
+                            'value': where_prev_value})
+        try:
+            update_result =  self.orms['kvp'].update_objects(
+                query={'filters': filters}, updates={'value': new_value},
+                connection=self.connection
+            )
+            assert update_result['rowcount'] == 1
+        except Exception as exc: raise self.UpdateError() from exc
 
     def flush(self):
         os.remove(self.db_uri)

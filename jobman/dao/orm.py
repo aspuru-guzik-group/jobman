@@ -4,6 +4,9 @@ import textwrap
 
 
 class ORM(object):
+    class UpdateError(Exception): pass
+    class InsertError(Exception): pass
+
     def __init__(self, name=None, fields=None, json=json, logger=None):
         self.name = name
         self.fields = fields
@@ -35,9 +38,9 @@ class ORM(object):
         if field_type == 'JSON': column_type = 'TEXT'
         return column_type
 
-    def save_object(self, obj=None, connection=None):
+    def save_object(self, obj=None, connection=None, replace=True):
         saved_record = self._save_record(record=self._obj_to_record(obj=obj),
-                                         connection=connection)
+                                         connection=connection, replace=replace)
         return self._record_to_obj(record=saved_record)
 
     def _obj_to_record(self, obj=None, fields=None):
@@ -55,7 +58,7 @@ class ORM(object):
     def _serialize_json_value(self, value=None):
         return self.json.dumps(value)
 
-    def _save_record(self, record=None, connection=None):
+    def _save_record(self, record=None, connection=None, replace=None):
         fields = sorted(self.fields.keys())
         values = []
         for field in fields:
@@ -66,24 +69,29 @@ class ORM(object):
                 record[field] = field_def['auto_update'](record=record)
             values.append(record.get(field))
         self.execute_insert_or_replace(fields=fields, values=values,
-                                       connection=connection)
+                                       replace=replace, connection=connection)
         return record
 
-    def execute_insert_or_replace(self, fields=None, values=None,
+    def execute_insert_or_replace(self, fields=None, values=None, replace=None,
                                   connection=None):
+        replace_sql = ''
+        if replace: replace_sql = 'OR REPLACE'
         statement = textwrap.dedent(
             '''
-            INSERT OR REPLACE INTO {table} ({csv_fields})
+            INSERT {replace_sql} INTO {table} ({csv_fields})
             VALUES ({csv_placeholders})
             '''
         ).strip().format(
+            replace_sql=replace_sql,
             table=self.name,
             csv_fields=(','.join(fields)),
             csv_placeholders=(','.join(['?' for field in fields]))
         )
-        connection.execute(statement, values)
+        try: connection.execute(statement, values)
+        except Exception as exc: raise self.InsertError() from exc
 
     def get_objects(self, query=None, connection=None):
+        query = query or {}
         self._validate_query(query=query)
         records = self._get_records(query=query, connection=connection)
         return [self._record_to_obj(record=record) for record in records]
@@ -164,3 +172,37 @@ class ORM(object):
         if serialized_value is None or serialized_value == '': return None
         return self.json.loads(serialized_value)
 
+    def update_objects(self, updates=None, query=None, connection=None):
+        self._validate_query(query=query)
+        result = self._update_records(updates=updates, query=query,
+                                      connection=connection)
+        return result
+
+    def _update_records(self, updates=None, query=None, connection=None):
+        args = []
+        updates_section = self._get_updates_section(updates=updates)
+        args.extend(updates_section['args'])
+        where_section = self._get_where_section(query=query)
+        args.extend(where_section['args'])
+        where_content = where_section['content']
+        if where_content: where_content = ' WHERE ' + where_content
+        statement = textwrap.dedent(
+            '''
+            UPDATE {table}
+            SET {updates_content}
+            {where_content}
+            '''
+        ).lstrip().format( 
+            table=self.name,
+            updates_content=updates_section['content'],
+            where_content=where_content,
+        )
+        try: cursor = connection.execute(statement, args)
+        except Exception as exc: raise self.UpdateError() from exc
+        return {'rowcount': cursor.rowcount}
+
+    def _get_updates_section(self, updates=None):
+        return {
+            'content': ', '.join(['"%s" = ?' % k for k in updates.keys()]),
+            'args': list(updates.values()),
+        }

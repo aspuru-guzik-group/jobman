@@ -38,28 +38,35 @@ class JobManE2ETest(unittest.TestCase):
 
     def test_job_completions(self):
         submissions = [{'some': 'submission'} for i in range(3)]
-        jobs = [self.jobman.submit_job(submission=submission)
-                for submission in submissions]
+        jobs = [
+            self.jobman.submit_submission(submission=submission,
+                                          submit_to_engine_immediately=True)
+            for submission in submissions
+        ]
         for i, job in enumerate(jobs):
             self.assertEqual(
-                set(self._get_job_keys(self.jobman.get_running_jobs())),
-                set(self._get_job_keys(jobs[i:]))
+                set(self._get_keys(self.jobman.get_running_jobs())),
+                set(self._get_keys(jobs[i:]))
             )
             self.engine.complete_job(engine_meta=job['engine_meta'])
-            self.jobman.update_job_engine_states(jobs=jobs, force=True)
-        self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()), [])
+            self.jobman._update_job_engine_states(
+                jobs=self.jobman.get_running_jobs())
+        self.assertEqual(self._get_keys(self.jobman.get_running_jobs()), [])
 
-    def _get_job_keys(self, jobs):
-        return [job['key'] for job in jobs]
+    def _get_keys(self, items): return [item['key'] for item in items]
 
     def test_orphaned_job(self):
         self.jobman.submission_grace_period = 0
         submissions = [{'some': 'submission'} for i in range(3)]
-        jobs = [self.jobman.submit_job(submission=submission)
-                for submission in submissions]
+        jobs = [
+            self.jobman.submit_submission(submission=submission,
+                                          submit_to_engine_immediately=True)
+            for submission in submissions
+        ]
         for i, job in enumerate(jobs):
-            self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()),
-                             self._get_job_keys(jobs[i:]))
+            self.assertEqual(self._get_keys(self.jobman.get_running_jobs()),
+                             self._get_keys(jobs[i:]))
             self.engine.unregister_job(engine_meta=job['engine_meta'])
-            self.jobman.update_job_engine_states(jobs=jobs, force=True)
-        self.assertEqual(self._get_job_keys(self.jobman.get_running_jobs()), [])
+            self.jobman._update_job_engine_states(
+                jobs=self.jobman.get_running_jobs())
+        self.assertEqual(self._get_keys(self.jobman.get_running_jobs()), [])
