@@ -124,24 +124,29 @@ class ORM(object):
         return {'content': ' AND '.join(clauses), 'args': args}
 
     def _filter_to_where_item(self, _filter=None):
-        if _filter['operator'] == 'IN':
-            return self._filter_to_in_where_item(_filter=_filter)
+        operator = _filter['operator']
+        negation = ''
+        if operator.startswith('!'):
+            negation = 'NOT'
+            operator = operator.lstrip('! ')
+        if operator == 'IN':
+            args = _filter.get('value', [])
+            clause_rhs = '({placeholders})'.format(
+                placeholders=(', '.join(['?' for v in args]))
+            )
         else:
-            where_item = {
-                'clause': '{field} {operator} ?'.format(**_filter),
-                'args': [_filter['value']]
-            }
-        return where_item
-
-    def _filter_to_in_where_item(self, _filter=None):
-        in_where_item = {
-            'clause': '{field} IN ({placeholders})'.format(
-                **_filter,
-                placeholders=(', '.join(['?' for v in _filter['value']])),
-            ),
-            'args': _filter.get('value', [])
+            args = [_filter['value']]
+            clause_rhs = '?'
+        where_item = {
+            'clause': '{negation} {field} {operator} {rhs}'.format(
+                negation=negation,
+                field=_filter['field'],
+                operator=operator,
+                rhs=clause_rhs,
+            ).lstrip(),
+            'args': args
         }
-        return in_where_item
+        return where_item
 
     def _record_to_obj(self, record=None):
         obj = {}

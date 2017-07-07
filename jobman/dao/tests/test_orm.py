@@ -308,14 +308,42 @@ class _FilterToWhereItemTestCase(BaseTestCase):
         super().setUp()
         self.filter = {'field': 'field', 'operator': 'operator',
                        'value': 'some_value'}
-        self.result = self.orm._filter_to_where_item(_filter=self.filter)
+
+    def _filter_to_where_item(self):
+        return self.orm._filter_to_where_item(_filter=self.filter)
 
     def test_returns_expected_item(self):
+        result = self._filter_to_where_item()
         expected_item = {
             'clause': '{field} {operator} ?'.format(**self.filter),
             'args': [self.filter['value']]
         }
-        self.assertEqual(self.result, expected_item)
+        self.assertEqual(result, expected_item)
+
+    def test_handles_negation(self):
+        self.filter['operator'] = '! ' + self.filter['operator']
+        result = self._filter_to_where_item()
+        expected_item = {
+            'clause': 'NOT {field} {operator} ?'.format(
+                field=self.filter['field'],
+                operator=self.filter['operator'].lstrip('! '),
+            ),
+            'args': [self.filter['value']]
+        }
+        self.assertEqual(result, expected_item)
+
+    def test_handles_in_operator(self):
+        self.filter['operator'] = 'IN'
+        self.filter['value'] = [1, 2, 3]
+        result = self._filter_to_where_item()
+        expected_item = {
+            'clause': '{field} IN ({placeholders})'.format(
+                field=self.filter['field'],
+                placeholders=(', '.join(['?' for v in self.filter['value']]))
+            ),
+            'args': self.filter['value']
+        }
+        self.assertEqual(result, expected_item)
 
 class _RecordToObjTestCase(BaseTestCase):
     def test_transforms_values(self):
