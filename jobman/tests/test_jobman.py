@@ -125,38 +125,155 @@ class TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_jobman_attrs(attrs=[
-            '_update_stale_engine_states_for_running_jobs',
+            '_job_engine_states_are_stale',
+            'get_jobs_for_status',
+            '_update_job_engine_states',
             '_process_executed_jobs',
             '_process_batchable_jobs',
             '_process_submittable_jobs',
         ])
-        self.jobman.tick()
 
-    def test_updates_stale_engine_states_for_running_jobs(self):
-        self.assertEqual(
-            self.jobman._update_stale_engine_states_for_running_jobs.call_args,
-            call()
-        )
+    def _tick(self): self.jobman.tick()
+
+    def test_updates_engine_states_if_stale(self):
+        self.jobman._job_engine_states_are_stale.return_value = True
+        self._tick()
+        self.assertEqual(self.jobman.get_jobs_for_status.call_args,
+                         call(status='RUNNING'))
+        self.assertEqual(self.jobman._update_job_engine_states.call_args,
+                         call(jobs=self.jobman.get_running_jobs.return_value))
+
+    def test_does_not_update_engine_states_if_not_stale(self):
+        self.jobman._job_engine_states_are_stale.return_value = False
+        self._tick()
+        self.assertEqual(self.jobman.get_jobs_for_status.call_args, None)
+        self.assertEqual(self.jobman._update_job_engine_states.call_args, None)
 
     def test_processes_executed_jobs(self):
+        self._tick()
         self.assertEqual(self.jobman._process_executed_jobs.call_args,
                          call())
 
     def test_processes_batchable_jobs(self):
+        self._tick()
         self.assertEqual(self.jobman._process_batchable_jobs.call_args,
                          call())
 
     def test_processes_submittable_jobs(self):
+        self._tick()
         self.assertEqual(self.jobman._process_submittable_jobs.call_args,
                          call())
 
-class _UpdateStaleEngineStatesForRunningJobs(BaseTestCase):
-    def test_something(self):
-        self.fail()
-
 class _ProcessExecutedJobsTestCase(BaseTestCase):
-    def test_something(self):
-        self.fail()
+    def setUp(self):
+        super().setUp()
+        self.mockify_jobman_attrs(attrs=['get_jobs_for_status',
+                                         '_process_executed_job'])
+        self.jobman.get_jobs_for_status.return_value = \
+                [MagicMock() for i in range(3)]
+        self.jobman._process_executed_jobs()
+
+    def test_gets_executed_jobs(self):
+        self.assertEqual(self.jobman.get_jobs_for_status.call_args,
+                         call(status='EXECUTED'))
+
+    def test_dispatches_to_process_executed_job(self):
+        self.assertEqual(
+            self.jobman._process_executed_job.call_args_list,
+            [call(executed_job=executed_job)
+             for executed_job in self.jobman.get_jobs_for_status.return_value]
+        )
+
+class _ProcessExecutedJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.executed_job = defaultdict(MagicMock)
+
+    def _process_executed_job(self):
+        self.jobman._process_executed_job(executed_job=self.executed_job)
+
+    def test_dispatches_for_batch_job(self):
+        self.jobman._process_executed_batch_job = MagicMock()
+        self.executed_job['is_batch'] = 1
+        self._process_executed_job()
+        self.assertEqual(self.jobman._process_executed_batch_job.call_args,
+                         call(executed_job=self.executed_job))
+
+    def test_dispatches_for_single_job(self):
+        self.jobman._process_executed_single_job = MagicMock()
+        self.executed_job['is_batch'] = 0
+        self._process_executed_job()
+        self.assertEqual(self.jobman._process_executed_single_job.call_args,
+                         call(executed_job=self.executed_job))
+
+class _ProcessExecutedBatchJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_jobman_attrs(attrs=['_get_batch_job_subjobs',
+                                         '_process_executed_job',
+                                         '_complete_job'])
+        self.executed_job = defaultdict(MagicMock)
+        self.jobman._process_executed_batch_job(executed_job=self.executed_job)
+
+    def test_gets_subjobs(self):
+        self.assertEqual(self.jobman._get_batch_job_subjobs.call_args,
+                         call(batch_job=self.executed_job))
+
+    def test_processes_subjobs(self):
+        self.assertEqual(
+            self.jobman._process_executed_job.call_args_list,
+            [call(executed_job=subjob)
+             for subjob in self.jobman._get_batch_job_subjobs.return_value]
+        )
+
+    def test_completes_batch_job(self):
+        self.assertEqual(self.jobman._complete_job.call_args,
+                         call(job=self.executed_job))
+
+class _GetBatchJobSubjobsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.batch_job = defaultdict(MagicMock)
+        self.batch_job['batch_meta'] = {
+            'subjob_keys': [MagicMock() for i in range(3)]
+        }
+        self.result = self._jobman._get_batch_job_subjobs(
+            batch_job=self.batch_job)
+
+    def test_queries_for_subjob_keys_in_batch_meta(self):
+        self.assertEqual(
+            self.jobman.dao.query.call_args,
+            call(query={
+                'filters': [
+                    {'field': 'key', 'operator': 'IN',
+                     'value': self.batch_job['batch_meta']['subjob_keys']}
+                ]
+            })
+        )
+        self.assertEqual(self.result, self.jobman.dao.query.return_value)
+
+class _CompleteJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job = defaultdict(MagicMock)
+        self.jobman._complete_job(job=self.job)
+
+    def test_marks_job_as_completed(self):
+        self.assertEqual(self.job['status'], 'COMPLETED')
+
+    def test_saves_job(self):
+        self.assertEqual(self.jobman.save_jobs.call_args, call(jobs=[self.job]))
+
+class _ProcessExecutedSingleJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.executed_job = defaultdict(MagicMock)
+        self.mockify_jobman_attrs(attrs=['_complete_job'])
+        self.jobman._process_executed_single_job(executed_job=self.executed_job)
+
+    def test_completes_job(self):
+        self.assertEqual(self.jobman._complete_job.call_args,
+                         call(job=self.executed_job))
 
 class _ProcessBatchableJobsTestCase(BaseTestCase):
     def test_something(self):

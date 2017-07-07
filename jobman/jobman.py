@@ -80,8 +80,7 @@ class JobMan(object):
         from .engines.slurm_engine import SlurmEngine
         return SlurmEngine(logger=self.logger)
 
-    def ensure_db(self):
-        self.dao.ensure_db()
+    def ensure_db(self): self.dao.ensure_db()
 
     def submit(self, submission=None, source=None, source_meta=None):
         self._debug_locals()
@@ -119,22 +118,12 @@ class JobMan(object):
 
     def save_jobs(self, jobs=None): return self.dao.save_jobs(jobs=jobs)
 
-    def get_running_jobs(self):
+    def get_jobs_for_status(self, status=None):
         return self.get_jobs(query={
             'filters': [
-                {'field': 'status', 'operator': '=', 'value': 'RUNNING'}
+                {'field': 'status', 'operator': '=', 'value': status}
             ]
         })
-
-    def job_engine_states_are_stale(self):
-        job_engine_states_age = self.get_job_engine_states_age()
-        return (job_engine_states_age is None) or \
-                (job_engine_states_age >= self.job_engine_states_ttl)
-
-    def get_job_engine_states_age(self):
-        try: age = time.time() - self.get_kvp(key='job_engine_states_modified')
-        except KeyError: age = None
-        return age
 
     def get_kvp(self, key=None):
         # fallback to dao if not in _kvps.
@@ -152,10 +141,22 @@ class JobMan(object):
         self._kvps[key] = value
 
     def tick(self):
-        self._update_stale_engine_states_for_running_jobs()
+        if self._job_engine_states_are_stale():
+            running_jobs = self.get_jobs_for_status(status='RUNNING')
+            self._update_job_engine_states(jobs=running_jobs)
         self._process_executed_jobs()
         self._process_batchable_jobs()
         self._process_submittable_jobs()
+
+    def _job_engine_states_are_stale(self):
+        job_engine_states_age = self._get_job_engine_states_age()
+        return (job_engine_states_age is None) or \
+                (job_engine_states_age >= self.job_engine_states_ttl)
+
+    def _get_job_engine_states_age(self):
+        try: age = time.time() - self.get_kvp(key='job_engine_states_modified')
+        except KeyError: age = None
+        return age
 
     def _update_job_engine_states(self, jobs=None):
         keyed_engine_states = self.engine.get_keyed_engine_states(
@@ -189,7 +190,34 @@ class JobMan(object):
         return time.time() - job['created']
 
     def _process_executed_jobs(self):
-        pass
+        for executed_job in self.get_jobs_for_status(status='EXECUTED'):
+            self._process_executed_job(executed_job=executed_job)
+
+    def _process_executed_job(self, executed_job=None):
+        process_fn = self._process_executed_single_job
+        if executed_job.get('is_batch'):
+            process_fn = self._process_executed_batch_job
+        process_fn(executed_job=executed_job)
+
+    def _process_executed_batch_job(self, executed_job=None):
+        for subjob in self._get_batch_job_subjobs(batch_job=executed_job):
+            self._process_executed_job(executed_job=subjob)
+        self._complete_job(job=executed_job)
+
+    def _get_batch_job_subjobs(self, batch_job=None):
+        subjob_keys = batch_job['batch_meta']['subjob_keys']
+        return self.dao.get_jobs(query={
+            'filters': [
+                {'field': 'key', 'operator': 'IN', 'value': subjob_keys}
+            ]
+        })
+
+    def _complete_job(self, job=None):
+        job['status'] = 'COMPLETED'
+        self.save_jobs(jobs=[job])
+
+    def _process_executed_single_job(self, executed_job=None):
+        self._complete_job(job=executed_job)
 
     def _process_batchable_jobs(self):
         pass
