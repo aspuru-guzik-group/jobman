@@ -1,2 +1,0 @@
-class BaseDAO(object):
-    pass

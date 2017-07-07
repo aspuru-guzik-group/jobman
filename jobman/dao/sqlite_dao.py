@@ -4,11 +4,10 @@ import sqlite3
 import time
 import uuid
 
-from .base_dao import BaseDAO
 from . import orm as _orm
 
 
-class SqliteDAO(BaseDAO):
+class SqliteDAO(object):
     def __init__(self, db_uri=':memory:', logger=None, sqlite=sqlite3,
                  orm=_orm):
         self.logger = logger or logging
@@ -38,6 +37,7 @@ class SqliteDAO(BaseDAO):
             'engine_state': {'type': 'JSON'},
             'source': {'type': 'TEXT'},
             'source_meta': {'type': 'JSON'},
+            'source_tag': {'type': 'TEXT'},
             'submission': {'type': 'JSON'},
             **self._generate_timestamp_fields()
         }
