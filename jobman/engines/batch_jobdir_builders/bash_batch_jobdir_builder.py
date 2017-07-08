@@ -4,9 +4,10 @@ import textwrap
 from .base_batch_jobdir_builder import BaseBatchJobdirBuilder
 
 
-class SerialBashBatchJobdirBuilder(BaseBatchJobdirBuilder):
-    def __init__(self, *args, **kwargs):
+class BashBatchJobdirBuilder(BaseBatchJobdirBuilder):
+    def __init__(self, *args, run_commands_command='bash', **kwargs):
         super().__init__(*args, **kwargs)
+        self.run_commands_command = run_commands_command
         self.subjob_commands_path = os.path.join(self.jobdir, 'subjob_commands')
 
     def _build_batch_jobdir(self):
@@ -32,7 +33,8 @@ class SerialBashBatchJobdirBuilder(BaseBatchJobdirBuilder):
     def _generate_subjob_command(self, subjob=None):
         return "pushd {dir}; {entrypoint}; popd".format(
             dir=subjob['jobdir_meta']['dir'],
-            entrypoint=subjob['jobdir_meta']['entrypoint']
+            entrypoint=os.path.join(subjob['jobdir_meta']['dir'],
+                                    subjob['jobdir_meta']['entrypoint'])
         )
 
     def _write_entrypoint(self):
@@ -44,7 +46,10 @@ class SerialBashBatchJobdirBuilder(BaseBatchJobdirBuilder):
         return textwrap.dedent(
             """
             #!/bin/bash
-            bash {commands_file}
+            {run_commands_command} {commands_file}
             """
-        ).lstrip().format(commands_file=self.subjob_commands_path)
+        ).lstrip().format(
+            run_commands_command=self.run_commands_command,
+            commands_file=self.subjob_commands_path
+        )
 
