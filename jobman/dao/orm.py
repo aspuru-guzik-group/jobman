@@ -132,24 +132,24 @@ class ORM(object):
         return {'content': ' AND '.join(clauses), 'args': args}
 
     def _filter_to_where_item(self, _filter=None):
-        operator = _filter['operator']
+        op = _filter['op']
         negation = ''
-        if operator.startswith('!'):
+        if op.startswith('!'):
             negation = 'NOT'
-            operator = operator.lstrip('! ')
-        if operator == 'IN':
-            args = _filter.get('value', [])
+            op = op.lstrip('! ')
+        if op == 'IN':
+            args = _filter.get('arg', [])
             clause_rhs = '({placeholders})'.format(
                 placeholders=(', '.join(['?' for v in args]))
             )
         else:
-            args = [_filter['value']]
+            args = [_filter['arg']]
             clause_rhs = '?'
         where_item = {
-            'clause': '{negation} {field} {operator} {rhs}'.format(
+            'clause': '{negation} {field} {op} {rhs}'.format(
                 negation=negation,
                 field=_filter['field'],
-                operator=operator,
+                op=op,
                 rhs=clause_rhs,
             ).lstrip(),
             'args': args

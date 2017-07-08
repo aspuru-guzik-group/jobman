@@ -35,6 +35,7 @@ class SqliteDAO(object):
         return {
             'key': {'type': 'TEXT', 'primary_key': True,
                     'default': self.generate_key},
+            'jobdir_meta': {'type': 'JSON'},
             'status': {'type': 'TEXT'},
             'is_batch': {'type': 'INTEGER'},
             'batch_meta': {'type': 'JSON'},
@@ -45,7 +46,6 @@ class SqliteDAO(object):
             'source': {'type': 'TEXT'},
             'source_meta': {'type': 'JSON'},
             'source_tag': {'type': 'TEXT'},
-            'submission': {'type': 'JSON'},
             **self._generate_timestamp_fields()
         }
 
@@ -125,10 +125,10 @@ class SqliteDAO(object):
                                             connection=self.connection)
 
     def update_kvp(self, key=None, new_value=None, where_prev_value=...):
-        filters = [{'field': 'key', 'operator': '=', 'value': key}]
+        filters = [{'field': 'key', 'op': '=', 'arg': key}]
         if where_prev_value is not ...:
-            filters.append({'field': 'value', 'operator': '=',
-                            'value': where_prev_value})
+            filters.append({'field': 'value', 'op': '=',
+                            'arg': where_prev_value})
         try:
             update_result =  self.orms['kvp'].update_objects(
                 query={'filters': filters}, updates={'value': new_value},

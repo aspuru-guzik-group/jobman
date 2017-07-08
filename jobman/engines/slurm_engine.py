@@ -15,10 +15,11 @@ class SlurmEngine(BaseEngine):
                                              'TIMEOUT'])
     }
 
-    def submit(self, submission=None):
-        workdir = submission['dir']
-        entrypoint_name = submission.get('entrypoint',
-                                         self.DEFAULT_ENTRYPOINT_NAME)
+    def submit_job(self, job=None):
+        jobdir_meta = job['jobdir_meta']
+        workdir = jobdir_meta['dir']
+        entrypoint_name = jobdir_meta.get('entrypoint') or \
+                self.DEFAULT_ENTRYPOINT_NAME
         entrypoint_path = os.path.join(workdir, entrypoint_name)
         cmd = ['sbatch', ('--workdir=%s' % workdir), entrypoint_path]
         try:

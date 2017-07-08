@@ -47,24 +47,24 @@ class EnsureDbTestCase(BaseTestCase):
         self.jobman.ensure_db()
         self.assertEqual(self.jobman.dao.ensure_db.call_args, call())
 
-class SubmitSubmissionTestCase(BaseTestCase):
+class SubmitJobDir_MetaTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.submission = MagicMock()
+        self.jobdir_meta = MagicMock()
         self.source = MagicMock()
         self.source_meta = MagicMock()
-        self.mockify_jobman_attrs(attrs=['_submission_to_job',
+        self.mockify_jobman_attrs(attrs=['_jobdir_meta_to_job',
                                          '_job_is_batchable', '_create_job'])
-        self.jobman._submission_to_job.return_value = defaultdict(MagicMock)
-        self.expected_job = self.jobman._submission_to_job.return_value
-        self.result = self.jobman.submit_submission(
-            submission=self.submission, source=self.source,
+        self.jobman._jobdir_meta_to_job.return_value = defaultdict(MagicMock)
+        self.expected_job = self.jobman._jobdir_meta_to_job.return_value
+        self.result = self.jobman.submit_jobdir_meta(
+            jobdir_meta=self.jobdir_meta, source=self.source,
             source_meta=self.source_meta)
 
-    def test_assembles_job_from_submission(self):
+    def test_assembles_job_from_jobdir_meta(self):
         self.assertEqual(
-            self.jobman._submission_to_job.call_args,
-            call(submission=self.submission, source=self.source,
+            self.jobman._jobdir_meta_to_job.call_args,
+            call(jobdir_meta=self.jobdir_meta, source=self.source,
                  source_meta=self.source_meta)
         )
 
@@ -83,17 +83,17 @@ class SubmitSubmissionTestCase(BaseTestCase):
 class _SubmissionToJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.submission = MagicMock()
+        self.jobdir_meta = MagicMock()
         self.source = MagicMock()
         self.source_meta = MagicMock()
-        self.result = self.jobman._submission_to_job(
-            submission=self.submission, source=self.source,
+        self.result = self.jobman._jobdir_meta_to_job(
+            jobdir_meta=self.jobdir_meta, source=self.source,
             source_meta=self.source_meta
         )
 
     def test_returns_expected_job(self):
         expected_result = {
-            'submission': self.submission,
+            'jobdir_meta': self.jobdir_meta,
             'source': self.source,
             'source_meta': self.source_meta,
             'status': 'PENDING',
@@ -251,8 +251,8 @@ class _GetBatchSubjobsTestCase(BaseTestCase):
             self.jobman.dao.get_jobs.call_args,
             call(query={
                 'filters': [
-                    {'field': 'key', 'operator': 'IN',
-                     'value': self.batch_job['batch_meta']['subjob_keys']}
+                    {'field': 'key', 'op': 'IN',
+                     'arg': self.batch_job['batch_meta']['subjob_keys']}
                 ]
             })
         )
@@ -314,10 +314,10 @@ class _GetBatchableJobsTestCase(BaseTestCase):
             self.jobman.dao.get_jobs.call_args,
             call(query={
                 'filters': [
-                    {'field': 'batchable', 'operator': '=', 'value': 1},
-                    {'field': 'status', 'operator': '=', 'value': 'PENDING'},
-                    {'field': 'modified', 'operator': '>=',
-                     'value': expected_age_threshold}
+                    {'field': 'batchable', 'op': '=', 'arg': 1},
+                    {'field': 'status', 'op': '=', 'arg': 'PENDING'},
+                    {'field': 'modified', 'op': '>=',
+                     'arg': expected_age_threshold}
                 ]
             })
         )
@@ -357,7 +357,7 @@ class _MakeBatchSubJobPartitionsTestCase(BaseTestCase):
 
     def _generate_batchable_job(self, estimated_run_time=1):
         batchable_job = defaultdict(MagicMock)
-        batchable_job['submission_meta'] = defaultdict(MagicMock, **{
+        batchable_job['jobdir_meta'] = defaultdict(MagicMock, **{
             'estimated_run_time': estimated_run_time
         })
         return batchable_job
@@ -380,17 +380,17 @@ class _MakeBatchSubJobPartitionsTestCase(BaseTestCase):
 class _GetEstimatedJobRunTime(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job = {'submission_meta': {'estimated_run_time': MagicMock()}}
+        self.job = {'jobdir_meta': {'estimated_run_time': MagicMock()}}
 
     def _get_estimated_job_run_time(self):
         return self.jobman._get_estimated_job_run_time(job=self.job)
 
-    def test_gets_from_submission_meta(self):
+    def test_gets_from_jobdir_meta(self):
         self.assertEqual(self._get_estimated_job_run_time(),
-                         self.job['submission_meta']['estimated_run_time'])
+                         self.job['jobdir_meta']['estimated_run_time'])
 
     def test_fallsback_to_default(self):
-        del self.job['submission_meta']['estimated_run_time']
+        del self.job['jobdir_meta']['estimated_run_time']
         self.assertEqual(self._get_estimated_job_run_time(),
                          self.jobman.default_estimated_job_run_time)
 
@@ -430,7 +430,8 @@ class _ProcessSubmittableJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_jobman_attrs(attrs=['_lock', '_get_submittable_jobs',
-                                         'get_num_free_slots', '_submit_job'])
+                                         'get_num_free_slots',
+                                         '_submit_job_to_engine'])
         self.submittable_jobs = [MagicMock() for i in range(5)]
         self.jobman._get_submittable_jobs.return_value = self.submittable_jobs
         self.num_free_slots = len(self.submittable_jobs) - 2
@@ -445,7 +446,7 @@ class _ProcessSubmittableJobsTestCase(BaseTestCase):
 
     def test_submits_until_free_slots_are_filled(self):
         self.assertEqual(
-            self.jobman._submit_job.call_args_list,
+            self.jobman._submit_job_to_engine.call_args_list,
             [call(job=job)
              for job in self.submittable_jobs[:(self.num_free_slots + 1)]]
         )
@@ -458,41 +459,40 @@ class _GetSubmittableJobsTestCase(BaseTestCase):
             self.jobman.dao.get_jobs.call_args,
             call(query={
                 'filters': [
-                    {'field': 'batchable', 'operator': '! =', 'value': 1},
-                    {'field': 'status', 'operator': '=', 'value': 'PENDING'},
+                    {'field': 'batchable', 'op': '! =', 'arg': 1},
+                    {'field': 'status', 'op': '=', 'arg': 'PENDING'},
                 ]
             })
         )
         self.assertEqual(result, self.jobman.dao.get_jobs.return_value)
 
-class _SubmitJobTestCase(BaseTestCase):
+class _SubmitJobToEngineTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job = MagicMock()
         self.mockify_jobman_attrs(attrs=['save_jobs'])
 
-    def _submit_job(self):
-        return self.jobman._submit_job(job=self.job)
+    def _submit_job_to_engine(self):
+        return self.jobman._submit_job_to_engine(job=self.job)
 
     def test_submits_via_engine(self):
-        self._submit_job()
-        self.assertEqual(self.engine.submit.call_args,
-                         call(submission=self.job['submission']))
+        self._submit_job_to_engine()
+        self.assertEqual(self.engine.submit_job.call_args, call(job=self.job))
 
     def test_updates_engine_meta_and_status(self):
-        self._submit_job()
+        self._submit_job_to_engine()
         self.assertEqual(
             self.job.update.call_args,
-            call({'engine_meta': self.jobman.engine.submit.return_value,
+            call({'engine_meta': self.jobman.engine.submit_job.return_value,
                   'status': 'RUNNING'})
         )
         self.assertEqual(self.jobman.save_jobs.call_args, call(jobs=[self.job]))
 
     def test_raises_exception_for_bad_submission(self):
         exception = Exception("bad submission")
-        self.engine.submit.side_effect = exception
+        self.engine.submit_job.side_effect = exception
         with self.assertRaises(self.jobman.SubmissionError):
-            self._submit_job()
+            self._submit_job_to_engine()
             self.assertEqual(self.job.update.call_args,
                              call({'status': 'FAILED'}))
             self.assertEqual(self.jobman.save_jobs.call_args,
@@ -557,7 +557,7 @@ class GetKvp(BaseTestCase):
             self.jobman.dao.get_kvps.call_args,
             call(query={
                 'filters': [
-                    {'field': 'key', 'operator': '=', 'value': self.key}
+                    {'field': 'key', 'op': '=', 'arg': self.key}
                 ]
             })
         )
@@ -567,10 +567,9 @@ class GetKvp(BaseTestCase):
 class GetRunningJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.status_filter = {'field': 'status', 'operator': '=',
-                              'value': 'RUNNING'}
-        self.batch_subjob_filter = {'field': 'parent_batch_key', 
-                                    'operator': 'IS', 'value': None}
+        self.status_filter = {'field': 'status', 'op': '=', 'arg': 'RUNNING'}
+        self.batch_subjob_filter = {'field': 'parent_batch_key', 'op': 'IS',
+                                    'arg': None}
 
     def test_excludes_batch_subjobs_by_default(self):
         result = self.jobman.get_running_jobs()

@@ -328,8 +328,7 @@ class _GetWhereSectionTestCase(BaseTestCase):
 class _FilterToWhereItemTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.filter = {'field': 'field', 'operator': 'operator',
-                       'value': 'some_value'}
+        self.filter = {'field': 'field', 'op': 'op', 'arg': 'some_arg'}
 
     def _filter_to_where_item(self):
         return self.orm._filter_to_where_item(_filter=self.filter)
@@ -337,33 +336,33 @@ class _FilterToWhereItemTestCase(BaseTestCase):
     def test_returns_expected_item(self):
         result = self._filter_to_where_item()
         expected_item = {
-            'clause': '{field} {operator} ?'.format(**self.filter),
-            'args': [self.filter['value']]
+            'clause': '{field} {op} ?'.format(**self.filter),
+            'args': [self.filter['arg']]
         }
         self.assertEqual(result, expected_item)
 
     def test_handles_negation(self):
-        self.filter['operator'] = '! ' + self.filter['operator']
+        self.filter['op'] = '! ' + self.filter['op']
         result = self._filter_to_where_item()
         expected_item = {
-            'clause': 'NOT {field} {operator} ?'.format(
+            'clause': 'NOT {field} {op} ?'.format(
                 field=self.filter['field'],
-                operator=self.filter['operator'].lstrip('! '),
+                op=self.filter['op'].lstrip('! '),
             ),
-            'args': [self.filter['value']]
+            'args': [self.filter['arg']]
         }
         self.assertEqual(result, expected_item)
 
-    def test_handles_in_operator(self):
-        self.filter['operator'] = 'IN'
-        self.filter['value'] = [1, 2, 3]
+    def test_handles_in_op(self):
+        self.filter['op'] = 'IN'
+        self.filter['arg'] = [1, 2, 3]
         result = self._filter_to_where_item()
         expected_item = {
             'clause': '{field} IN ({placeholders})'.format(
                 field=self.filter['field'],
-                placeholders=(', '.join(['?' for v in self.filter['value']]))
+                placeholders=(', '.join(['?' for v in self.filter['arg']]))
             ),
-            'args': self.filter['value']
+            'args': self.filter['arg']
         }
         self.assertEqual(result, expected_item)
 

@@ -102,25 +102,26 @@ class JobMan(object):
         try: self.dao.save_kvps(kvps=[lock_kvp], replace=False)
         except self.dao.InsertError: pass
 
-    def submit_submission(self, submission=None, source=None, source_meta=None,
-                          submit_to_engine_immediately=False):
+    def submit_jobdir_meta(self, jobdir_meta=None, source=None,
+                           source_meta=None,
+                           submit_to_engine_immediately=False):
         self._debug_locals()
         try:
-            job = self._submission_to_job(submission=submission,
-                                          source=source,
-                                          source_meta=source_meta)
+            job = self._jobdir_meta_to_job(jobdir_meta=jobdir_meta,
+                                           source=source,
+                                           source_meta=source_meta)
             job['batchable'] = self._job_is_batchable(job=job)
             created_job = self._create_job(job=job)
             if submit_to_engine_immediately:
-                created_job = self._submit_job(job=created_job)
+                created_job = self._submit_job_to_engine(job=created_job)
             return created_job
         except Exception as exc:
             raise self.SubmissionError() from exc
 
-    def _submission_to_job(self, submission=None, source=None,
-                           source_meta=None):
+    def _jobdir_meta_to_job(self, jobdir_meta=None, source=None,
+                            source_meta=None):
         return {
-            'submission': submission,
+            'jobdir_meta': jobdir_meta,
             'source': source,
             'source_meta': source_meta,
             'status': 'PENDING',
@@ -140,23 +141,21 @@ class JobMan(object):
 
     def get_job_for_key(self, key=None):
         return self.dao.get_jobs(query={
-            'filters': [{'field': 'key', 'operator': '=', 'value': key}]
+            'filters': [{'field': 'key', 'op': '=', 'arg': key}]
         })[0]
 
     def save_jobs(self, jobs=None): return self.dao.save_jobs(jobs=jobs)
 
     def get_running_jobs(self, include_batch_subjobs=False):
-        filters = [{'field': 'status', 'operator': '=', 'value': 'RUNNING'}]
+        filters = [{'field': 'status', 'op': '=', 'arg': 'RUNNING'}]
         if not include_batch_subjobs:
-            filters.append({'field': 'parent_batch_key', 'operator': 'IS',
-                            'value': None})
+            filters.append({'field': 'parent_batch_key', 'op': 'IS',
+                            'arg': None})
         return self.dao.get_jobs(query={'filters': filters})
 
     def get_jobs_for_status(self, status=None):
         return self.get_jobs(query={
-            'filters': [
-                {'field': 'status', 'operator': '=', 'value': status}
-            ]
+            'filters': [{'field': 'status', 'op': '=', 'arg': status}]
         })
 
     def get_kvp(self, key=None):
@@ -164,7 +163,7 @@ class JobMan(object):
         try:
             if key not in self._kvps:
                 self._kvps[key] = self.dao.get_kvps(query={
-                    'filters': [{'field': 'key', 'operator': '=', 'value': key}]
+                    'filters': [{'field': 'key', 'op': '=', 'arg': key}]
                 })[0]['value']
             return self._kvps[key]
         except Exception as exc:
@@ -241,9 +240,7 @@ class JobMan(object):
     def _get_batch_subjobs(self, batch_job=None):
         subjob_keys = batch_job['batch_meta']['subjob_keys']
         return self.dao.get_jobs(query={
-            'filters': [
-                {'field': 'key', 'operator': 'IN', 'value': subjob_keys}
-            ]
+            'filters': [{'field': 'key', 'op': 'IN', 'arg': subjob_keys}]
         })
 
     def _complete_job(self, job=None):
@@ -262,9 +259,9 @@ class JobMan(object):
         age_threshold = time.time() - self.max_batchable_wait
         return self.dao.get_jobs(query={
             'filters': [
-                {'field': 'batchable', 'operator': '=', 'value': 1},
-                {'field': 'status', 'operator': '=', 'value': 'PENDING'},
-                {'field': 'modified', 'operator': '>=', 'value': age_threshold}
+                {'field': 'batchable', 'op': '=', 'arg': 1},
+                {'field': 'status', 'op': '=', 'arg': 'PENDING'},
+                {'field': 'modified', 'op': '>=', 'arg': age_threshold}
             ]
         })
 
@@ -290,7 +287,7 @@ class JobMan(object):
         return partitions
 
     def _get_estimated_job_run_time(self, job=None):
-        estimated_job_run_time = job.get('submission_meta', {}).get(
+        estimated_job_run_time = job.get('jobdir_meta', {}).get(
             'estimated_run_time')
         if estimated_job_run_time is None:
             estimated_job_run_time = self.default_estimated_job_run_time
@@ -320,7 +317,7 @@ class JobMan(object):
             for job in submittable_jobs:
                 if num_submissions > num_slots: break
                 try:
-                    self._submit_job(job=job)
+                    self._submit_job_to_engine(job=job)
                     num_submissions += 1
                 except self.SubmissionError:
                     self.logger.exception('SubmissionError')
@@ -349,14 +346,14 @@ class JobMan(object):
     def _get_submittable_jobs(self):
         return self.dao.get_jobs(query={
             'filters': [
-                {'field': 'batchable', 'operator': '! =', 'value': 1},
-                {'field': 'status', 'operator': '=', 'value': 'PENDING'},
+                {'field': 'batchable', 'op': '! =', 'arg': 1},
+                {'field': 'status', 'op': '=', 'arg': 'PENDING'},
             ]
         })
 
-    def _submit_job(self, job=None):
+    def _submit_job_to_engine(self, job=None):
         try:
-            engine_meta = self.engine.submit(submission=job['submission'])
+            engine_meta = self.engine.submit_job(job=job)
             job.update({'engine_meta': engine_meta, 'status': 'RUNNING'})
             return self.save_jobs(jobs=[job])[0]
         except Exception as exc:

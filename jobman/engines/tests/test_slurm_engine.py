@@ -19,24 +19,26 @@ class BaseTestCase(unittest.TestCase):
     def mockify_engine_attrs(self, attrs=None):
         for attr in attrs: setattr(self.engine, attr, MagicMock())
 
-class SubmitTestCase(BaseTestCase):
+class SubmitJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.submission = collections.defaultdict(MagicMock, **{
+        self.jobdir_meta = collections.defaultdict(MagicMock, **{
             'dir': 'some_dir',
             'entrypoint': 'some_entrypoint'
         })
+        self.job = collections.defaultdict(MagicMock,
+                                           **{'jobdir_meta': self.jobdir_meta})
 
-    def _submit(self):
-        return self.engine.submit(submission=self.submission)
+    def _submit_job(self):
+        return self.engine.submit_job(job=self.job)
 
     def test_calls_sbatch(self):
         self.process_runner.run_process.return_value = \
                 self.generate_successful_sbatch_proc()
-        self._submit()
-        workdir = self.submission['dir']
+        self._submit_job()
+        workdir = self.jobdir_meta['dir']
         entrypoint_path = os.path.join(
-            workdir, self.submission.get('entrypoint'))
+            workdir, self.jobdir_meta.get('entrypoint'))
         expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint_path]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
@@ -51,7 +53,7 @@ class SubmitTestCase(BaseTestCase):
         job_id = '12345'
         self.process_runner.run_process.return_value = \
                 self.generate_successful_sbatch_proc(job_id=job_id)
-        engine_meta = self._submit()
+        engine_meta = self._submit_job()
         expected_engine_meta = {'job_id': job_id}
         self.assertEqual(engine_meta, expected_engine_meta)
 
@@ -68,8 +70,7 @@ class SubmitTestCase(BaseTestCase):
             raise self.process_runner.CalledProcessError(
                 proc.returncode, cmd)
         self.process_runner.run_process.side_effect = simulate_failed_proc
-        with self.assertRaises(self.engine.SubmissionError):
-            self._submit()
+        with self.assertRaises(self.engine.SubmissionError): self._submit_job()
 
 class GetKeyedEngineStatesTestCase(BaseTestCase):
     def setUp(self):

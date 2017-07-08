@@ -19,15 +19,16 @@ class LocalEngine(BaseEngine):
         self.conn.execute('''CREATE TABLE IF NOT EXISTS jobs
                           (job_id text, status text)''')
 
-    def submit(self, submission=None):
-        workdir = submission['dir']
-        entrypoint_name = submission.get('entrypoint',
-                                         self.DEFAULT_ENTRYPOINT_NAME)
+    def submit_job(self, job=None):
+        jobdir_meta = job['jobdir_meta']
+        workdir = jobdir_meta['dir']
+        entrypoint_name = jobdir_meta.get('entrypoint') or \
+                self.DEFAULT_ENTRYPOINT_NAME
         entrypoint_path = os.path.join(workdir, entrypoint_name)
         cmd = entrypoint_path
         std_log_files = {
             log_key: os.path.join(workdir, log_file_name)
-            for log_key, log_file_name in submission.get(
+            for log_key, log_file_name in jobdir_meta.get(
                 'std_log_file_names', {}).items()
         }
         stdout_path = std_log_files.get('stdout')

@@ -9,7 +9,7 @@ class MockEngine(object):
     def __init__(self):
         self.jobs = {}
 
-    def submit(self, submission=None):
+    def submit_job(self, job=None):
         engine_meta = str(uuid.uuid4())
         self.jobs[engine_meta] = {'status': 'RUNNING'}
         return engine_meta
@@ -37,11 +37,11 @@ class JobManE2ETest(unittest.TestCase):
         )
 
     def test_job_completions(self):
-        submissions = [{'some': 'submission'} for i in range(3)]
+        jobdir_metas = [{'some': 'jobdir_meta'} for i in range(3)]
         jobs = [
-            self.jobman.submit_submission(submission=submission,
-                                          submit_to_engine_immediately=True)
-            for submission in submissions
+            self.jobman.submit_jobdir_meta(jobdir_meta=jobdir_meta,
+                                           submit_to_engine_immediately=True)
+            for jobdir_meta in jobdir_metas
         ]
         for i, job in enumerate(jobs):
             self.assertEqual(
@@ -57,11 +57,11 @@ class JobManE2ETest(unittest.TestCase):
 
     def test_orphaned_job(self):
         self.jobman.submission_grace_period = 0
-        submissions = [{'some': 'submission'} for i in range(3)]
+        jobdir_metas = [{'some': 'jobdir_meta'} for i in range(3)]
         jobs = [
-            self.jobman.submit_submission(submission=submission,
-                                          submit_to_engine_immediately=True)
-            for submission in submissions
+            self.jobman.submit_jobdir_meta(jobdir_meta=jobdir_meta,
+                                           submit_to_engine_immediately=True)
+            for jobdir_meta in jobdir_metas
         ]
         for i, job in enumerate(jobs):
             self.assertEqual(self._get_keys(self.jobman.get_running_jobs()),
