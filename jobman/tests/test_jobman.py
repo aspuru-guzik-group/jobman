@@ -334,12 +334,12 @@ class _MarkJobsAsBatchableTestCase(BaseTestCase):
 class _ProcessBatchableJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mockify_jobman_attrs(attrs=['_lock', '_get_batchable_jobs',
+        self.mockify_jobman_attrs(attrs=['_get_lock', '_get_batchable_jobs',
                                          '_batchify_jobs'])
         self.jobman._process_batchable_jobs()
 
     def test_gets_lock(self):
-        self.assertEqual(self.jobman._lock.call_args, call())
+        self.assertEqual(self.jobman._get_lock.call_args, call())
 
     def test_gets_batchable_jobs(self):
         self.assertEqual(self.jobman._get_batchable_jobs.call_args, call())
@@ -478,7 +478,7 @@ class _MakeBatchJobTestCase(BaseTestCase):
 class _ProcessSubmittableJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mockify_jobman_attrs(attrs=['_lock', '_get_submittable_jobs',
+        self.mockify_jobman_attrs(attrs=['_get_lock', '_get_submittable_jobs',
                                          'get_num_free_slots',
                                          '_submit_job_to_engine'])
         self.jobman.use_batching = MagicMock()
@@ -489,7 +489,7 @@ class _ProcessSubmittableJobsTestCase(BaseTestCase):
         self.jobman._process_submittable_jobs()
 
     def test_gets_lock(self):
-        self.assertEqual(self.jobman._lock.call_args, call())
+        self.assertEqual(self.jobman._get_lock.call_args, call())
 
     def test_gets_submittable_jobs(self):
         self.assertEqual(

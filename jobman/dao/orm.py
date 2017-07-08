@@ -152,9 +152,23 @@ class ORM(object):
                 op=op,
                 rhs=clause_rhs,
             ).lstrip(),
-            'args': args
+            'args': self._format_args(args=args, _filter=_filter)
         }
         return where_item
+
+    def _format_args(self, args=None, _filter=None):
+        return [
+            self._format_value_for_field(value=arg, field_key=_filter['field'])
+            for arg in args
+        ]
+
+    def _format_value_for_field(self, value=None, field_key=None):
+        field = self.fields[field_key]
+        if field['type'] == 'JSON': value = self._serialize_json_value(value)
+        return value
+
+    def _get_field_for_filter(self, _filter=None):
+        return self.fields[_filter['field']]
 
     def _record_to_obj(self, record=None):
         obj = {}
@@ -197,12 +211,16 @@ class ORM(object):
             updates_content=updates_section['content'],
             where_content=where_content,
         )
-        try: cursor = connection.execute(statement, args)
+        try:
+            cursor = connection.execute(statement, args)
+            return {'rowcount': cursor.rowcount}
         except Exception as exc: raise self.UpdateError() from exc
-        return {'rowcount': cursor.rowcount}
 
     def _get_updates_section(self, updates=None):
-        return {
-            'content': ', '.join(['"%s" = ?' % k for k in updates.keys()]),
-            'args': list(updates.values()),
-        }
+        set_items = []
+        args = []
+        for field_key, value in updates.items():
+            set_items.append('%s = ?' % field_key)
+            args.append(self._format_value_for_field(value=value,
+                                                     field_key=field_key))
+        return {'content': ', '.join(set_items), 'args': args}

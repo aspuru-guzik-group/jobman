@@ -28,8 +28,8 @@ class JobMan(object):
 
     def __init__(self, logger=None, logging_cfg=None, debug=None,
                  setup=True, **kwargs):
-        self.logger = self._generate_logger(logging_cfg=logging_cfg)
         self.debug = debug
+        self.logger = self._generate_logger(logging_cfg=logging_cfg)
         if setup: self._setup(**kwargs)
 
     def _setup(self, dao=None, jobman_db_uri=None, engine=None,
@@ -38,6 +38,7 @@ class JobMan(object):
                max_batchable_wait=120, target_batch_time=(60 * 60),
                default_estimated_job_run_time=(5 * 60),
                lock_timeout=30, use_batching=False, **kwargs):
+        self._debug_locals()
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
         self.engine = engine or self._generate_engine()
         self.max_running_jobs = max_running_jobs
@@ -63,12 +64,13 @@ class JobMan(object):
                 logging.getLogger('jobman_%s' % id(self))
 
         log_file = logging_cfg.get('log_file')
-        if log_file: logger.addHandler(
-            logging.FileHandler(os.path.expanduser(log_file)))
+        if log_file:
+            logger.addHandler(logging.FileHandler(os.path.expanduser(log_file)))
+        if self.debug: logger.addHandler(logging.StreamHandler())
 
         level = logging_cfg.get('level')
-        if level:
-            logger.setLevel(getattr(logging, level))
+        if level: logger.setLevel(getattr(logging, level))
+        elif self.debug: logger.setLevel(logging.DEBUG)
 
         fmt = logging_cfg.get('fmt') or \
                 '| %(asctime)s | %(name)s | %(levelname)s |\n%(message)s\n'
@@ -81,11 +83,12 @@ class JobMan(object):
         if self.debug: debug_utils.debug_locals(logger=self.logger)
 
     def _get_default_batchable_filters(self):
-        def submission_has_batchable(job=None):
-            return bool(job.get('submission', {}).get('batchable'))
-        return [submission_has_batchable]
+        def jobdir_meta_has_batchable(job=None):
+            return bool(job.get('jobdir_meta', {}).get('batchable'))
+        return [jobdir_meta_has_batchable]
 
     def _generate_dao(self, jobman_db_uri=None):
+        self._debug_locals()
         jobman_db_uri = jobman_db_uri or os.path.expanduser(
             '~/jobman.sqlite.db')
         from .dao.sqlite_dao import SqliteDAO
@@ -100,9 +103,12 @@ class JobMan(object):
         self._ensure_lock_kvp()
 
     def _ensure_lock_kvp(self):
+        self._debug_locals()
         lock_kvp = {'key': self.LOCK_KEY, 'value': 'UNLOCKED'}
         try: self.dao.save_kvps(kvps=[lock_kvp], replace=False)
-        except self.dao.InsertError: pass
+        except self.dao.InsertError as exc:
+            if self.debug:
+                self.logger.debug(("_ensure_lock_kvp exc: ", exc))
 
     def submit_jobdir_meta(self, jobdir_meta=None, source=None,
                            source_meta=None,
@@ -127,11 +133,6 @@ class JobMan(object):
             'source_meta': source_meta,
             'status': 'PENDING',
         }
-
-    def _job_is_batchable(self, job=None):
-        for filter_ in self.batchable_filters:
-            if filter_(job): return True
-        return False
 
     def _create_job(self, job=None): return self.dao.create_job(job=job)
 
@@ -266,12 +267,17 @@ class JobMan(object):
         return self.dao.get_jobs(query={
             'filters': [
                 {'field': 'status', 'op': '=', 'arg': 'PENDING'},
-                {'field': 'batchable', 'op': '=', 'arg': None}
+                {'field': 'batchable', 'op': 'IS', 'arg': None}
             ]
         })
 
+    def _job_is_batchable(self, job=None):
+        for filter_ in self.batchable_filters:
+            if filter_(job): return True
+        return False
+
     def _process_batchable_jobs(self):
-        with self._lock():
+        with self._get_lock():
             batchable_jobs = self._get_batchable_jobs()
             self._batchify_jobs(batchable_jobs=batchable_jobs)
 
@@ -331,7 +337,7 @@ class JobMan(object):
 
 
     def _process_submittable_jobs(self):
-        with self._lock():
+        with self._get_lock():
             submittable_jobs = self._get_submittable_jobs(
                 exclude_batchable_jobs=(not self.use_batching))
             num_submissions = 0
@@ -345,24 +351,30 @@ class JobMan(object):
                     self.logger.exception('SubmissionError')
 
     @contextlib.contextmanager
-    def _lock(self):
+    def _get_lock(self):
+        self._debug_locals()
         self._acquire_lock()
         try: yield
         finally: self._release_lock()
 
     def _acquire_lock(self):
+        self._debug_locals()
         start_time = time.time()
         while time.time() - start_time < self.lock_timeout:
             try:
-                self.dao.update_kvp(key=self.LockError, new_value='LOCKED',
+                self.dao.update_kvp(key=self.LOCK_KEY, new_value='LOCKED',
                                     where_prev_value='UNLOCKED')
-            except self.dao.UpdateError: pass
-            if self.debug: self.logger.debug("waiting for lock")
-            time.sleep(1)
+                return
+            except self.dao.UpdateError as exc:
+                if self.debug:
+                    self.logger.exception('UpdateError')
+                    self.logger.debug("waiting for lock")
+                time.sleep(1)
         raise self.LockError("Could not acquire lock within timeout window")
 
     def _release_lock(self):
-        self.dao.update_kvp(key=self.LockError, new_value='UNLOCKED',
+        self._debug_locals()
+        self.dao.update_kvp(key=self.LOCK_KEY, new_value='UNLOCKED',
                             where_prev_value='LOCKED')
 
     def _get_submittable_jobs(self, exclude_batchable_jobs=True):
