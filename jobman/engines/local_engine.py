@@ -4,27 +4,26 @@ import tempfile
 import uuid
 
 from .base_engine import BaseEngine
-from .batch_jobdir_builders.serial_bash_batch_jobdir_builder import (
-    SerialBashBatchJobdirBuilder)
+from .batch_jobdir_builders.bash_batch_jobdir_builder import (
+    BashBatchJobdirBuilder)
 
 
 class LocalEngine(BaseEngine):
     DEFAULT_ENTRYPOINT_NAME ='job.sh'
 
     def __init__(self, *args, db_uri=None, sqlite=sqlite3, scratch_dir=None,
-                 batch_jobdir_builder=None, **kwargs):
+                 build_batch_jobdir_fn=None, **kwargs):
         super().__init__(*args, **kwargs)
         db_uri = db_uri or ':memory:'
         self.scratch_dir = scratch_dir
-        self.batch_jobdir_builder = batch_jobdir_builder or \
-                self._get_default_batch_jobdir_builder()
-
+        self.build_batch_jobdir_fn = build_batch_jobdir_fn or \
+                self._get_default_build_batch_jobdir_fn()
         self.conn = sqlite.connect(db_uri)
         self.conn.row_factory = sqlite.Row
         self.ensure_db()
 
-    def _get_default_batch_jobdir_builder(self):
-        return SerialBashBatchJobdirBuilder
+    def _get_default_build_batch_jobdir_fn(self):
+        return BashBatchJobdirBuilder().build_batch_jobdir
 
     def ensure_db(self):
         self.conn.execute('''CREATE TABLE IF NOT EXISTS jobs
@@ -117,6 +116,6 @@ class LocalEngine(BaseEngine):
 
     def _build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None):
         self._debug_locals()
-        jobdir_meta = self.batch_jobdir_builder.build_batch_jobdir(
+        jobdir_meta = self.build_batch_jobdir_fn(
             batch_job=batch_job, subjobs=subjobs, dest=dest)
         return jobdir_meta

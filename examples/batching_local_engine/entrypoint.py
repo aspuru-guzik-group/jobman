@@ -5,6 +5,8 @@ import textwrap
 
 from jobman.jobman import JobMan
 from jobman.engines.local_engine import LocalEngine
+from jobman.engines.batch_jobdir_builders.bash_batch_jobdir_builder import (
+    BashBatchJobdirBuilder)
 
 
 class Entrypoint(object):
@@ -19,15 +21,17 @@ class Entrypoint(object):
         self._tick_jobman(num_ticks=3)
 
     def _setup(self):
-        self.debug = os.environ.get('DEBUG')
         this_dir = os.path.abspath(os.path.dirname(__file__))
         self.scratch_dir = tempfile.mkdtemp(
             dir=os.path.join(this_dir, 'scratch'))
-        self.engine = LocalEngine(debug=self.debug,
-                                  scratch_dir=self.scratch_dir)
+        batch_jobdir_builder = BashBatchJobdirBuilder(
+            run_commands_command='bash') # could also use gnu parallel here!
+        self.engine = LocalEngine(
+            scratch_dir=self.scratch_dir,
+            build_batch_jobdir_fn=batch_jobdir_builder.build_batch_jobdir
+        )
         self.jobman = JobMan(
             jobman_db_uri=':memory:',
-            debug=self.debug,
             engine=self.engine,
             use_batching=True,
             lock_timeout=2,
