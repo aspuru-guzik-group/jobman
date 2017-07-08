@@ -4,7 +4,6 @@ import re
 from .base_engine import BaseEngine
 
 
-
 class SlurmEngine(BaseEngine):
     SLURM_STATES_TO_ENGINE_JOB_STATUSES = {
         BaseEngine.JOB_STATUSES.RUNNING: set(['CONFIGURING', 'COMPLETING',
@@ -16,7 +15,9 @@ class SlurmEngine(BaseEngine):
     }
 
     def submit_job(self, job=None):
-        jobdir_meta = job['jobdir_meta']
+        return self._submit_jobdir(jobdir_meta=job['jobdir_meta'])
+
+    def _submit_jobdir(self, jobdir_meta=None):
         workdir = jobdir_meta['dir']
         entrypoint_name = jobdir_meta.get('entrypoint') or \
                 self.DEFAULT_ENTRYPOINT_NAME

@@ -5,7 +5,7 @@ import textwrap
 
 from jobman.jobman import JobMan
 from jobman.engines.local_engine import LocalEngine
-from jobman.engines.batch_jobdir_builders.bash_batch_jobdir_builder import (
+from jobman.batch_jobdir_builders.bash_batch_jobdir_builder import (
     BashBatchJobdirBuilder)
 
 
