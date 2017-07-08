@@ -353,13 +353,26 @@ class JobMan(object):
 
     def _submit_job_to_engine(self, job=None):
         try:
-            engine_meta = self.engine.submit_job(job=job)
+            submit_to_engine_fn = self._get_submit_to_engine_fn_for_job(job=job)
+            engine_meta = submit_to_engine_fn(job=job)
             job.update({'engine_meta': engine_meta, 'status': 'RUNNING'})
             return self.save_jobs(jobs=[job])[0]
         except Exception as exc:
             job.update({'status': 'FAILED'})
             self.save_jobs(jobs=[job])
             raise self.SubmissionError() from exc
+
+    def _get_submit_to_engine_fn_for_job(self, job=None):
+        if job.get('is_batch'): return self._submit_batch_job_to_engine
+        return self._submit_single_job_to_engine
+
+    def _submit_single_job_to_engine(self, job=None):
+        engine_meta = self.engine.submit_job(job=job)
+        return engine_meta
+
+    def _submit_batch_job_to_engine(self, job=None):
+        subjobs = self._get_batch_subjobs(batch_job=job)
+        return self.engine.submit_batch_job(batch_job=job, subjobs=subjobs)
 
     def flush(self):
         self.dao.flush()

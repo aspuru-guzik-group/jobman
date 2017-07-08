@@ -470,33 +470,78 @@ class _SubmitJobToEngineTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job = MagicMock()
-        self.mockify_jobman_attrs(attrs=['save_jobs'])
+        self.mockify_jobman_attrs(attrs=['_get_submit_to_engine_fn_for_job',
+                                         'save_jobs'])
+        self.expected_submission_fn = \
+                self.jobman._get_submit_to_engine_fn_for_job.return_value
 
     def _submit_job_to_engine(self):
         return self.jobman._submit_job_to_engine(job=self.job)
 
-    def test_submits_via_engine(self):
+    def test_gets_submission_fn(self):
         self._submit_job_to_engine()
-        self.assertEqual(self.engine.submit_job.call_args, call(job=self.job))
+        self.assertEqual(self.jobman._get_submit_to_engine_fn_for_job.call_args,
+                         call(job=self.job))
+
+    def test_submits_via_submission_fn(self):
+        self._submit_job_to_engine()
+        self.assertEqual(self.expected_submission_fn.call_args,
+                         call(job=self.job))
 
     def test_updates_engine_meta_and_status(self):
         self._submit_job_to_engine()
         self.assertEqual(
             self.job.update.call_args,
-            call({'engine_meta': self.jobman.engine.submit_job.return_value,
+            call({'engine_meta': self.expected_submission_fn.return_value,
                   'status': 'RUNNING'})
         )
         self.assertEqual(self.jobman.save_jobs.call_args, call(jobs=[self.job]))
 
     def test_raises_exception_for_bad_submission(self):
         exception = Exception("bad submission")
-        self.engine.submit_job.side_effect = exception
+        self.expected_submission_fn.side_effect = exception
         with self.assertRaises(self.jobman.SubmissionError):
             self._submit_job_to_engine()
             self.assertEqual(self.job.update.call_args,
                              call({'status': 'FAILED'}))
             self.assertEqual(self.jobman.save_jobs.call_args,
                              call(jobs=[self.job]))
+
+class _GetSubmitToEngineFnForJobTestCase(BaseTestCase):
+    def test_handles_batch_job(self):
+        job = {'is_batch': 1}
+        result = self.jobman._get_submit_to_engine_fn_for_job(job=job)
+        self.assertEqual(result, self.jobman._submit_batch_job_to_engine)
+
+    def test_defaults_to_basic_job(self):
+        job = {'is_batch': None}
+        result = self.jobman._get_submit_to_engine_fn_for_job(job=job)
+        self.assertEqual(result, self.jobman._submit_single_job_to_engine)
+
+class _SubmitSingleJobToEngine(BaseTestCase):
+    def test_dispatches_to_engine_submit_job(self):
+        job = MagicMock()
+        result = self.jobman._submit_single_job_to_engine(job=job)
+        self.assertEqual(self.jobman.engine.submit_job.call_args, call(job=job))
+        self.assertEqual(result, self.jobman.engine.submit_job.return_value)
+
+class _SubmitBatchJobToEngine(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_jobman_attrs(attrs=['_get_batch_subjobs'])
+        self.job = MagicMock()
+        self.result = self.jobman._submit_batch_job_to_engine(job=self.job)
+
+    def test_gets_batch_subjobs(self):
+        self.assertEqual(self.jobman._get_batch_subjobs.call_args,
+                         call(batch_job=self.job))
+
+    def test_dispatches_to_engine_submit_batch_job(self):
+        expected_subjobs = self.jobman._get_batch_subjobs.return_value
+        self.assertEqual(self.jobman.engine.submit_batch_job.call_args,
+                         call(batch_job=self.job, subjobs=expected_subjobs))
+        self.assertEqual(self.result,
+                         self.jobman.engine.submit_batch_job.return_value)
 
 class _CreateJobTestCase(BaseTestCase):
     def setUp(self):
