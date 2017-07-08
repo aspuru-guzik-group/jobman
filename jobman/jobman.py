@@ -16,7 +16,7 @@ class JobMan(object):
                   'job_engine_states_ttl', 'submission_grace_period',
                   'batchable_filters', 'max_batchable_wait',
                   'target_batch_time', 'default_estimated_job_run_time',
-                  'lock_timeout']
+                  'lock_timeout', 'use_batching']
 
     @classmethod
     def from_cfg(cls, cfg=None):
@@ -37,20 +37,22 @@ class JobMan(object):
                job_engine_states_ttl=120, submission_grace_period=None,
                max_batchable_wait=120, target_batch_time=(60 * 60),
                default_estimated_job_run_time=(5 * 60),
-               lock_timeout=30, **kwargs):
+               lock_timeout=30, use_batching=False, **kwargs):
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
         self.engine = engine or self._generate_engine()
         self.max_running_jobs = max_running_jobs
         self.job_engine_states_ttl = job_engine_states_ttl
         self.submission_grace_period = submission_grace_period or \
                 (2 * self.job_engine_states_ttl)
+        self.default_estimated_job_run_time = default_estimated_job_run_time
+        self.lock_timeout = lock_timeout
+
+        self.use_batching = use_batching
         if batchable_filters is ...: batchable_filters = []
         self.batchable_filters = (batchable_filters
                                   + self._get_default_batchable_filters())
         self.max_batchable_wait = max_batchable_wait
         self.target_batch_time = target_batch_time
-        self.default_estimated_job_run_time = default_estimated_job_run_time
-        self.lock_timeout = lock_timeout
 
         self.ensure_db()
         self._kvps = {}
@@ -110,7 +112,6 @@ class JobMan(object):
             job = self._jobdir_meta_to_job(jobdir_meta=jobdir_meta,
                                            source=source,
                                            source_meta=source_meta)
-            job['batchable'] = self._job_is_batchable(job=job)
             created_job = self._create_job(job=job)
             if submit_to_engine_immediately:
                 created_job = self._submit_job_to_engine(job=created_job)
@@ -177,7 +178,7 @@ class JobMan(object):
         if self._job_engine_states_are_stale():
             self._update_job_engine_states(jobs=self.get_running_jobs())
         self._process_executed_jobs()
-        self._process_batchable_jobs()
+        if self.use_batching: self._tick_batching()
         self._process_submittable_jobs()
 
     def _job_engine_states_are_stale(self):
@@ -250,6 +251,25 @@ class JobMan(object):
     def _process_executed_single_job(self, executed_job=None):
         self._complete_job(job=executed_job)
 
+    def _tick_batching(self):
+        self._mark_jobs_as_batchable()
+        self._process_batchable_jobs()
+
+    def _mark_jobs_as_batchable(self):
+        with self._get_lock():
+            candidate_batchable_jobs = self._get_candidate_batchable_jobs()
+            for job in candidate_batchable_jobs:
+                job['batchable'] = self._job_is_batchable(job=job)
+            self.save_jobs(jobs=candidate_batchable_jobs)
+
+    def _get_candidate_batchable_jobs(self):
+        return self.dao.get_jobs(query={
+            'filters': [
+                {'field': 'status', 'op': '=', 'arg': 'PENDING'},
+                {'field': 'batchable', 'op': '=', 'arg': None}
+            ]
+        })
+
     def _process_batchable_jobs(self):
         with self._lock():
             batchable_jobs = self._get_batchable_jobs()
@@ -309,9 +329,11 @@ class JobMan(object):
             'status': 'PENDING'
         })
 
+
     def _process_submittable_jobs(self):
         with self._lock():
-            submittable_jobs = self._get_submittable_jobs()
+            submittable_jobs = self._get_submittable_jobs(
+                exclude_batchable_jobs=(not self.use_batching))
             num_submissions = 0
             num_slots = self.get_num_free_slots() 
             for job in submittable_jobs:
@@ -343,13 +365,11 @@ class JobMan(object):
         self.dao.update_kvp(key=self.LockError, new_value='UNLOCKED',
                             where_prev_value='LOCKED')
 
-    def _get_submittable_jobs(self):
-        return self.dao.get_jobs(query={
-            'filters': [
-                {'field': 'batchable', 'op': '! =', 'arg': 1},
-                {'field': 'status', 'op': '=', 'arg': 'PENDING'},
-            ]
-        })
+    def _get_submittable_jobs(self, exclude_batchable_jobs=True):
+        filters = [{'field': 'status', 'op': '=', 'arg': 'PENDING'}]
+        if exclude_batchable_jobs:
+            filters.append({'field': 'batchable', 'op': '! =', 'arg': 1})
+        return self.dao.get_jobs(query={'filters': filters})
 
     def _submit_job_to_engine(self, job=None):
         try:

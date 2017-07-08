@@ -53,8 +53,7 @@ class SubmitJobDir_MetaTestCase(BaseTestCase):
         self.jobdir_meta = MagicMock()
         self.source = MagicMock()
         self.source_meta = MagicMock()
-        self.mockify_jobman_attrs(attrs=['_jobdir_meta_to_job',
-                                         '_job_is_batchable', '_create_job'])
+        self.mockify_jobman_attrs(attrs=['_jobdir_meta_to_job', '_create_job'])
         self.jobman._jobdir_meta_to_job.return_value = defaultdict(MagicMock)
         self.expected_job = self.jobman._jobdir_meta_to_job.return_value
         self.result = self.jobman.submit_jobdir_meta(
@@ -67,11 +66,6 @@ class SubmitJobDir_MetaTestCase(BaseTestCase):
             call(jobdir_meta=self.jobdir_meta, source=self.source,
                  source_meta=self.source_meta)
         )
-
-    def test_marks_job_as_batchable(self):
-        self.jobman._job_is_batchable.call_args(job=self.expected_job)
-        self.assertEqual(self.expected_job['batchable'],
-                         self.jobman._job_is_batchable.return_value)
 
     def test_creates_job(self):
         self.assertEqual(self.jobman._create_job.call_args,
@@ -137,7 +131,7 @@ class TickTestCase(BaseTestCase):
             'get_running_jobs',
             '_update_job_engine_states',
             '_process_executed_jobs',
-            '_process_batchable_jobs',
+            '_tick_batching',
             '_process_submittable_jobs',
         ])
 
@@ -161,10 +155,15 @@ class TickTestCase(BaseTestCase):
         self.assertEqual(self.jobman._process_executed_jobs.call_args,
                          call())
 
-    def test_processes_batchable_jobs(self):
+    def test_calls_tick_batching_if_use_batching(self):
+        self.jobman.use_batching = True
         self._tick()
-        self.assertEqual(self.jobman._process_batchable_jobs.call_args,
-                         call())
+        self.assertEqual(self.jobman._tick_batching.call_args, call())
+
+    def test_does_not_call_tick_batching_if_not_use_batching(self):
+        self.jobman.use_batching = False
+        self._tick()
+        self.assertEqual(self.jobman._tick_batching.call_args, None)
 
     def test_processes_submittable_jobs(self):
         self._tick()
@@ -281,6 +280,56 @@ class _ProcessExecutedSingleJobTestCase(BaseTestCase):
     def test_completes_job(self):
         self.assertEqual(self.jobman._complete_job.call_args,
                          call(job=self.executed_job))
+
+class _TickBatchingTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_jobman_attrs(attrs=['_mark_jobs_as_batchable',
+                                         '_process_batchable_jobs'])
+        self.jobman._tick_batching()
+
+    def test_mark_jobs_as_batchable(self):
+        self.assertEqual(self.jobman._mark_jobs_as_batchable.call_args, call())
+
+    def test_processes_batchable_jobs(self):
+        self.assertEqual(self.jobman._process_batchable_jobs.call_args, call())
+
+class _MarkJobsAsBatchableTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_jobman_attrs(attrs=['_get_candidate_batchable_jobs',
+                                         '_job_is_batchable',
+                                         '_get_lock', 'save_jobs'])
+        self.jobman._get_candidate_batchable_jobs.return_value = [
+            defaultdict(MagicMock) for i in range(3)
+        ]
+        self.expected_candidate_batchable_jobs = \
+                self.jobman._get_candidate_batchable_jobs.return_value
+        self.jobman._mark_jobs_as_batchable()
+
+    def test_gets_lock(self):
+        self.assertEqual(self.jobman._get_lock.call_args, call())
+
+    def test_gets_candidate_batchable_jobs(self):
+        self.assertEqual(self.jobman._get_candidate_batchable_jobs.call_args,
+                         call())
+
+    def test_marks_job_as_batchable(self):
+        self.assertEqual(
+            self.jobman._job_is_batchable.call_args_list,
+            [call(job=job) for job in self.expected_candidate_batchable_jobs]
+        )
+        batchable_values = []
+        expected_batchable_values = []
+        for job in self.expected_candidate_batchable_jobs:
+            batchable_values.append(job['batchable'])
+            expected_batchable_values.append(
+                self.jobman._job_is_batchable.return_value)
+        self.assertEqual(batchable_values, expected_batchable_values)
+
+    def test_saves_jobs(self):
+        self.assertEqual(self.jobman.save_jobs.call_args,
+                         call(jobs=self.expected_candidate_batchable_jobs))
 
 class _ProcessBatchableJobsTestCase(BaseTestCase):
     def setUp(self):
@@ -432,6 +481,7 @@ class _ProcessSubmittableJobsTestCase(BaseTestCase):
         self.mockify_jobman_attrs(attrs=['_lock', '_get_submittable_jobs',
                                          'get_num_free_slots',
                                          '_submit_job_to_engine'])
+        self.jobman.use_batching = MagicMock()
         self.submittable_jobs = [MagicMock() for i in range(5)]
         self.jobman._get_submittable_jobs.return_value = self.submittable_jobs
         self.num_free_slots = len(self.submittable_jobs) - 2
@@ -442,7 +492,10 @@ class _ProcessSubmittableJobsTestCase(BaseTestCase):
         self.assertEqual(self.jobman._lock.call_args, call())
 
     def test_gets_submittable_jobs(self):
-        self.assertEqual(self.jobman._get_submittable_jobs.call_args, call())
+        self.assertEqual(
+            self.jobman._get_submittable_jobs.call_args,
+            call(exclude_batchable_jobs=(not self.jobman.use_batching))
+        )
 
     def test_submits_until_free_slots_are_filled(self):
         self.assertEqual(
@@ -453,17 +506,34 @@ class _ProcessSubmittableJobsTestCase(BaseTestCase):
 
 
 class _GetSubmittableJobsTestCase(BaseTestCase):
-    def test_queries_dao(self):
-        result = self.jobman._get_submittable_jobs()
+    def _get_submittable_jobs(self, **kwargs):
+        return self.jobman._get_submittable_jobs(**kwargs)
+
+    def test_makes_expected_query_for_exclude_batchable_jobs(self):
+        self._get_submittable_jobs(exclude_batchable_jobs=True)
         self.assertEqual(
             self.jobman.dao.get_jobs.call_args,
             call(query={
                 'filters': [
+                    {'field': 'status', 'op': '=', 'arg': 'PENDING'},
                     {'field': 'batchable', 'op': '! =', 'arg': 1},
+                ]
+            })
+        )
+
+    def test_makes_expected_query_for_include_batchable_jobs(self):
+        self._get_submittable_jobs(exclude_batchable_jobs=False)
+        self.assertEqual(
+            self.jobman.dao.get_jobs.call_args,
+            call(query={
+                'filters': [
                     {'field': 'status', 'op': '=', 'arg': 'PENDING'},
                 ]
             })
         )
+
+    def test_returns_query_result(self):
+        result = self._get_submittable_jobs()
         self.assertEqual(result, self.jobman.dao.get_jobs.return_value)
 
 class _SubmitJobToEngineTestCase(BaseTestCase):
