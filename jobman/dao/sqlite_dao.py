@@ -35,7 +35,7 @@ class SqliteDAO(object):
         return {
             'key': {'type': 'TEXT', 'primary_key': True,
                     'default': self.generate_key},
-            'jobdir_meta': {'type': 'JSON'},
+            'job_spec': {'type': 'JSON'},
             'status': {'type': 'TEXT'},
             'is_batch': {'type': 'INTEGER'},
             'batch_meta': {'type': 'JSON'},

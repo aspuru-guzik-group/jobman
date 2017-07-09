@@ -47,23 +47,23 @@ class EnsureDbTestCase(BaseTestCase):
         self.jobman.ensure_db()
         self.assertEqual(self.jobman.dao.ensure_db.call_args, call())
 
-class SubmitJobDirTestCase(BaseTestCase):
+class SubmitJobSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.jobdir_meta = MagicMock()
+        self.job_spec = MagicMock()
         self.source = MagicMock()
         self.source_meta = MagicMock()
-        self.mockify_jobman_attrs(attrs=['_jobdir_meta_to_job', '_create_job'])
-        self.jobman._jobdir_meta_to_job.return_value = defaultdict(MagicMock)
-        self.expected_job = self.jobman._jobdir_meta_to_job.return_value
-        self.result = self.jobman.submit_jobdir(jobdir_meta=self.jobdir_meta,
-                                                source=self.source,
-                                                source_meta=self.source_meta)
+        self.mockify_jobman_attrs(attrs=['_job_spec_to_job', '_create_job'])
+        self.jobman._job_spec_to_job.return_value = defaultdict(MagicMock)
+        self.expected_job = self.jobman._job_spec_to_job.return_value
+        self.result = self.jobman.submit_job_spec(job_spec=self.job_spec,
+                                                  source=self.source,
+                                                  source_meta=self.source_meta)
 
-    def test_assembles_job_from_jobdir_meta(self):
+    def test_assembles_job_from_job_spec(self):
         self.assertEqual(
-            self.jobman._jobdir_meta_to_job.call_args,
-            call(jobdir_meta=self.jobdir_meta, source=self.source,
+            self.jobman._job_spec_to_job.call_args,
+            call(job_spec=self.job_spec, source=self.source,
                  source_meta=self.source_meta)
         )
 
@@ -74,20 +74,20 @@ class SubmitJobDirTestCase(BaseTestCase):
     def test_returns_created_job(self):
         self.assertEqual(self.result, self.jobman._create_job.return_value)
 
-class _SubmissionToJobTestCase(BaseTestCase):
+class _JobMetaToJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.jobdir_meta = MagicMock()
+        self.job_spec = MagicMock()
         self.source = MagicMock()
         self.source_meta = MagicMock()
-        self.result = self.jobman._jobdir_meta_to_job(
-            jobdir_meta=self.jobdir_meta, source=self.source,
+        self.result = self.jobman._job_spec_to_job(
+            job_spec=self.job_spec, source=self.source,
             source_meta=self.source_meta
         )
 
     def test_returns_expected_job(self):
         expected_result = {
-            'jobdir_meta': self.jobdir_meta,
+            'job_spec': self.job_spec,
             'source': self.source,
             'source_meta': self.source_meta,
             'status': 'PENDING',
@@ -406,7 +406,7 @@ class _MakeBatchSubJobPartitionsTestCase(BaseTestCase):
 
     def _generate_batchable_job(self, time=1):
         batchable_job = defaultdict(MagicMock)
-        batchable_job['jobdir_meta'] = defaultdict(MagicMock, **{
+        batchable_job['job_spec'] = defaultdict(MagicMock, **{
             'resources': {'time': time}
         })
         return batchable_job
@@ -429,17 +429,17 @@ class _MakeBatchSubJobPartitionsTestCase(BaseTestCase):
 class _GetJobTime(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job = {'jobdir_meta': {'resources': {'time': MagicMock()}}}
+        self.job = {'job_spec': {'resources': {'time': MagicMock()}}}
 
     def _get_job_time(self):
         return self.jobman._get_job_time(job=self.job)
 
-    def test_gets_from_jobdir_meta(self):
+    def test_gets_from_job_spec(self):
         self.assertEqual(self._get_job_time(),
-                         self.job['jobdir_meta']['resources']['time'])
+                         self.job['job_spec']['resources']['time'])
 
     def test_fallsback_to_default(self):
-        del self.job['jobdir_meta']['resources']
+        del self.job['job_spec']['resources']
         self.assertEqual(self._get_job_time(), self.jobman.default_job_time)
 
 class _MakeBatchJobTestCase(BaseTestCase):

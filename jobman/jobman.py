@@ -82,9 +82,9 @@ class JobMan(object):
         if self.debug: debug_utils.debug_locals(logger=self.logger)
 
     def _get_default_batchable_filters(self):
-        def jobdir_meta_has_batchable(job=None):
-            return bool(job.get('jobdir_meta', {}).get('batchable'))
-        return [jobdir_meta_has_batchable]
+        def job_spec_has_batchable(job=None):
+            return bool(job.get('job_spec', {}).get('batchable'))
+        return [job_spec_has_batchable]
 
     def _generate_dao(self, jobman_db_uri=None):
         jobman_db_uri = jobman_db_uri or os.path.expanduser(
@@ -106,10 +106,10 @@ class JobMan(object):
         except self.dao.InsertError as exc:
             if self.debug: self.logger.debug(("_ensure_lock_kvp exc: ", exc))
 
-    def submit_jobdir(self, jobdir_meta=None, source=None,
-                      source_meta=None, submit_to_engine_immediately=False):
+    def submit_job_spec(self, job_spec=None, source=None,
+                        source_meta=None, submit_to_engine_immediately=False):
         try:
-            job = self._jobdir_meta_to_job(jobdir_meta=jobdir_meta,
+            job = self._job_spec_to_job(job_spec=job_spec,
                                            source=source,
                                            source_meta=source_meta)
             created_job = self._create_job(job=job)
@@ -119,10 +119,10 @@ class JobMan(object):
         except Exception as exc:
             raise self.SubmissionError() from exc
 
-    def _jobdir_meta_to_job(self, jobdir_meta=None, source=None,
+    def _job_spec_to_job(self, job_spec=None, source=None,
                             source_meta=None):
         return {
-            'jobdir_meta': jobdir_meta,
+            'job_spec': job_spec,
             'source': source,
             'source_meta': source_meta,
             'status': 'PENDING',
@@ -306,7 +306,7 @@ class JobMan(object):
         return partitions
 
     def _get_job_time(self, job=None):
-        try: job_time = job['jobdir_meta']['resources']['time']
+        try: job_time = job['job_spec']['resources']['time']
         except KeyError: job_time = None
         return job_time or self.default_job_time
 

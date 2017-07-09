@@ -1,8 +1,8 @@
 import logging
 import subprocess
+import tempfile
 import types
 
-from .. import debug_utils
 from ..batch_jobdir_builders.bash_batch_jobdir_builder import (
     BashBatchJobdirBuilder)
 
@@ -19,10 +19,10 @@ class BaseEngine(object):
 
     def __init__(self, process_runner=None, logger=None, debug=None, cfg=None,
                  scratch_dir=None, build_batch_jobdir_fn=None):
-        self.process_runner = process_runner or \
-                self.generate_default_process_runner()
         self.debug = debug
         self.logger = self._setup_logger(logger=logger)
+        self.process_runner = process_runner or \
+                self.generate_default_process_runner()
         self.cfg = cfg or {}
         self.scratch_dir = scratch_dir
         self.build_batch_jobdir_fn = build_batch_jobdir_fn or \
@@ -36,12 +36,6 @@ class BaseEngine(object):
                 logger.setLevel(logging.DEBUG)
         return logger
 
-    def _debug_locals(self):
-        if self.debug: debug_utils.debug_locals(logger=self.logger)
-
-    def default_build_batch_jobdir(self, *args, **kwargs):
-        return BashBatchJobdirBuilder().build_batch_jobdir(*args, **kwargs)
-
     def generate_default_process_runner(self):
         process_runner = types.SimpleNamespace()
         def run_process(cmd=None, **kwargs):
@@ -52,7 +46,19 @@ class BaseEngine(object):
         process_runner.CalledProcessError = subprocess.CalledProcessError
         return process_runner
 
+    def default_build_batch_jobdir(self, *args, **kwargs):
+        return BashBatchJobdirBuilder().build_batch_jobdir(*args, **kwargs)
+
+    def submit_job(self, job=None): raise NotImplementedError
+
+    def submit_batch_job(self, batch_job=None, subjobs=None):
+        batch_job_spec = self.build_batch_jobdir(
+            batch_job=batch_job, subjobs=subjobs,
+            dest=tempfile.mkdtemp(dir=self.scratch_dir, prefix='batch.')
+        )
+        return self.submit_job(job={'job_spec': batch_job_spec})
+
     def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None):
-        jobdir_meta = self.build_batch_jobdir_fn(
+        job_spec = self.build_batch_jobdir_fn(
             batch_job=batch_job, subjobs=subjobs, dest=dest)
-        return jobdir_meta
+        return job_spec

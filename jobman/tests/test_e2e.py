@@ -37,11 +37,11 @@ class JobManE2ETest(unittest.TestCase):
         )
 
     def test_job_completions(self):
-        jobdir_metas = [{'some': 'jobdir_meta'} for i in range(3)]
+        job_specs = [{'some': 'job_spec'} for i in range(3)]
         jobs = [
-            self.jobman.submit_jobdir(jobdir_meta=jobdir_meta,
-                                      submit_to_engine_immediately=True)
-            for jobdir_meta in jobdir_metas
+            self.jobman.submit_job_spec(job_spec=job_spec,
+                                        submit_to_engine_immediately=True)
+            for job_spec in job_specs
         ]
         for i, job in enumerate(jobs):
             self.assertEqual(
@@ -57,11 +57,11 @@ class JobManE2ETest(unittest.TestCase):
 
     def test_orphaned_job(self):
         self.jobman.submission_grace_period = 0
-        jobdir_metas = [{'some': 'jobdir_meta'} for i in range(3)]
+        job_specs = [{'some': 'job_spec'} for i in range(3)]
         jobs = [
-            self.jobman.submit_jobdir(jobdir_meta=jobdir_meta,
-                                      submit_to_engine_immediately=True)
-            for jobdir_meta in jobdir_metas
+            self.jobman.submit_job_spec(job_spec=job_spec,
+                                        submit_to_engine_immediately=True)
+            for job_spec in job_specs
         ]
         for i, job in enumerate(jobs):
             self.assertEqual(self._get_keys(self.jobman.get_running_jobs()),

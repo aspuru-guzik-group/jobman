@@ -15,9 +15,9 @@ class Entrypoint(object):
 
     def _run(self):
         self._setup()
-        jobdir_metas = self._generate_jobdirs()
-        for jobdir_meta in jobdir_metas:
-            self.jobman.submit_jobdir(jobdir_meta=jobdir_meta)
+        job_specs = self._generate_job_specs()
+        for job_spec in job_specs:
+            self.jobman.submit_job_spec(job_spec=job_spec)
         self._tick_jobman(num_ticks=3)
 
     def _setup(self):
@@ -37,12 +37,12 @@ class Entrypoint(object):
             lock_timeout=2,
         )
 
-    def _generate_jobdirs(self, num_submissions=3):
-        jobdir_metas = [self._generate_jobdir(ctx={'key': i})
-                        for i in range(num_submissions)]
-        return jobdir_metas
+    def _generate_job_specs(self, num_jobdirs=3):
+        job_specs = [self._generate_job_spec(ctx={'key': i})
+                     for i in range(num_jobdirs)]
+        return job_specs
 
-    def _generate_jobdir(self, ctx=None):
+    def _generate_job_spec(self, ctx=None):
         jobdir = tempfile.mkdtemp(dir=self.scratch_dir)
         entrypoint_name = 'entrypoint.sh'
         entrypoint_content = textwrap.dedent(
@@ -54,12 +54,12 @@ class Entrypoint(object):
         entrypoint_path = os.path.join(jobdir, entrypoint_name)
         with open(entrypoint_path, 'w') as f: f.write(entrypoint_content)
         os.chmod(entrypoint_path, 0o755)
-        jobdir_meta = {
+        job_spec = {
             'dir': jobdir,
             'entrypoint': ('./' + entrypoint_name),
             'batchable': True
         }
-        return jobdir_meta
+        return job_spec
 
     def _tick_jobman(self, num_ticks=3):
         for i in range(num_ticks):

@@ -24,11 +24,9 @@ class SlurmEngine(BaseEngine):
         self.slurm_commands = slurm_commands or self.DEFAULT_SLURM_COMMANDS
 
     def submit_job(self, job=None):
-        return self._submit_jobdir(jobdir_meta=job['jobdir_meta'])
-
-    def _submit_jobdir(self, jobdir_meta=None):
-        workdir = jobdir_meta['dir']
-        entrypoint_name = jobdir_meta.get('entrypoint') or \
+        job_spec = job['job_spec']
+        workdir = job_spec['dir']
+        entrypoint_name = job_spec.get('entrypoint') or \
                 self.DEFAULT_ENTRYPOINT_NAME
         entrypoint_path = os.path.join(workdir, entrypoint_name)
         cmd = [self.slurm_commands['sbatch'],

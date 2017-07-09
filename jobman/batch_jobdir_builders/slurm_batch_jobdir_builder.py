@@ -30,9 +30,9 @@ class SlurmBatchJobdirBuilder(BashBatchJobdirBuilder):
         self.default_subjob_time = default_subjob_time
 
     def _build_batch_jobdir(self, *args, **kwargs):
-        jobdir_meta = super()._build_batch_jobdir(*args, **kwargs)
-        jobdir_meta['resource_params'] = self._generate_resource_params()
-        return jobdir_meta
+        job_spec = super()._build_batch_jobdir(*args, **kwargs)
+        job_spec['resource_params'] = self._generate_resource_params()
+        return job_spec
 
     def _generate_resource_params(self):
         resource_params = {
@@ -44,7 +44,7 @@ class SlurmBatchJobdirBuilder(BashBatchJobdirBuilder):
     def _get_max_subjob_memory(self):
         max_mem = 0
         for subjob in self.subjobs:
-            try: subjob_mem = subjob['jobdir_meta']['resources']['memory']
+            try: subjob_mem = subjob['job_spec']['resources']['memory']
             except KeyError: subjob_mem = None
             if subjob_mem is not None and subjob_mem > max_mem:
                 max_mem = subjob_mem
@@ -54,7 +54,7 @@ class SlurmBatchJobdirBuilder(BashBatchJobdirBuilder):
     def _get_total_batch_time(self):
         total_time = 0
         for subjob in self.subjobs:
-            try: subjob_time = subjob['jobdir_meta']['resources']['time']
+            try: subjob_time = subjob['job_spec']['resources']['time']
             except KeyError: subjob_time = None
             total_time += (subjob_time or self.default_subjob_time)
         return total_time * self.time_fudge_factor
@@ -69,7 +69,7 @@ class SlurmBatchJobdirBuilder(BashBatchJobdirBuilder):
 
     def _generate_subjob_command(self, subjob=None):
         return "pushd {dir}; $SRUN {entrypoint}; popd".format(
-            dir=subjob['jobdir_meta']['dir'],
+            dir=subjob['job_spec']['dir'],
             srun_cmd=self.srun_cmd,
-            entrypoint=subjob['jobdir_meta']['entrypoint']
+            entrypoint=subjob['job_spec']['entrypoint']
         )

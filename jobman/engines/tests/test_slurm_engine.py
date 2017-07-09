@@ -22,12 +22,12 @@ class BaseTestCase(unittest.TestCase):
 class SubmitJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.jobdir_meta = collections.defaultdict(MagicMock, **{
+        self.job_spec = collections.defaultdict(MagicMock, **{
             'dir': 'some_dir',
             'entrypoint': 'some_entrypoint'
         })
         self.job = collections.defaultdict(MagicMock,
-                                           **{'jobdir_meta': self.jobdir_meta})
+                                           **{'job_spec': self.job_spec})
 
     def _submit_job(self):
         return self.engine.submit_job(job=self.job)
@@ -36,9 +36,9 @@ class SubmitJobTestCase(BaseTestCase):
         self.process_runner.run_process.return_value = \
                 self.generate_successful_sbatch_proc()
         self._submit_job()
-        workdir = self.jobdir_meta['dir']
+        workdir = self.job_spec['dir']
         entrypoint_path = os.path.join(
-            workdir, self.jobdir_meta.get('entrypoint'))
+            workdir, self.job_spec.get('entrypoint'))
         expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint_path]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))

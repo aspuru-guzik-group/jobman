@@ -30,12 +30,12 @@ class BashBatchJobdirBuilder(BaseBatchJobdirBuilder):
     def _build_batch_jobdir(self, preamble=None):
         self._write_subjob_commands()
         self._write_entrypoint(preamble=preamble)
-        jobdir_meta = {
+        job_spec = {
             'dir': self.jobdir,
             'entrypoint': self.entrypoint_path,
             'std_log_file_names': self.std_log_file_names,
         }
-        return jobdir_meta
+        return job_spec
 
     def _write_subjob_commands(self):
         with open(self.subjob_commands_path, 'w') as f:
@@ -49,8 +49,8 @@ class BashBatchJobdirBuilder(BaseBatchJobdirBuilder):
 
     def _generate_subjob_command(self, subjob=None):
         return "pushd {dir}; {entrypoint}; popd".format(
-            dir=subjob['jobdir_meta']['dir'],
-            entrypoint=subjob['jobdir_meta']['entrypoint']
+            dir=subjob['job_spec']['dir'],
+            entrypoint=subjob['job_spec']['entrypoint']
         )
 
     def _write_entrypoint(self, preamble=None):

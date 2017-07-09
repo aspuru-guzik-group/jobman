@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import tempfile
 import uuid
 
 from .base_engine import BaseEngine
@@ -21,18 +20,16 @@ class LocalEngine(BaseEngine):
                           (job_id text, status text)''')
 
     def submit_job(self, job=None):
-        return self._submit_jobdir(jobdir_meta=job['jobdir_meta'])
-
-    def _submit_jobdir(self, jobdir_meta=None):
-        workdir = jobdir_meta['dir']
-        entrypoint_name = jobdir_meta.get('entrypoint') or \
+        job_spec = job['job_spec']
+        workdir = job_spec['dir']
+        entrypoint_name = job_spec.get('entrypoint') or \
                 self.DEFAULT_ENTRYPOINT_NAME
         entrypoint_path = os.path.join(workdir, entrypoint_name)
         cmd = 'pushd {workdir}; {entrypoint_path}; popd;'.format(
             workdir=workdir, entrypoint_path=entrypoint_path)
         std_log_files = {
             log_key: os.path.join(workdir, log_file_name)
-            for log_key, log_file_name in jobdir_meta.get(
+            for log_key, log_file_name in job_spec.get(
                 'std_log_file_names', {}).items()
         }
         stdout_path = std_log_files.get('stdout')
@@ -91,9 +88,3 @@ class LocalEngine(BaseEngine):
     def local_job_to_status(self, local_job=None):
         return self.JOB_STATUSES.EXECUTED
 
-    def submit_batch_job(self, batch_job=None, subjobs=None):
-        batch_jobdir_meta = self.build_batch_jobdir(
-            batch_job=batch_job, subjobs=subjobs,
-            dest=tempfile.mkdtemp(dir=self.scratch_dir, prefix='batch.')
-        )
-        return self._submit_jobdir(jobdir_meta=batch_jobdir_meta)
