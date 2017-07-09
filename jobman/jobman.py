@@ -38,7 +38,6 @@ class JobMan(object):
                max_batchable_wait=120, target_batch_time=(60 * 60),
                default_job_time=(5 * 60),
                lock_timeout=30, use_batching=False, **kwargs):
-        self._debug_locals()
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
         self.engine = engine or self._generate_engine()
         self.max_running_jobs = max_running_jobs
@@ -88,7 +87,6 @@ class JobMan(object):
         return [jobdir_meta_has_batchable]
 
     def _generate_dao(self, jobman_db_uri=None):
-        self._debug_locals()
         jobman_db_uri = jobman_db_uri or os.path.expanduser(
             '~/jobman.sqlite.db')
         from .dao.sqlite_dao import SqliteDAO
@@ -103,17 +101,13 @@ class JobMan(object):
         self._ensure_lock_kvp()
 
     def _ensure_lock_kvp(self):
-        self._debug_locals()
         lock_kvp = {'key': self.LOCK_KEY, 'value': 'UNLOCKED'}
         try: self.dao.save_kvps(kvps=[lock_kvp], replace=False)
         except self.dao.InsertError as exc:
-            if self.debug:
-                self.logger.debug(("_ensure_lock_kvp exc: ", exc))
+            if self.debug: self.logger.debug(("_ensure_lock_kvp exc: ", exc))
 
-    def submit_jobdir_meta(self, jobdir_meta=None, source=None,
-                           source_meta=None,
-                           submit_to_engine_immediately=False):
-        self._debug_locals()
+    def submit_jobdir(self, jobdir_meta=None, source=None,
+                      source_meta=None, submit_to_engine_immediately=False):
         try:
             job = self._jobdir_meta_to_job(jobdir_meta=jobdir_meta,
                                            source=source,
@@ -349,13 +343,11 @@ class JobMan(object):
 
     @contextlib.contextmanager
     def _get_lock(self):
-        self._debug_locals()
         self._acquire_lock()
         try: yield
         finally: self._release_lock()
 
     def _acquire_lock(self):
-        self._debug_locals()
         start_time = time.time()
         while time.time() - start_time < self.lock_timeout:
             try:
@@ -370,7 +362,6 @@ class JobMan(object):
         raise self.LockError("Could not acquire lock within timeout window")
 
     def _release_lock(self):
-        self._debug_locals()
         self.dao.update_kvp(key=self.LOCK_KEY, new_value='UNLOCKED',
                             where_prev_value='LOCKED')
 

@@ -39,8 +39,8 @@ class JobManE2ETest(unittest.TestCase):
     def test_job_completions(self):
         jobdir_metas = [{'some': 'jobdir_meta'} for i in range(3)]
         jobs = [
-            self.jobman.submit_jobdir_meta(jobdir_meta=jobdir_meta,
-                                           submit_to_engine_immediately=True)
+            self.jobman.submit_jobdir(jobdir_meta=jobdir_meta,
+                                      submit_to_engine_immediately=True)
             for jobdir_meta in jobdir_metas
         ]
         for i, job in enumerate(jobs):
@@ -59,8 +59,8 @@ class JobManE2ETest(unittest.TestCase):
         self.jobman.submission_grace_period = 0
         jobdir_metas = [{'some': 'jobdir_meta'} for i in range(3)]
         jobs = [
-            self.jobman.submit_jobdir_meta(jobdir_meta=jobdir_meta,
-                                           submit_to_engine_immediately=True)
+            self.jobman.submit_jobdir(jobdir_meta=jobdir_meta,
+                                      submit_to_engine_immediately=True)
             for jobdir_meta in jobdir_metas
         ]
         for i, job in enumerate(jobs):

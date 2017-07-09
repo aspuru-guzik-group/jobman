@@ -17,7 +17,7 @@ class Entrypoint(object):
         self._setup()
         jobdir_metas = self._generate_jobdirs()
         for jobdir_meta in jobdir_metas:
-            self.jobman.submit_jobdir_meta(jobdir_meta=jobdir_meta)
+            self.jobman.submit_jobdir(jobdir_meta=jobdir_meta)
         self._tick_jobman(num_ticks=3)
 
     def _setup(self):

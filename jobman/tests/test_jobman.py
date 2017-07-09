@@ -47,7 +47,7 @@ class EnsureDbTestCase(BaseTestCase):
         self.jobman.ensure_db()
         self.assertEqual(self.jobman.dao.ensure_db.call_args, call())
 
-class SubmitJobDir_MetaTestCase(BaseTestCase):
+class SubmitJobDirTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.jobdir_meta = MagicMock()
@@ -56,9 +56,9 @@ class SubmitJobDir_MetaTestCase(BaseTestCase):
         self.mockify_jobman_attrs(attrs=['_jobdir_meta_to_job', '_create_job'])
         self.jobman._jobdir_meta_to_job.return_value = defaultdict(MagicMock)
         self.expected_job = self.jobman._jobdir_meta_to_job.return_value
-        self.result = self.jobman.submit_jobdir_meta(
-            jobdir_meta=self.jobdir_meta, source=self.source,
-            source_meta=self.source_meta)
+        self.result = self.jobman.submit_jobdir(jobdir_meta=self.jobdir_meta,
+                                                source=self.source,
+                                                source_meta=self.source_meta)
 
     def test_assembles_job_from_jobdir_meta(self):
         self.assertEqual(
