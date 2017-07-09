@@ -14,6 +14,15 @@ class SlurmEngine(BaseEngine):
                                              'TIMEOUT'])
     }
 
+    DEFAULT_SLURM_COMMANDS = {
+        slurm_command: slurm_command
+        for slurm_command in ['sacct', 'sbatch', 'scontrol']
+    }
+
+    def __init__(self, *args, slurm_commands=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.slurm_commands = slurm_commands or self.DEFAULT_SLURM_COMMANDS
+
     def submit_job(self, job=None):
         return self._submit_jobdir(jobdir_meta=job['jobdir_meta'])
 
@@ -22,7 +31,8 @@ class SlurmEngine(BaseEngine):
         entrypoint_name = jobdir_meta.get('entrypoint') or \
                 self.DEFAULT_ENTRYPOINT_NAME
         entrypoint_path = os.path.join(workdir, entrypoint_name)
-        cmd = ['sbatch', ('--workdir=%s' % workdir), entrypoint_path]
+        cmd = [self.slurm_commands['sbatch'],
+               ('--workdir=%s' % workdir), entrypoint_path]
         try:
             completed_proc = self.process_runner.run_process(
                 cmd=cmd, check=True)
@@ -75,7 +85,8 @@ class SlurmEngine(BaseEngine):
                 #for job_id in job_ids]
 
     def get_all_slurm_jobs_via_scontrol(self):
-        cmd = ['scontrol', 'show', '--all', '--details', '--oneliner', 'job']
+        cmd = [self.slurm_commands['scontrol'], 'show', '--all', '--details',
+               '--oneliner', 'job']
         completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
         scontrol_output = completed_proc.stdout
         slurm_jobs = []
@@ -87,7 +98,8 @@ class SlurmEngine(BaseEngine):
         return slurm_jobs
 
     def get_slurm_job_via_scontrol(self, job_id=None):
-        cmd = ['scontrol', 'show', '--details', '--oneliner', 'job', job_id]
+        cmd = [self.slurm_comamnds['scontrol'], 'show', '--details',
+               '--oneliner', 'job', job_id]
         try:
             completed_proc = self.process_runner.run_process(
                 cmd=cmd, check=True)
@@ -107,8 +119,8 @@ class SlurmEngine(BaseEngine):
     def get_slurm_jobs_via_sacct(self, job_ids=None):
         if not job_ids: return []
         csv_job_ids = ','.join(list(job_ids))
-        cmd = ['sacct', '--jobs=%s' % csv_job_ids, '--long', '--noconvert',
-               '--parsable2', '--allocations']
+        cmd = [self.slurm_commands['sacct'], '--jobs=%s' % csv_job_ids,
+               '--long', '--noconvert', '--parsable2', '--allocations']
         completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
         slurm_jobs = self.parse_sacct_stdout(
             sacct_stdout=completed_proc.stdout)['records']

@@ -40,7 +40,7 @@ class BaseEngine(object):
         if self.debug: debug_utils.debug_locals(logger=self.logger)
 
     def default_build_batch_jobdir(self, *args, **kwargs):
-        return BashBatchJobdirBuilder(*args, **kwargs).build_batch_jobdir()
+        return BashBatchJobdirBuilder().build_batch_jobdir(*args, **kwargs)
 
     def generate_default_process_runner(self):
         process_runner = types.SimpleNamespace()

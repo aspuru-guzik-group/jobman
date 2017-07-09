@@ -25,7 +25,7 @@ class Entrypoint(object):
         self.scratch_dir = tempfile.mkdtemp(
             dir=os.path.join(this_dir, 'scratch'))
         batch_jobdir_builder = BashBatchJobdirBuilder(
-            run_commands_command='bash') # could also use gnu parallel here!
+            default_preamble="PARALLEL=/bin/bash")
         self.engine = LocalEngine(
             scratch_dir=self.scratch_dir,
             build_batch_jobdir_fn=batch_jobdir_builder.build_batch_jobdir
@@ -54,8 +54,11 @@ class Entrypoint(object):
         entrypoint_path = os.path.join(jobdir, entrypoint_name)
         with open(entrypoint_path, 'w') as f: f.write(entrypoint_content)
         os.chmod(entrypoint_path, 0o755)
-        jobdir_meta = {'dir': jobdir, 'entrypoint': entrypoint_name,
-                       'batchable': True}
+        jobdir_meta = {
+            'dir': jobdir,
+            'entrypoint': ('./' + entrypoint_name),
+            'batchable': True
+        }
         return jobdir_meta
 
     def _tick_jobman(self, num_ticks=3):

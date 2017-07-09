@@ -5,14 +5,31 @@ from .base_batch_jobdir_builder import BaseBatchJobdirBuilder
 
 
 class BashBatchJobdirBuilder(BaseBatchJobdirBuilder):
-    def __init__(self, *args, run_commands_command='bash', **kwargs):
+    class InvalidPreambleError(Exception):
+        def __init__(self, msg=None, preamble=None):
+            msg = msg or ''
+            hr = '-' * 10
+            msg += "\n".join(["Preamble was:", hr, preamble, hr])
+            super().__init__(msg)
+
+    DEFAULT_PREAMBLE = 'PARALLEL=/bin/bash'
+
+    def __init__(self, *args, default_preamble=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.run_commands_command = run_commands_command
+        self.default_preamble = default_preamble or self.DEFAULT_PREAMBLE
         self.subjob_commands_path = os.path.join(self.jobdir, 'subjob_commands')
 
-    def _build_batch_jobdir(self):
+    def _get_preamble_errors(self, preamble=None):
+        errors = []
+        if 'PARALLEL=' not in preamble:
+            errors.append("A line like 'PARALLEL=<your parallel cmd>' must be"
+                          " present in preamble. It will be called like"
+                          " '$PARALLEL < commands' .")
+        return errors
+
+    def _build_batch_jobdir(self, preamble=None):
         self._write_subjob_commands()
-        self._write_entrypoint()
+        self._write_entrypoint(preamble=preamble)
         jobdir_meta = {
             'dir': self.jobdir,
             'entrypoint': self.entrypoint_path,
@@ -33,23 +50,37 @@ class BashBatchJobdirBuilder(BaseBatchJobdirBuilder):
     def _generate_subjob_command(self, subjob=None):
         return "pushd {dir}; {entrypoint}; popd".format(
             dir=subjob['jobdir_meta']['dir'],
-            entrypoint=os.path.join(subjob['jobdir_meta']['dir'],
-                                    subjob['jobdir_meta']['entrypoint'])
+            entrypoint=subjob['jobdir_meta']['entrypoint']
         )
 
-    def _write_entrypoint(self):
+    def _write_entrypoint(self, preamble=None):
         with open(self.entrypoint_path, 'w') as f:
-            f.write(self._generate_entrypoint_content())
+            f.write(self._generate_entrypoint_content(preamble=preamble))
         os.chmod(self.entrypoint_path, 0o755)
 
-    def _generate_entrypoint_content(self):
+    def _generate_entrypoint_content(self, preamble=None):
+        if not preamble: preamble = self._get_preamble()
+        self._validate_preamble(preamble=preamble)
         return textwrap.dedent(
             """
             #!/bin/bash
-            {run_commands_command} {commands_file}
+            {preamble}
+            $PARALLEL < {commands_file}
             """
         ).lstrip().format(
-            run_commands_command=self.run_commands_command,
+            preamble=preamble,
             commands_file=self.subjob_commands_path
         )
+
+    def _get_preamble(self):
+        try: return self._generate_preamble()
+        except NotImplementedError: return self.default_preamble
+
+    def _generate_preamble(self): raise NotImplementedError
+
+    def _validate_preamble(self, preamble=None):
+        errors = self._get_preamble_errors(preamble=preamble)
+        if errors:
+            raise self.InvalidPreambleError(preamble=preamble,
+                                            msg="\n".join(errors))
 

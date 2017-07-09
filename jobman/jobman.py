@@ -15,7 +15,7 @@ class JobMan(object):
     CFG_PARAMS = ['dao', 'jobman_db_uri', 'engine', 'max_running_jobs',
                   'job_engine_states_ttl', 'submission_grace_period',
                   'batchable_filters', 'max_batchable_wait',
-                  'target_batch_time', 'default_estimated_job_run_time',
+                  'target_batch_time', 'default_job_time',
                   'lock_timeout', 'use_batching']
 
     @classmethod
@@ -36,7 +36,7 @@ class JobMan(object):
                max_running_jobs=50, batchable_filters=...,
                job_engine_states_ttl=120, submission_grace_period=None,
                max_batchable_wait=120, target_batch_time=(60 * 60),
-               default_estimated_job_run_time=(5 * 60),
+               default_job_time=(5 * 60),
                lock_timeout=30, use_batching=False, **kwargs):
         self._debug_locals()
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
@@ -45,7 +45,7 @@ class JobMan(object):
         self.job_engine_states_ttl = job_engine_states_ttl
         self.submission_grace_period = submission_grace_period or \
                 (2 * self.job_engine_states_ttl)
-        self.default_estimated_job_run_time = default_estimated_job_run_time
+        self.default_job_time = default_job_time
         self.lock_timeout = lock_timeout
 
         self.use_batching = use_batching
@@ -303,8 +303,7 @@ class JobMan(object):
         current_partition_time = 0
         for batchable_job in batchable_jobs:
             current_partition.append(batchable_job)
-            current_partition_time += self._get_estimated_job_run_time(
-                job=batchable_job)
+            current_partition_time += self._get_job_time(job=batchable_job)
             if current_partition_time >= self.target_batch_time:
                 partitions.append(current_partition)
                 current_partition = []
@@ -312,12 +311,10 @@ class JobMan(object):
         if current_partition: partitions.append(current_partition)
         return partitions
 
-    def _get_estimated_job_run_time(self, job=None):
-        estimated_job_run_time = job.get('jobdir_meta', {}).get(
-            'estimated_run_time')
-        if estimated_job_run_time is None:
-            estimated_job_run_time = self.default_estimated_job_run_time
-        return estimated_job_run_time
+    def _get_job_time(self, job=None):
+        try: job_time = job['jobdir_meta']['resources']['time']
+        except KeyError: job_time = None
+        return job_time or self.default_job_time
 
     def _make_batch_job(self, subjobs=None):
         batch_key = self.dao.generate_key()

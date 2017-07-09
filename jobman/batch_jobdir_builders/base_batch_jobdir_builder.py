@@ -8,16 +8,21 @@ class BaseBatchJobdirBuilder(object):
     std_log_file_names = {logname: logname for logname in ['stdout', 'stderr']}
 
     def __init__(self, batch_job=None, subjobs=None, dest=None):
-        self.batch_job = batch_job
-        self.subjobs = subjobs
         self.jobdir = dest or tempfile.mkdtemp()
         os.makedirs(self.jobdir, exist_ok=True)
         self.entrypoint_path = os.path.join(self.jobdir, self.ENTRYPOINT_NAME)
 
-    @classmethod
-    def build_batch_jobdir(cls, batch_job=None, subjobs=None, dest=None):
-        instance = cls(batch_job=batch_job, subjobs=subjobs, dest=dest)
-        jobdir_meta = instance._build_batch_jobdir()
+
+    def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None,
+                           **kwargs):
+        self.batch_job = batch_job
+        self.subjobs = subjobs
+        self.dest = dest
+        jobdir_meta = self._build_batch_jobdir(**kwargs)
+        del self.batch_job
+        del self.subjobs
+        del self.dest
         return jobdir_meta
 
-    def _build_batch_jobdir(self): raise NotImplementedError()
+    def _build_batch_jobdir(self, **kwargs): raise NotImplementedError
+        
