@@ -482,7 +482,7 @@ class _GetUpdatesSection(BaseTestCase):
     def test_returns_expected_result(self):
         updates = {'field_%s' % i : 'value_%s' % i for i in range(3)}
         expected_updates_section = {
-            'content': ', '.join(['"%s" = ?' % k for k in updates]),
+            'content': ', '.join(['%s = ?' % k for k in updates]),
             'args': list(updates.values()),
         }
         self.assertEqual(self.orm._get_updates_section(updates=updates),

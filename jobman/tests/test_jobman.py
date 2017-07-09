@@ -398,16 +398,16 @@ class _MakeBatchSubJobPartitionsTestCase(BaseTestCase):
         super().setUp()
         self.jobman.target_batch_time = 3
         self.batchable_jobs = [
-            self._generate_batchable_job(estimated_run_time=1)
+            self._generate_batchable_job(time=1)
             for i in range(self.jobman.target_batch_time * 2 + 1)
         ]
         self.result = self.jobman._make_batch_subjob_partitions(
             batchable_jobs=self.batchable_jobs)
 
-    def _generate_batchable_job(self, estimated_run_time=1):
+    def _generate_batchable_job(self, time=1):
         batchable_job = defaultdict(MagicMock)
         batchable_job['jobdir_meta'] = defaultdict(MagicMock, **{
-            'estimated_run_time': estimated_run_time
+            'resources': {'time': time}
         })
         return batchable_job
 
@@ -417,7 +417,7 @@ class _MakeBatchSubJobPartitionsTestCase(BaseTestCase):
         current_partition_time = 0
         for batchable_job in self.batchable_jobs:
             current_partition.append(batchable_job)
-            current_partition_time += self.jobman._get_estimated_job_run_time(
+            current_partition_time += self.jobman._get_job_time(
                 job=batchable_job)
             if current_partition_time >= self.jobman.target_batch_time:
                 expected_partitions.append(current_partition)
@@ -426,22 +426,21 @@ class _MakeBatchSubJobPartitionsTestCase(BaseTestCase):
         if current_partition: expected_partitions.append(current_partition)
         self.assertEqual(self.result, expected_partitions)
 
-class _GetEstimatedJobRunTime(BaseTestCase):
+class _GetJobTime(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job = {'jobdir_meta': {'estimated_run_time': MagicMock()}}
+        self.job = {'jobdir_meta': {'resources': {'time': MagicMock()}}}
 
-    def _get_estimated_job_run_time(self):
-        return self.jobman._get_estimated_job_run_time(job=self.job)
+    def _get_job_time(self):
+        return self.jobman._get_job_time(job=self.job)
 
     def test_gets_from_jobdir_meta(self):
-        self.assertEqual(self._get_estimated_job_run_time(),
-                         self.job['jobdir_meta']['estimated_run_time'])
+        self.assertEqual(self._get_job_time(),
+                         self.job['jobdir_meta']['resources']['time'])
 
     def test_fallsback_to_default(self):
-        del self.job['jobdir_meta']['estimated_run_time']
-        self.assertEqual(self._get_estimated_job_run_time(),
-                         self.jobman.default_estimated_job_run_time)
+        del self.job['jobdir_meta']['resources']
+        self.assertEqual(self._get_job_time(), self.jobman.default_job_time)
 
 class _MakeBatchJobTestCase(BaseTestCase):
     def setUp(self):
