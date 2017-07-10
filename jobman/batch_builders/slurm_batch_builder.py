@@ -1,9 +1,9 @@
 import textwrap
 
-from .bash_batch_jobdir_builder import BashBatchJobdirBuilder
+from .bash_batch_builder import BashBatchBuilder
 
 
-class SlurmBatchJobdirBuilder(BashBatchJobdirBuilder):
+class SlurmBatchBuilder(BashBatchBuilder):
 
     DEFAULT_PREAMBLE = textwrap.dedent(
         '''

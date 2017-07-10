@@ -2,7 +2,7 @@ import os
 import tempfile
 
 
-class BaseBatchJobdirBuilder(object):
+class BaseBatchBuilder(object):
     ENTRYPOINT_NAME = 'entrypoint.sh'
     SUBJOBS_DIR_NAME = 'subjobs'
     std_log_file_names = {logname: logname for logname in ['stdout', 'stderr']}

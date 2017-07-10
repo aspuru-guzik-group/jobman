@@ -1,10 +1,10 @@
 import os
 import textwrap
 
-from .base_batch_jobdir_builder import BaseBatchJobdirBuilder
+from .base_batch_builder import BaseBatchBuilder
 
 
-class BashBatchJobdirBuilder(BaseBatchJobdirBuilder):
+class BashBatchBuilder(BaseBatchBuilder):
     class InvalidPreambleError(Exception):
         def __init__(self, msg=None, preamble=None):
             msg = msg or ''

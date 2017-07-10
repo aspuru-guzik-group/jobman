@@ -3,8 +3,7 @@ import subprocess
 import tempfile
 import types
 
-from ..batch_jobdir_builders.bash_batch_jobdir_builder import (
-    BashBatchJobdirBuilder)
+from ..batch_builders.bash_batch_builder import BashBatchBuilder
 
 class BaseEngine(object):
     DEFAULT_ENTRYPOINT_NAME ='job.sh'
@@ -47,7 +46,7 @@ class BaseEngine(object):
         return process_runner
 
     def default_build_batch_jobdir(self, *args, **kwargs):
-        return BashBatchJobdirBuilder().build_batch_jobdir(*args, **kwargs)
+        return BashBatchBuilder().build_batch_jobdir(*args, **kwargs)
 
     def submit_job(self, job=None): raise NotImplementedError
 
