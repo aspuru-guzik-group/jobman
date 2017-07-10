@@ -5,6 +5,9 @@ from .base_batch_builder import BaseBatchBuilder
 
 
 class BashBatchBuilder(BaseBatchBuilder):
+    class CfgSpecAggregationError(Exception): pass
+    class CfgSpecMergeError(Exception): pass
+
     class InvalidPreambleError(Exception):
         def __init__(self, msg=None, preamble=None):
             msg = msg or ''
@@ -31,6 +34,7 @@ class BashBatchBuilder(BaseBatchBuilder):
         self._write_subjob_commands()
         self._write_entrypoint(preamble=preamble)
         job_spec = {
+            'cfg_specs': self._get_merged_subjob_cfg_specs(),
             'dir': self.jobdir,
             'entrypoint': self.entrypoint_path,
             'std_log_file_names': self.std_log_file_names,
@@ -83,4 +87,35 @@ class BashBatchBuilder(BaseBatchBuilder):
         if errors:
             raise self.InvalidPreambleError(preamble=preamble,
                                             msg="\n".join(errors))
+
+    def _get_merged_subjob_cfg_specs(self):
+        merged_specs = {}
+        for subjob in self.subjobs:
+            subjob_cfg_specs = subjob['job_spec'].get('cfg_specs', {})
+            for cfg_key, cfg_spec in subjob_cfg_specs.items():
+                if cfg_key in merged_specs:
+                    try:
+                        cfg_spec = self._merge_cfg_specs(merged_specs[cfg_key],
+                                                         cfg_spec)
+                    except self.CfgSpecMergeError as exc:
+                        error = ("Could not merge cfg_specs for cfg_key"
+                                 " '{cfg_key}'").format(cfg_key=cfg_key)
+                        raise self.CfgSpecAggregationError(error) from exc
+                merged_specs[cfg_key] = cfg_spec
+        return merged_specs
+
+    def _merge_cfg_specs(self, *cfg_specs):
+        merged = {}
+        for cfg_spec in cfg_specs:
+            merged['required'] = \
+                    merged.get('required') or cfg_spec.get('required')
+            if 'default' in cfg_spec:
+                if 'default' in merged:
+                    if merged['default'] != cfg_spec['default']:
+                        error = ("Competing default values:"
+                                 " '{}' and '{}'").format(merged['default'],
+                                                          cfg_spec['default'])
+                        raise self.CfgSpecMergeError(error)
+                merged['default'] = cfg_spec['default']
+        return merged
 
