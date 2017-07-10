@@ -45,3 +45,58 @@ class SubmitBatchJobTestCase(BaseTestCase):
 
     def test_returns_submission_result(self):
         self.assertEqual(self.result, self.engine.submit_job.return_value)
+
+class ResolveCfgItemTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.cfg_key = MagicMock()
+        self.cfg_spec = MagicMock()
+        self.extra_cfg_sources = [MagicMock() for i in range(3)]
+        self.module_mocks = self.mockify_module_attrs(attrs=['os'])
+        self.mockify_engine_attrs(attrs=['_get_from_first_matching_source'])
+
+    def _resolve_cfg_spec(self):
+        return self.engine.resolve_cfg_item(
+            key=self.cfg_key, spec=self.cfg_spec,
+            extra_cfg_sources=self.extra_cfg_sources)
+
+    def test_dispatches_to_get_from_first_matching_source(self):
+        result = self._resolve_cfg_spec()
+        expected_sources = self.extra_cfg_sources + [
+            self.engine.cfg, self.module_mocks['os'].environ]
+        self.assertEqual(
+            self.engine._get_from_first_matching_source.call_args,
+            call(key=self.cfg_key, sources=expected_sources)
+        )
+        self.assertEqual(
+            result, self.engine._get_from_first_matching_source.return_value)
+
+    def test_raises_if_key_error(self):
+        self.engine._get_from_first_matching_source.side_effect = KeyError
+        with self.assertRaises(self.engine.CfgItemResolutionError):
+            self._resolve_cfg_spec()
+
+class _GetFromFirstMatchingSourceTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.key = 'some_key'
+        self.sources = [{} for i in range(3)]
+
+    def _get_from_first_matching_source(self, **kwargs):
+        return self.engine._get_from_first_matching_source(
+            key=self.key, sources=self.sources, **kwargs)
+
+    def test_returns_from_first_matching_source(self):
+        self.sources[-2][self.key] = MagicMock()
+        self.assertEqual(self._get_from_first_matching_source(),
+                         self.sources[-2][self.key])
+
+    def test_returns_default_if_no_matching_source(self):
+        default = MagicMock()
+        self.assertEqual(
+            self._get_from_first_matching_source(default=default),
+            default
+        )
+
+    def test_raises_if_no_matching_source_and_no_default(self):
+        with self.assertRaises(KeyError): self._get_from_first_matching_source()

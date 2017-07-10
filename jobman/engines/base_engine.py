@@ -1,3 +1,4 @@
+import os
 import logging
 import subprocess
 import tempfile
@@ -15,6 +16,11 @@ class BaseEngine(object):
         UNKNOWN = 'UNKNOWN'
 
     class SubmissionError(Exception): pass
+    class CfgItemResolutionError(Exception):
+        def __init__(self, msg=None, key=None, spec=None, *args, **kwargs):
+            msg = msg or ''
+            msg += "key:'{key}'; spec: '{spec}'".format(key=key, spec=spec)
+            super().__init__(msg, *args, **kwargs)
 
     def __init__(self, process_runner=None, logger=None, debug=None, cfg=None,
                  scratch_dir=None, build_batch_jobdir_fn=None):
@@ -61,3 +67,19 @@ class BaseEngine(object):
         job_spec = self.build_batch_jobdir_fn(
             batch_job=batch_job, subjobs=subjobs, dest=dest)
         return job_spec
+
+    def resolve_cfg_item(self, key=None, spec=None, extra_cfg_sources=None):
+        try:
+            sources = (extra_cfg_sources or []) + [self.cfg, os.environ]
+            get_kwargs = {'key': key, 'sources': sources}
+            if 'default' in spec: get_kwargs['default'] = spec['default']
+            return self._get_from_first_matching_source(**get_kwargs)
+        except KeyError: raise self.CfgItemResolutionError(key=None, spec=spec)
+
+    def _get_from_first_matching_source(self, key=None, sources=None,
+                                        default=...):
+        for source in sources:
+            try: return source[key]
+            except: pass
+        if default is not ...: return default
+        raise KeyError(key)
