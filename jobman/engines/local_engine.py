@@ -38,6 +38,7 @@ class LocalEngine(BaseEngine):
             self.ENGINE_ENTRYPOINT_TPL.format(job_id=job_id)
         )
         with open(entrypoint_path, 'w') as f: f.write(entrypoint_content)
+        os.chmod(entrypoint_path, 0o755)
         return entrypoint_path
 
     def _generate_engine_entrypoint_content(self, job=None, job_id=None):
@@ -54,7 +55,7 @@ class LocalEngine(BaseEngine):
             job_entrypoint=job['job_spec']['entrypoint'],
         )
 
-    def _generate_engine_entrypoint_preamable(self, job=None, job_id=None):
+    def _generate_engine_entrypoint_preamble(self, job=None, job_id=None):
         return self._generate_env_vars_for_cfg_specs(job=job)
 
     def _generate_env_vars_for_cfg_specs(self, job=None):
@@ -151,7 +152,7 @@ class LocalEngine(BaseEngine):
 
     def _get_std_log_contents(self, job=None):
         std_log_contents = {}
-        for log_name, log_path in self._get_std_log_paths(job=job):
+        for log_name, log_path in self._get_std_log_paths(job=job).items():
             log_content = ''
             try:
                 with open(log_path) as f: log_content = f.read()

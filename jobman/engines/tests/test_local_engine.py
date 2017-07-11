@@ -87,6 +87,10 @@ class _WriteEngineEntrypointTestCase(BaseTestCase):
             call(self.engine._generate_engine_entrypoint_content.return_value)
         )
 
+    def test_makes_entrypoint_executable(self):
+        self.assertEqual(self.module_mocks['os'].chmod.call_args,
+                         call(self.expected_path, 0o755))
+
     def test_returns_path(self):
         self.assertEqual(self.result, self.expected_path)
 
@@ -125,14 +129,14 @@ class _GenerateEngineEntrypointPreambleTestCase(BaseTestCase):
         super().setUp()
         self.job_id = MagicMock()
         self.mockify_engine_attrs(attrs=['_generate_env_vars_for_cfg_specs'])
-        self.result = self.engine._generate_engine_entrypoint_preamable(
+        self.result = self.engine._generate_engine_entrypoint_preamble(
             job=self.job, job_id=self.job_id)
 
     def test_generates_env_vars_for_cfg_specs(self):
         self.assertEqual(self.engine._generate_env_vars_for_cfg_specs.call_args,
                          call(job=self.job))
 
-    def test_returns_expected_preamable_content(self):
+    def test_returns_expected_preamble_content(self):
         self.assertEqual(
             self.result,
             self.engine._generate_env_vars_for_cfg_specs.return_value
