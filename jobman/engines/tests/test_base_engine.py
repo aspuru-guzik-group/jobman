@@ -46,6 +46,48 @@ class SubmitBatchJobTestCase(BaseTestCase):
     def test_returns_submission_result(self):
         self.assertEqual(self.result, self.engine.submit_job.return_value)
 
+class ResolveJobCfgSpecsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_engine_attrs(attrs=['resolve_cfg_item'])
+        self.cfg_specs = {'key_%s' % i: MagicMock() for i in range(3)}
+        self.job = {
+            'job_spec': {
+                'cfg': MagicMock(), 'cfg_specs': self.cfg_specs
+            }
+        }
+        self.extra_cfg_sources = [MagicMock() for i in range(3)]
+        self.result = self.engine.resolve_job_cfg_specs(
+            job=self.job, extra_cfg_sources=self.extra_cfg_sources)
+
+    def test_dispatches_to_resolve_cfg_item(self):
+        expected_extra_cfg_sources = [*self.extra_cfg_sources,
+                                      self.job['job_spec'].get('cfg')]
+        self.assertEqual(
+            self.engine.resolve_cfg_item.call_args_list,
+            [
+                call(key=key, spec=spec,
+                     extra_cfg_sources=expected_extra_cfg_sources)
+                for key, spec in self.cfg_specs.items()
+            ]
+        )
+        self.assertEqual(
+            self.result,
+            {
+                key: self.engine.resolve_cfg_item.return_value
+                for key in self.cfg_specs
+            }
+        )
+
+    def resolve_job_cfg_specs(self, job=None, extra_cfg_sources=None):
+        extra_cfg_sources = ((extra_cfg_sources or []) 
+                             + job['job_spec'].get('cfg', []))
+        resolved_cfg_items = {}
+        for key, spec in job['job_spec'].get('cfg_specs', {}).items():
+            resolved_cfg_items[key] = self.resolve_cfg_item(
+                key=key, spec=spec, extra_cfg_sources=extra_cfg_sources)
+        return resolved_cfg_items
+
 class ResolveCfgItemTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()

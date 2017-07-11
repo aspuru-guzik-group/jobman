@@ -7,7 +7,7 @@ import types
 from ..batch_builders.bash_batch_builder import BashBatchBuilder
 
 class BaseEngine(object):
-    DEFAULT_ENTRYPOINT_NAME ='job.sh'
+    DEFAULT_JOB_ENTRYPOINT_NAME ='job.sh'
 
     class JOB_STATUSES(object):
         RUNNING = 'RUNNING'
@@ -67,6 +67,17 @@ class BaseEngine(object):
         job_spec = self.build_batch_jobdir_fn(
             batch_job=batch_job, subjobs=subjobs, dest=dest)
         return job_spec
+
+    def resolve_job_cfg_specs(self, job=None, extra_cfg_sources=None):
+        extra_cfg_sources = [
+            *(extra_cfg_sources or []),
+            job['job_spec'].get('cfg', {})
+        ]
+        resolved_cfg_items = {}
+        for key, spec in job['job_spec'].get('cfg_specs', {}).items():
+            resolved_cfg_items[key] = self.resolve_cfg_item(
+                key=key, spec=spec, extra_cfg_sources=extra_cfg_sources)
+        return resolved_cfg_items
 
     def resolve_cfg_item(self, key=None, spec=None, extra_cfg_sources=None):
         try:
