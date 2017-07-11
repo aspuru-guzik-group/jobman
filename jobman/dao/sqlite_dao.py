@@ -46,6 +46,7 @@ class SqliteDAO(object):
             'source': {'type': 'TEXT'},
             'source_meta': {'type': 'JSON'},
             'source_tag': {'type': 'TEXT'},
+            'purgeable': {'type': 'INTEGER'},
             **self._generate_timestamp_fields()
         }
 
