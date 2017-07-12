@@ -154,6 +154,12 @@ class ORM(object):
             ).lstrip(),
             'args': self._format_args(args=args, _filter=_filter)
         }
+        # Hack for handling != filters for null values.
+        # NOT = value will return true if value is null :/
+        if op == '=' and negation:
+            where_item['clause'] = '({clause} OR {field} IS NULL)'.format(
+                clause=where_item['clause'],
+                field=_filter['field'])
         return where_item
 
     def _format_args(self, args=None, _filter=None):

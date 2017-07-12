@@ -366,6 +366,18 @@ class _FilterToWhereItemTestCase(BaseTestCase):
         }
         self.assertEqual(result, expected_item)
 
+    def test_handles_negated_eq(self):
+        self.filter['op'] = '! ='
+        result = self._filter_to_where_item()
+        expected_item = {
+            'clause': '(NOT {field} {op} ? OR {field} IS NULL)'.format(
+                field=self.filter['field'],
+                op=self.filter['op'].lstrip('! '),
+            ),
+            'args': [self.filter['arg']]
+        }
+        self.assertEqual(result, expected_item)
+
 class _RecordToObjTestCase(BaseTestCase):
     def test_transforms_values(self):
         self.orm._record_val_to_obj_val = MagicMock()
