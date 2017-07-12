@@ -13,6 +13,7 @@ class BaseTestCase(unittest.TestCase):
             sqlite=MagicMock()
         )
         self.job = MagicMock()
+        self.extra_cfgs = MagicMock()
 
     def mockify_engine_attrs(self, attrs=None):
         for attr in attrs: setattr(self.engine, attr, MagicMock())
@@ -31,7 +32,8 @@ class SubmitJobTestCase(BaseTestCase):
         self.mockify_engine_attrs(attrs=['_generate_job_id',
                                          '_write_engine_entrypoint',
                                          '_execute_engine_entrypoint'])
-        self.result = self.engine.submit_job(job=self.job)
+        self.result = self.engine.submit_job(job=self.job,
+                                             extra_cfgs=self.extra_cfgs)
 
     def test_generates_job_id(self):
         self.assertEqual(self.engine._generate_job_id.call_args, call())
@@ -39,7 +41,8 @@ class SubmitJobTestCase(BaseTestCase):
     def test_writes_engine_entrypoint(self):
         self.assertEqual(
             self.engine._write_engine_entrypoint.call_args,
-            call(job=self.job, job_id=self.engine._generate_job_id.return_value)
+            call(job=self.job, job_id=self.engine._generate_job_id.return_value,
+                 extra_cfgs=self.extra_cfgs)
         )
 
     def test_executes_engine_entrypoint(self):
@@ -48,7 +51,8 @@ class SubmitJobTestCase(BaseTestCase):
             call(entrypoint_path=(self.engine._write_engine_entrypoint
                                   .return_value),
                  job=self.job,
-                 job_id=self.engine._generate_job_id.return_value)
+                 job_id=self.engine._generate_job_id.return_value,
+                 extra_cfgs=self.extra_cfgs)
         )
 
     def test_returns_engine_meta(self):
@@ -61,14 +65,14 @@ class _WriteEngineEntrypointTestCase(BaseTestCase):
         self.mockify_engine_attrs(attrs=['_generate_engine_entrypoint_content'])
         self.module_mocks = self.mockify_module_attrs(attrs=['open', 'os'])
         self.job_id = MagicMock()
-        self.result = self.engine._write_engine_entrypoint(job=self.job,
-                                                           job_id=self.job_id)
+        self.result = self.engine._write_engine_entrypoint(
+            job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
         self.expected_path = self.module_mocks['os'].path.join.return_value
 
     def test_generates_content(self):
         self.assertEqual(
             self.engine._generate_engine_entrypoint_content.call_args,
-            call(job=self.job, job_id=self.job_id)
+            call(job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
         )
 
     def test_generates_expected_path(self):
@@ -101,12 +105,12 @@ class _GenerateEngineEntrypointContentTestCase(BaseTestCase):
             '_generate_engine_entrypoint_preamble'])
         self.job_id = MagicMock()
         self.result = self.engine._generate_engine_entrypoint_content(
-            job=self.job, job_id=self.job_id)
+            job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
 
     def test_generates_preamble(self):
         self.assertEqual(
             self.engine._generate_engine_entrypoint_preamble.call_args,
-            call(job=self.job, job_id=self.job_id)
+            call(job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
         )
 
     def test_returns_expected_content(self):
@@ -130,11 +134,11 @@ class _GenerateEngineEntrypointPreambleTestCase(BaseTestCase):
         self.job_id = MagicMock()
         self.mockify_engine_attrs(attrs=['_generate_env_vars_for_cfg_specs'])
         self.result = self.engine._generate_engine_entrypoint_preamble(
-            job=self.job, job_id=self.job_id)
+            job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
 
     def test_generates_env_vars_for_cfg_specs(self):
         self.assertEqual(self.engine._generate_env_vars_for_cfg_specs.call_args,
-                         call(job=self.job))
+                         call(job=self.job, extra_cfgs=self.extra_cfgs))
 
     def test_returns_expected_preamble_content(self):
         self.assertEqual(
@@ -150,11 +154,12 @@ class _GenerateEnvVarsForCfgSpecsTestCase(BaseTestCase):
         self.engine.resolve_job_cfg_specs.return_value = {'key_i': MagicMock()
                                                           for i in range(3)}
         self.engine._kvp_to_env_var_block.return_value = 'some_block'
-        self.result = self.engine._generate_env_vars_for_cfg_specs(job=self.job)
+        self.result = self.engine._generate_env_vars_for_cfg_specs(
+            job=self.job, extra_cfgs=self.extra_cfgs)
 
     def test_resolves_cfg_specs(self):
         self.assertEqual(self.engine.resolve_job_cfg_specs.call_args,
-                         call(job=self.job))
+                         call(job=self.job, extra_cfgs=self.extra_cfgs))
 
     def test_writes_resolved_specs_as_env_vars(self):
         expected_resolved_cfgs = self.engine.resolve_job_cfg_specs.return_value
@@ -191,17 +196,13 @@ class _ExecuteEngineEntrypointTestCase(BaseTestCase):
         self.entrypoint_path = MagicMock()
         self.engine._execute_engine_entrypoint(
             entrypoint_path=self.entrypoint_path,
-            job=self.job,
-            job_id=self.job_id
-        )
+            job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
 
     def test_generates_entrypoint_cmd(self):
         self.assertEqual(
             self.engine._generate_engine_entrypoint_cmd.call_args,
             call(entrypoint_path=self.entrypoint_path,
-                 job=self.job,
-                 job_id=self.job_id
-                )
+                 job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
         )
 
     def test_executes_entrypoint_cmd(self):

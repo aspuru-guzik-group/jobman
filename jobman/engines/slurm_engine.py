@@ -23,7 +23,7 @@ class SlurmEngine(BaseEngine):
         super().__init__(*args, **kwargs)
         self.slurm_commands = slurm_commands or self.DEFAULT_SLURM_COMMANDS
 
-    def submit_job(self, job=None):
+    def submit_job(self, job=None, cfg=None):
         job_spec = job['job_spec']
         workdir = job_spec['dir']
         entrypoint_name = job_spec.get('entrypoint') or \

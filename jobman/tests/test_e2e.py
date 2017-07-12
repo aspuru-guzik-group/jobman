@@ -9,7 +9,7 @@ class MockEngine(object):
     def __init__(self):
         self.jobs = {}
 
-    def submit_job(self, job=None):
+    def submit_job(self, job=None, extra_cfgs=None):
         engine_meta = str(uuid.uuid4())
         self.jobs[engine_meta] = {'status': 'RUNNING'}
         return engine_meta

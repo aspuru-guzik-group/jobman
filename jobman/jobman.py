@@ -24,12 +24,13 @@ class JobMan(object):
         for param in cls.CFG_PARAMS:
             try: params_from_cfg[param] = getattr(cfg, param)
             except AttributeError: pass
-        return JobMan(**params_from_cfg)
+        return JobMan(**params_from_cfg, cfg=cfg)
 
     def __init__(self, logger=None, logging_cfg=None, debug=None,
-                 setup=True, **kwargs):
+                 setup=True, cfg=None, **kwargs):
         self.debug = debug
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
+        self.cfg = cfg
         if setup: self._setup(**kwargs)
 
     def _setup(self, dao=None, jobman_db_uri=None, engine=None,
@@ -387,12 +388,13 @@ class JobMan(object):
         return self._submit_single_job_to_engine
 
     def _submit_single_job_to_engine(self, job=None):
-        engine_meta = self.engine.submit_job(job=job)
+        engine_meta = self.engine.submit_job(job=job, extra_cfgs=[self.cfg])
         return engine_meta
 
     def _submit_batch_job_to_engine(self, job=None):
         subjobs = self._get_batch_subjobs(batch_job=job)
-        return self.engine.submit_batch_job(batch_job=job, subjobs=subjobs)
+        return self.engine.submit_batch_job(batch_job=job, subjobs=subjobs,
+                                            extra_cfgs=[self.cfg])
 
     def flush(self):
         self.dao.flush()

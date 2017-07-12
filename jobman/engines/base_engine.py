@@ -54,43 +54,43 @@ class BaseEngine(object):
     def default_build_batch_jobdir(self, *args, **kwargs):
         return BashBatchBuilder().build_batch_jobdir(*args, **kwargs)
 
-    def submit_job(self, job=None): raise NotImplementedError
+    def submit_job(self, job=None, extra_cfgs=None): raise NotImplementedError
 
-    def submit_batch_job(self, batch_job=None, subjobs=None):
+    def submit_batch_job(self, batch_job=None, subjobs=None, extra_cfgs=None):
         batch_job_spec = self.build_batch_jobdir(
             batch_job=batch_job, subjobs=subjobs,
-            dest=tempfile.mkdtemp(dir=self.scratch_dir, prefix='batch.')
+            dest=tempfile.mkdtemp(dir=self.scratch_dir, prefix='batch.'),
+            extra_cfgs=extra_cfgs
         )
-        return self.submit_job(job={'job_spec': batch_job_spec})
+        return self.submit_job(job={'job_spec': batch_job_spec},
+                               extra_cfgs=extra_cfgs)
 
     def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None):
         job_spec = self.build_batch_jobdir_fn(
             batch_job=batch_job, subjobs=subjobs, dest=dest)
         return job_spec
 
-    def resolve_job_cfg_specs(self, job=None, extra_cfg_sources=None):
-        extra_cfg_sources = [
-            *(extra_cfg_sources or []),
-            job['job_spec'].get('cfg', {})
-        ]
+    def resolve_job_cfg_specs(self, job=None, extra_cfgs=None):
+        extra_cfgs = [*(extra_cfgs or []), job['job_spec'].get('cfg', {})]
         resolved_cfg_items = {}
         for key, spec in job['job_spec'].get('cfg_specs', {}).items():
             resolved_cfg_items[key] = self.resolve_cfg_item(
-                key=key, spec=spec, extra_cfg_sources=extra_cfg_sources)
+                key=key, spec=spec, extra_cfgs=extra_cfgs)
         return resolved_cfg_items
 
-    def resolve_cfg_item(self, key=None, spec=None, extra_cfg_sources=None):
+    def resolve_cfg_item(self, key=None, spec=None, extra_cfgs=None):
         try:
-            sources = (extra_cfg_sources or []) + [self.cfg, os.environ]
-            get_kwargs = {'key': key, 'sources': sources}
+            srcs = (extra_cfgs or []) + [self.cfg, os.environ]
+            get_kwargs = {'key': key, 'srcs': srcs}
             if 'default' in spec: get_kwargs['default'] = spec['default']
-            return self._get_from_first_matching_source(**get_kwargs)
+            return self._get_from_first_matching_src(**get_kwargs)
         except KeyError: raise self.CfgItemResolutionError(key=key, spec=spec)
 
-    def _get_from_first_matching_source(self, key=None, sources=None,
-                                        default=...):
-        for source in sources:
-            try: return source[key]
+    def _get_from_first_matching_src(self, key=None, srcs=None, default=...):
+        for src in srcs:
+            try: return src[key]
+            except: pass
+            try: return getattr(src, key)
             except: pass
         if default is not ...: return default
         raise KeyError(key)

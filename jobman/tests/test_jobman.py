@@ -591,7 +591,8 @@ class _SubmitSingleJobToEngine(BaseTestCase):
     def test_dispatches_to_engine_submit_job(self):
         job = MagicMock()
         result = self.jobman._submit_single_job_to_engine(job=job)
-        self.assertEqual(self.jobman.engine.submit_job.call_args, call(job=job))
+        self.assertEqual(self.jobman.engine.submit_job.call_args,
+                         call(job=job, extra_cfgs=[self.jobman.cfg]))
         self.assertEqual(result, self.jobman.engine.submit_job.return_value)
 
 class _SubmitBatchJobToEngine(BaseTestCase):
@@ -608,7 +609,8 @@ class _SubmitBatchJobToEngine(BaseTestCase):
     def test_dispatches_to_engine_submit_batch_job(self):
         expected_subjobs = self.jobman._get_batch_subjobs.return_value
         self.assertEqual(self.jobman.engine.submit_batch_job.call_args,
-                         call(batch_job=self.job, subjobs=expected_subjobs))
+                         call(batch_job=self.job, subjobs=expected_subjobs,
+                              extra_cfgs=[self.jobman.cfg]))
         self.assertEqual(self.result,
                          self.jobman.engine.submit_batch_job.return_value)
 
@@ -886,7 +888,7 @@ class FromCfgTestCase(BaseTestCase):
         expected_kwargs = {attr: self.mocks['getattr'].return_value
                            for attr in _jobman.JobMan.CFG_PARAMS}
         self.assertEqual(self.mocks['JobMan.__init__'].call_args,
-                         call(**expected_kwargs))
+                         call(**expected_kwargs, cfg=self.cfg))
 
     def test_returns_jobman(self):
         self.assertTrue(isinstance(self.result, _jobman.JobMan))
