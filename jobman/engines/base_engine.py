@@ -65,23 +65,25 @@ class BaseEngine(object):
         return self.submit_job(job={'job_spec': batch_job_spec},
                                extra_cfgs=extra_cfgs)
 
-    def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None):
+    def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None,
+                           extra_cfgs=None):
         job_spec = self.build_batch_jobdir_fn(
-            batch_job=batch_job, subjobs=subjobs, dest=dest)
+            batch_job=batch_job, subjobs=subjobs, dest=dest,
+            extra_cfgs=extra_cfgs)
         return job_spec
 
     def resolve_job_cfg_specs(self, job=None, extra_cfgs=None):
-        extra_cfgs = [*(extra_cfgs or []), job['job_spec'].get('cfg', {})]
+        cfgs = [job['job_spec'].get('cfg', {}), self.cfg, os.environ,
+                *(extra_cfgs or [])]
         resolved_cfg_items = {}
         for key, spec in job['job_spec'].get('cfg_specs', {}).items():
             resolved_cfg_items[key] = self.resolve_cfg_item(
-                key=key, spec=spec, extra_cfgs=extra_cfgs)
+                key=key, spec=spec, cfgs=cfgs)
         return resolved_cfg_items
 
-    def resolve_cfg_item(self, key=None, spec=None, extra_cfgs=None):
+    def resolve_cfg_item(self, key=None, spec=None, cfgs=None):
         try:
-            srcs = (extra_cfgs or []) + [self.cfg, os.environ]
-            get_kwargs = {'key': key, 'srcs': srcs}
+            get_kwargs = {'key': key, 'srcs': cfgs}
             if 'default' in spec: get_kwargs['default'] = spec['default']
             return self._get_from_first_matching_src(**get_kwargs)
         except KeyError: raise self.CfgItemResolutionError(key=key, spec=spec)

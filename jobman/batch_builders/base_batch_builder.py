@@ -12,16 +12,17 @@ class BaseBatchBuilder(object):
         os.makedirs(self.jobdir, exist_ok=True)
         self.entrypoint_path = os.path.join(self.jobdir, self.ENTRYPOINT_NAME)
 
-
     def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None,
-                           **kwargs):
+                           extra_cfgs=None, **kwargs):
         self.batch_job = batch_job
         self.subjobs = subjobs
         self.dest = dest
+        self.extra_cfgs = extra_cfgs
         job_spec = self._build_batch_jobdir(**kwargs)
         del self.batch_job
         del self.subjobs
         del self.dest
+        del self.extra_cfgs
         return job_spec
 
     def _build_batch_jobdir(self, **kwargs): raise NotImplementedError

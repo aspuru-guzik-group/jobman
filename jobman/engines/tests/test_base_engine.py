@@ -55,6 +55,7 @@ class ResolveJobCfgSpecsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_engine_attrs(attrs=['resolve_cfg_item'])
+        self.module_mocks = self.mockify_module_attrs(attrs=['os'])
         self.cfg_specs = {'key_%s' % i: MagicMock() for i in range(3)}
         self.job = {
             'job_spec': {
@@ -66,12 +67,12 @@ class ResolveJobCfgSpecsTestCase(BaseTestCase):
             job=self.job, extra_cfgs=self.extra_cfgs)
 
     def test_dispatches_to_resolve_cfg_item(self):
-        expected_extra_cfgs = [*self.extra_cfgs,
-                               self.job['job_spec'].get('cfg')]
+        expected_cfgs = [self.job['job_spec'].get('cfg', {}), self.engine.cfg,
+                         self.module_mocks['os'].environ, *(self.extra_cfgs)]
         self.assertEqual(
             self.engine.resolve_cfg_item.call_args_list,
             [
-                call(key=key, spec=spec, extra_cfgs=expected_extra_cfgs)
+                call(key=key, spec=spec, cfgs=expected_cfgs)
                 for key, spec in self.cfg_specs.items()
             ]
         )
@@ -83,34 +84,23 @@ class ResolveJobCfgSpecsTestCase(BaseTestCase):
             }
         )
 
-    def resolve_job_cfg_specs(self, job=None, extra_cfgs=None):
-        extra_cfgs = ((extra_cfgs or []) + job['job_spec'].get('cfg', []))
-        resolved_cfg_items = {}
-        for key, spec in job['job_spec'].get('cfg_specs', {}).items():
-            resolved_cfg_items[key] = self.resolve_cfg_item(
-                key=key, spec=spec, extra_cfgs=extra_cfgs)
-        return resolved_cfg_items
-
 class ResolveCfgItemTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.cfg_key = MagicMock()
         self.cfg_spec = MagicMock()
-        self.extra_cfgs = [MagicMock() for i in range(3)]
-        self.module_mocks = self.mockify_module_attrs(attrs=['os'])
+        self.cfgs = [MagicMock() for i in range(3)]
         self.mockify_engine_attrs(attrs=['_get_from_first_matching_src'])
 
     def _resolve_cfg_spec(self):
         return self.engine.resolve_cfg_item(
-            key=self.cfg_key, spec=self.cfg_spec, extra_cfgs=self.extra_cfgs)
+            key=self.cfg_key, spec=self.cfg_spec, cfgs=self.cfgs)
 
     def test_dispatches_to_get_from_first_matching_src(self):
         result = self._resolve_cfg_spec()
-        expected_srcs = self.extra_cfgs + [
-            self.engine.cfg, self.module_mocks['os'].environ]
         self.assertEqual(
             self.engine._get_from_first_matching_src.call_args,
-            call(key=self.cfg_key, srcs=expected_srcs)
+            call(key=self.cfg_key, srcs=self.cfgs)
         )
         self.assertEqual(
             result, self.engine._get_from_first_matching_src.return_value)
