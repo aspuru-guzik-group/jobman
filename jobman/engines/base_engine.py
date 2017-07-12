@@ -85,7 +85,7 @@ class BaseEngine(object):
             get_kwargs = {'key': key, 'sources': sources}
             if 'default' in spec: get_kwargs['default'] = spec['default']
             return self._get_from_first_matching_source(**get_kwargs)
-        except KeyError: raise self.CfgItemResolutionError(key=None, spec=spec)
+        except KeyError: raise self.CfgItemResolutionError(key=key, spec=spec)
 
     def _get_from_first_matching_source(self, key=None, sources=None,
                                         default=...):
