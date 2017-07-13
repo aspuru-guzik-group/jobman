@@ -1,4 +1,3 @@
-import types
 import unittest
 from unittest.mock import call, MagicMock, patch
 
@@ -57,6 +56,8 @@ class ResolveJobCfgSpecsTestCase(BaseTestCase):
         self.mockify_engine_attrs(attrs=['resolve_cfg_item'])
         self.module_mocks = self.mockify_module_attrs(attrs=['os'])
         self.cfg_specs = {'key_%s' % i: MagicMock() for i in range(3)}
+        self.cfg_specs['sans_output_key'] = {'required': False}
+        self.cfg_specs['with_output_key'] = {'output_key': 'some_output_key'}
         self.job = {
             'job_spec': {
                 'cfg': MagicMock(), 'cfg_specs': self.cfg_specs
@@ -76,13 +77,12 @@ class ResolveJobCfgSpecsTestCase(BaseTestCase):
                 for key, spec in self.cfg_specs.items()
             ]
         )
-        self.assertEqual(
-            self.result,
-            {
-                key: self.engine.resolve_cfg_item.return_value
-                for key in self.cfg_specs
-            }
-        )
+        expected_resolved_cfg_specs = {}
+        for key, spec in self.cfg_specs.items():
+            output_key = spec.get('output_key') or key
+            expected_resolved_cfg_specs[output_key] = \
+                self.engine.resolve_cfg_item.return_value
+        self.assertEqual(self.result, expected_resolved_cfg_specs)
 
 class ResolveCfgItemTestCase(BaseTestCase):
     def setUp(self):
@@ -113,31 +113,29 @@ class ResolveCfgItemTestCase(BaseTestCase):
 class _GetFromFirstMatchingSourceTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.mockify_engine_attrs(attrs=['_get_key_or_attr'])
         self.key = 'some_key'
-        self.dict_srcs = [{} for i in range(3)]
-        self.attr_srcs = [types.SimpleNamespace() for i in range(3)]
-        self.srcs = self.dict_srcs + self.attr_srcs
+        self.srcs = [MagicMock() for i in range(3)]
+        def _mock_get_key_or_attr(src=None, key=None): raise KeyError
+        self.mock_get_key_or_attr = _mock_get_key_or_attr
 
     def _get_from_first_matching_src(self, **kwargs):
+        self.engine._get_key_or_attr.side_effect = self.mock_get_key_or_attr
         return self.engine._get_from_first_matching_src(
             key=self.key, srcs=self.srcs, **kwargs)
 
     def test_returns_from_first_matching_src(self):
-        self.dict_srcs[-2][self.key] = MagicMock()
+        def _mock_get_key_or_attr(src=None, key=None):
+            if src is self.srcs[-2]: return src[key]
+            else: raise KeyError
+        self.mock_get_key_or_attr = _mock_get_key_or_attr
         self.assertEqual(self._get_from_first_matching_src(),
-                         self.dict_srcs[-2][self.key])
-
-    def test_matches_for_attr_srcs(self):
-        setattr(self.attr_srcs[-2], self.key, MagicMock())
-        self.assertEqual(self._get_from_first_matching_src(),
-                         getattr(self.attr_srcs[-2], self.key))
+                         self.srcs[-2][self.key])
 
     def test_returns_default_if_no_matching_src(self):
         default = MagicMock()
-        self.assertEqual(
-            self._get_from_first_matching_src(default=default),
-            default
-        )
+        self.assertEqual(self._get_from_first_matching_src(default=default),
+                         default)
 
     def test_raises_if_no_matching_src_and_no_default(self):
         with self.assertRaises(KeyError): self._get_from_first_matching_src()

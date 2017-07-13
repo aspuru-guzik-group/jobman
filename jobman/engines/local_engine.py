@@ -7,7 +7,7 @@ from .base_engine import BaseEngine
 
 
 class LocalEngine(BaseEngine):
-    ENGINE_ENTRYPOINT_TPL ='jobman_entrypoint.{job_id}.sh'
+    ENGINE_ENTRYPOINT_TPL ='JOBMAN.ENTRYPOINT.{job_id}.sh'
 
     def __init__(self, *args, db_uri=None, sqlite=sqlite3, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,9 +49,9 @@ class LocalEngine(BaseEngine):
             '''
             #!/bin/bash
             {preamble}
-            pushd {jobdir} && {job_entrypoint}; popd;
+            pushd "{jobdir}" > /dev/null && {job_entrypoint}; popd > /dev/null;
             '''
-        ).format(
+        ).lstrip().format(
             preamble=self._generate_engine_entrypoint_preamble(
                 job=job, job_id=job_id, extra_cfgs=extra_cfgs),
             jobdir=job['job_spec']['dir'],
@@ -60,8 +60,18 @@ class LocalEngine(BaseEngine):
 
     def _generate_engine_entrypoint_preamble(self, job=None, job_id=None,
                                              extra_cfgs=None):
-        return self._generate_env_vars_for_cfg_specs(
-            job=job, extra_cfgs=extra_cfgs)
+        preamble = textwrap.dedent(
+            '''
+            {engine_preamble}
+            {env_vars_for_cfg_specs}
+            '''
+        ).lstrip().format(
+            engine_preamble=self.resolve_cfg_item(key='ENGINE_PREAMBLE',
+                                                  spec={'default': ''}),
+            env_vars_for_cfg_specs=self._generate_env_vars_for_cfg_specs(
+                job=job, extra_cfgs=extra_cfgs)
+        )
+        return preamble
 
     def _generate_env_vars_for_cfg_specs(self, job=None, extra_cfgs=None):
         resolved_cfgs = self.resolve_job_cfg_specs(
@@ -77,6 +87,7 @@ class LocalEngine(BaseEngine):
             read -d '' {key} << EOF
             {value}
             EOF
+            export {key}=${key}
             '''
         ).lstrip().format(key=kvp['key'], value=kvp['value'].lstrip())
 
@@ -96,9 +107,9 @@ class LocalEngine(BaseEngine):
     def _generate_engine_entrypoint_cmd(self, entrypoint_path=None, job=None,
                                         job_id=None, extra_cfgs=None):
         cmd = (
-            'pushd {entrypoint_dir}' 
-            ' && {entrypoint_path} {stdout_redirect} {stderr_redirect}'
-            'popd;'
+            'pushd {entrypoint_dir} > /dev/null &&'  
+            ' {entrypoint_path} {stdout_redirect} {stderr_redirect};'
+            ' popd > /dev/null;'
         ).format(
             entrypoint_dir=os.path.dirname(entrypoint_path),
             entrypoint_path=entrypoint_path,

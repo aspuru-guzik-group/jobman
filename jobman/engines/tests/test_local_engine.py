@@ -118,9 +118,9 @@ class _GenerateEngineEntrypointContentTestCase(BaseTestCase):
             '''
             #!/bin/bash
             {preamble}
-            pushd {jobdir} && {job_entrypoint}; popd;
+            pushd "{jobdir}" > /dev/null && {job_entrypoint}; popd > /dev/null;
             '''
-        ).format(
+        ).lstrip().format(
             preamble=(self.engine._generate_engine_entrypoint_preamble
                       .return_value),
             jobdir=self.job['job_spec']['dir'],
@@ -132,19 +132,31 @@ class _GenerateEngineEntrypointPreambleTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job_id = MagicMock()
-        self.mockify_engine_attrs(attrs=['_generate_env_vars_for_cfg_specs'])
+        self.mockify_engine_attrs(attrs=['resolve_cfg_item',
+                                         '_generate_env_vars_for_cfg_specs'])
         self.result = self.engine._generate_engine_entrypoint_preamble(
             job=self.job, job_id=self.job_id, extra_cfgs=self.extra_cfgs)
+
+    def test_gets_engine_preamble_from_cfg(self):
+        self.assertEqual(self.engine.resolve_cfg_item.call_args,
+                         call(key='ENGINE_PREAMBLE', spec={'default': ''}))
 
     def test_generates_env_vars_for_cfg_specs(self):
         self.assertEqual(self.engine._generate_env_vars_for_cfg_specs.call_args,
                          call(job=self.job, extra_cfgs=self.extra_cfgs))
 
     def test_returns_expected_preamble_content(self):
-        self.assertEqual(
-            self.result,
-            self.engine._generate_env_vars_for_cfg_specs.return_value
+        expected_content = textwrap.dedent(
+            '''
+            {engine_preamble}
+            {env_vars_for_cfg_specs}
+            '''
+        ).lstrip().format(
+            engine_preamble=self.engine.resolve_cfg_item.return_value,
+            env_vars_for_cfg_specs=(self.engine._generate_env_vars_for_cfg_specs
+                                    .return_value)
         )
+        self.assertEqual(self.result, expected_content)
 
 class _GenerateEnvVarsForCfgSpecsTestCase(BaseTestCase):
     def setUp(self):
@@ -183,6 +195,7 @@ class _KvpToEnvVarBlock(BaseTestCase):
             read -d '' {key} << EOF
             {value}
             EOF
+            export {key}=${key}
             '''
         ).lstrip().format(key=kvp['key'], value=kvp['value'].lstrip())
         self.assertEqual(result, expected_block)
@@ -227,9 +240,9 @@ class _GenerateEngineEntrypointCmdTestCase(BaseTestCase):
 
     def test_returns_expected_cmd(self):
         expected_cmd = (
-            'pushd {entrypoint_dir}' 
-            ' && {entrypoint_path} {stdout_redirect} {stderr_redirect}'
-            'popd;'
+            'pushd {entrypoint_dir} > /dev/null' 
+            ' && {entrypoint_path} {stdout_redirect} {stderr_redirect};'
+            ' popd > /dev/null;'
         ).format(
             entrypoint_dir=os.path.dirname(self.entrypoint_path),
             entrypoint_path=self.entrypoint_path,

@@ -4,6 +4,7 @@ import os
 import time
 
 from . import debug_utils
+from . import utils
 
 
 class JobMan(object):
@@ -22,8 +23,9 @@ class JobMan(object):
     def from_cfg(cls, cfg=None):
         params_from_cfg = {}
         for param in cls.CFG_PARAMS:
-            try: params_from_cfg[param] = getattr(cfg, param)
-            except AttributeError: pass
+            try: params_from_cfg[param] = utils.get_key_or_attr(
+                src=cfg, key=param)
+            except KeyError: pass
         return JobMan(**params_from_cfg, cfg=cfg)
 
     def __init__(self, logger=None, logging_cfg=None, debug=None,

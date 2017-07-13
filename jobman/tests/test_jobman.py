@@ -870,23 +870,24 @@ class FromCfgTestCase(BaseTestCase):
 
     def setup_mocks(self):
         patchers = {'JobMan.__init__': patch.object(_jobman.JobMan, '__init__'),
-                    'getattr': patch.object(_jobman, 'getattr')}
+                    'utils': patch.object(_jobman, 'utils')}
         self.mocks = {}
         for key, patcher in patchers.items():
             self.addCleanup(patcher.stop)
             self.mocks[key] = patcher.start()
         self.mocks['JobMan.__init__'].return_value = None
 
-    def test_gets_expected_attrs(self):
-        expected_call_args_list = [call(self.cfg, attr)
-                                   for attr in _jobman.JobMan.CFG_PARAMS]
-
-        self.assertEqual(self.mocks['getattr'].call_args_list,
+    def test_gets_expected_params(self):
+        expected_call_args_list = [call(src=self.cfg, key=param)
+                                   for param in _jobman.JobMan.CFG_PARAMS]
+        self.assertEqual(self.mocks['utils'].get_key_or_attr.call_args_list,
                          expected_call_args_list)
 
     def test_creates_jobman_with_kwargs_from_cfg(self):
-        expected_kwargs = {attr: self.mocks['getattr'].return_value
-                           for attr in _jobman.JobMan.CFG_PARAMS}
+        expected_kwargs = {
+            param: self.mocks['utils'].get_key_or_attr.return_value
+            for param in _jobman.JobMan.CFG_PARAMS
+        }
         self.assertEqual(self.mocks['JobMan.__init__'].call_args,
                          call(**expected_kwargs, cfg=self.cfg))
 

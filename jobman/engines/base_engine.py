@@ -4,7 +4,8 @@ import subprocess
 import tempfile
 import types
 
-from ..batch_builders.bash_batch_builder import BashBatchBuilder
+from jobman.batch_builders.bash_batch_builder import BashBatchBuilder
+from jobman import utils
 
 class BaseEngine(object):
     DEFAULT_JOB_ENTRYPOINT_NAME ='job.sh'
@@ -73,15 +74,19 @@ class BaseEngine(object):
         return job_spec
 
     def resolve_job_cfg_specs(self, job=None, extra_cfgs=None):
-        cfgs = [job['job_spec'].get('cfg', {}), self.cfg, os.environ,
+        cfgs = [job['job_spec'].get('cfg', {}), *self._get_default_cfgs(),
                 *(extra_cfgs or [])]
         resolved_cfg_items = {}
         for key, spec in job['job_spec'].get('cfg_specs', {}).items():
-            resolved_cfg_items[key] = self.resolve_cfg_item(
+            output_key = spec.get('output_key') or key
+            resolved_cfg_items[output_key] = self.resolve_cfg_item(
                 key=key, spec=spec, cfgs=cfgs)
         return resolved_cfg_items
 
+    def _get_default_cfgs(self): return [self.cfg, os.environ]
+
     def resolve_cfg_item(self, key=None, spec=None, cfgs=None):
+        cfgs = cfgs or self._get_default_cfgs()
         try:
             get_kwargs = {'key': key, 'srcs': cfgs}
             if 'default' in spec: get_kwargs['default'] = spec['default']
@@ -90,9 +95,10 @@ class BaseEngine(object):
 
     def _get_from_first_matching_src(self, key=None, srcs=None, default=...):
         for src in srcs:
-            try: return src[key]
-            except: pass
-            try: return getattr(src, key)
-            except: pass
+            try: return self._get_key_or_attr(src=src, key=key)
+            except: KeyError
         if default is not ...: return default
         raise KeyError(key)
+
+    def _get_key_or_attr(self, src=None, key=None):
+        return utils.get_key_or_attr(src=src, key=key)
