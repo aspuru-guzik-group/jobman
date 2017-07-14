@@ -9,9 +9,11 @@ from .base_engine import BaseEngine
 class LocalEngine(BaseEngine):
     ENGINE_ENTRYPOINT_TPL ='JOBMAN.ENTRYPOINT.{job_id}.sh'
 
-    def __init__(self, *args, db_uri=None, sqlite=sqlite3, **kwargs):
+    def __init__(self, *args, db_uri=':memory:', sqlite=sqlite3, **kwargs):
         super().__init__(*args, **kwargs)
-        db_uri = db_uri or ':memory:'
+        if db_uri == 'sqlite://': db_uri = ':memory:'
+        elif db_uri.startswith('sqlite:///'):
+            db_uri = db_uri.replace('sqlite:///', '')
         self.conn = sqlite.connect(db_uri)
         self.conn.row_factory = sqlite.Row
         self.ensure_db()
