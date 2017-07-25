@@ -1,8 +1,13 @@
 import contextlib
+import json
 import logging
 import os
+from pathlib import Path
 import time
+import traceback
+import shutil
 
+from . import constants
 from . import debug_utils
 from . import utils
 
@@ -22,6 +27,8 @@ class JobMan(object):
                   'target_batch_time', 'default_job_time',
                   'lock_timeout', 'use_batching']
 
+    default_job_spec = {'entrypoint': 'entrypoint.sh'}
+
     @classmethod
     def from_cfg(cls, cfg=None):
         params_from_cfg = {}
@@ -35,7 +42,7 @@ class JobMan(object):
 
     def __init__(self, logger=None, logging_cfg=None, debug=None,
                  setup=True, cfg=None, **kwargs):
-        self.debug = debug
+        self.debug = debug or os.environ.get('JOBMAN_DEBUG')
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
         self.cfg = cfg
         if setup:
@@ -46,7 +53,8 @@ class JobMan(object):
                job_engine_states_ttl=120, submission_grace_period=None,
                max_batchable_wait=120, target_batch_time=(60 * 60),
                default_job_time=(5 * 60),
-               lock_timeout=30, use_batching=False, **kwargs):
+               lock_timeout=30, use_batching=False, source_cfgs=None,
+               default_job_spec=None, **kwargs):
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
         self.engine = engine or self._generate_engine()
         self.max_running_jobs = max_running_jobs
@@ -55,8 +63,10 @@ class JobMan(object):
                                         (2 * self.job_engine_states_ttl))
         self.default_job_time = default_job_time
         self.lock_timeout = lock_timeout
-
+        self.submitting_lock_file_name = 'JOBMAN-SUBMITTING'
         self.use_batching = use_batching
+        self.source_cfgs = source_cfgs or {}
+        self.default_job_spec = default_job_spec or self.default_job_spec
         if batchable_filters is ...:
             batchable_filters = []
         self.batchable_filters = (batchable_filters
@@ -122,11 +132,11 @@ class JobMan(object):
             if self.debug:
                 self.logger.debug(("_ensure_lock_kvp exc: ", exc))
 
-    def submit_job_spec(self, job_spec=None, source=None,
+    def submit_job_spec(self, job_spec=None, source_key=None,
                         source_meta=None, submit_to_engine_immediately=False):
         try:
             job = self._job_spec_to_job(job_spec=job_spec,
-                                        source=source,
+                                        source_key=source_key,
                                         source_meta=source_meta)
             created_job = self._create_job(job=job)
             if submit_to_engine_immediately:
@@ -135,10 +145,11 @@ class JobMan(object):
         except Exception as exc:
             raise self.SubmissionError() from exc
 
-    def _job_spec_to_job(self, job_spec=None, source=None, source_meta=None):
+    def _job_spec_to_job(self, job_spec=None, source_key=None,
+                         source_meta=None):
         return {
             'job_spec': job_spec,
-            'source': source,
+            'source_key': source_key,
             'source_meta': source_meta,
             'status': 'PENDING',
         }
@@ -188,6 +199,7 @@ class JobMan(object):
         if self._job_engine_states_are_stale():
             self._update_job_engine_states(jobs=self.get_running_jobs())
         self._process_executed_jobs()
+        self._ingest_from_sources()
         if self.use_batching:
             self._tick_batching()
         self._process_submittable_jobs()
@@ -245,9 +257,10 @@ class JobMan(object):
             self._process_executed_job(executed_job=executed_job)
 
     def _process_executed_job(self, executed_job=None):
-        process_fn = self._process_executed_single_job
         if executed_job.get('is_batch'):
             process_fn = self._process_executed_batch_job
+        else:
+            process_fn = self._process_executed_single_job
         process_fn(executed_job=executed_job)
 
     def _process_executed_batch_job(self, executed_job=None):
@@ -266,7 +279,88 @@ class JobMan(object):
         self.save_jobs(jobs=[job])
 
     def _process_executed_single_job(self, executed_job=None):
-        self._complete_job(job=executed_job)
+        try:
+            self._call_source_callback(job=executed_job,
+                                       callback_name='on_job_executed')
+            self._complete_job(job=executed_job)
+        except Exception as exc:
+            error = traceback.format_exc()
+            self.logger.warning(error)
+            self._fail_job(job=executed_job, errors=[error])
+
+    def _call_source_callback(self, job=None, callback_name=None):
+        source_callback = self._get_source_callback(
+            job=job, callback_name=callback_name)
+        if source_callback:
+            source_callback(job=job)
+
+    def _get_source_callback(self, job=None, callback_name=None):
+        try:
+            source_key = job['source_key']
+            source_callback = self.source_cfgs[source_key][callback_name]
+        except KeyError:
+            source_callback = None
+        return source_callback
+
+    def _fail_job(self, job=None, errors=None):
+        job['status'] = 'FAILED'
+        job['errors'] = errors
+        self.save_jobs(jobs=[job])
+
+    def _ingest_from_sources(self):
+        for source_key, source_cfg in self.source_cfgs.items():
+            self._ingest_from_source(source_key=source_key,
+                                     source_cfg=source_cfg)
+
+    def _ingest_from_source(self, source_key=None, source_cfg=None):
+        if source_cfg.get('type') == 'dir':
+            self._ingest_from_dir_source(source_key=source_key,
+                                         source_cfg=source_cfg)
+
+    def _ingest_from_dir_source(self, source_key=None, source_cfg=None):
+        self._ensure_dir_source_dirs(source_key=source_key,
+                                     source_cfg=source_cfg)
+        inbox_path = Path(source_cfg['root']) / 'inbox'
+        for inbox_item_path in inbox_path.glob('*'):
+            self._ingest_inbox_item(item_path=inbox_item_path,
+                                    source_key=source_key,
+                                    source_cfg=source_cfg)
+
+    def _ensure_dir_source_dirs(self, source_key=None, source_cfg=None):
+        for subdir in constants.DIR_SOURCE_SUBDIRS:
+            Path(source_cfg['root'], subdir).mkdir(
+                parents=True, exist_ok=True)
+
+    def _ingest_inbox_item(self, item_path=None, source_key=None,
+                           source_cfg=None):
+        submitting_lock_path = item_path / self.submitting_lock_file_name
+        if os.path.exists(submitting_lock_path):
+            return
+        submitting_lock_path.touch()
+        dest_in_queued = Path(source_cfg['root'], 'queued',
+                              Path(item_path).name)
+        shutil.move(item_path, dest_in_queued)
+        job_spec = self._generate_job_spec_for_dir_source_item(
+            dir=dest_in_queued, source_key=source_key, source_cfg=source_cfg)
+        self.submit_job_spec(job_spec=job_spec, source_key=source_key)
+        (dest_in_queued / self.submitting_lock_file_name).unlink()
+
+    def _generate_job_spec_for_dir_source_item(self, dir=None, source_key=None,
+                                               source_cfg=None):
+        return {
+            'dir': str(dir),
+            **self.default_job_spec,
+            **source_cfg.get('default_job_spec', {}),
+            **self._load_job_spec_from_dir(dir)
+        }
+
+    def _load_job_spec_from_dir(self, dir=None):
+        job_spec = {}
+        job_spec_path = Path(dir) / constants.JOB_SPEC_FILE_NAME
+        if job_spec_path.exists():
+            with open(job_spec_path) as f:
+                job_spec = json.load(f)
+        return job_spec
 
     def _tick_batching(self):
         self._mark_jobs_as_batchable()

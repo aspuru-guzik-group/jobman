@@ -8,13 +8,17 @@ from . import orm as _orm
 
 
 class SqliteDAO(object):
-    class UpdateError(Exception): pass
-    class InsertError(Exception): pass
+    class UpdateError(Exception):
+        pass
+
+    class InsertError(Exception):
+        pass
 
     def __init__(self, db_uri=':memory:', logger=None, sqlite=sqlite3,
                  orm=_orm):
         self.logger = logger or logging
-        if db_uri == 'sqlite://': db_uri = ':memory:'
+        if db_uri == 'sqlite://':
+            db_uri = ':memory:'
         elif db_uri.startswith('sqlite:///'):
             db_uri = db_uri.replace('sqlite:///', '')
         self.db_uri = db_uri
@@ -43,7 +47,8 @@ class SqliteDAO(object):
             'parent_batch_key': {'type': 'TEXT'},
             'engine_meta': {'type': 'JSON'},
             'engine_state': {'type': 'JSON'},
-            'source': {'type': 'TEXT'},
+            'errors': {'type': 'JSON'},
+            'source_key': {'type': 'TEXT'},
             'source_meta': {'type': 'JSON'},
             'source_tag': {'type': 'TEXT'},
             'purgeable': {'type': 'INTEGER'},
@@ -59,7 +64,8 @@ class SqliteDAO(object):
 
     def _generate_timestamp_fields(self):
         return {
-            'created': {'type': 'INTEGER', 'default': self._generate_timestamp},
+            'created': {'type': 'INTEGER',
+                        'default': self._generate_timestamp},
             'modified': {'type': 'INTEGER',
                          'auto_update': self._generate_timestamp}
         }
@@ -74,7 +80,8 @@ class SqliteDAO(object):
 
     @property
     def connection(self):
-        if not self._connection: self._connection = self.create_connection()
+        if not self._connection:
+            self._connection = self.create_connection()
         return self._connection
 
     def create_connection(self):
@@ -84,9 +91,12 @@ class SqliteDAO(object):
 
     def ensure_db(self):
         should_create = False
-        if self.db_uri == ':memory': should_create = True
-        elif not os.path.exists(self.db_uri): should_create = True
-        if should_create: self.create_db()
+        if self.db_uri == ':memory':
+            should_create = True
+        elif not os.path.exists(self.db_uri):
+            should_create = True
+        if should_create:
+            self.create_db()
 
     def create_db(self):
         with self.connection:
@@ -131,12 +141,13 @@ class SqliteDAO(object):
             filters.append({'field': 'value', 'op': '=',
                             'arg': where_prev_value})
         try:
-            update_result =  self.orms['kvp'].update_objects(
+            update_result = self.orms['kvp'].update_objects(
                 query={'filters': filters}, updates={'value': new_value},
                 connection=self.connection
             )
             assert update_result['rowcount'] == 1
-        except Exception as exc: raise self.UpdateError() from exc
+        except Exception as exc:
+            raise self.UpdateError() from exc
 
     def flush(self):
         os.remove(self.db_uri)
