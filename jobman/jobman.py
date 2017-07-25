@@ -8,8 +8,11 @@ from . import utils
 
 
 class JobMan(object):
-    class LockError(Exception): pass
-    class SubmissionError(Exception): pass
+    class LockError(Exception):
+        pass
+
+    class SubmissionError(Exception):
+        pass
 
     LOCK_KEY = '_JOBMAN_LOCK'
 
@@ -23,9 +26,11 @@ class JobMan(object):
     def from_cfg(cls, cfg=None):
         params_from_cfg = {}
         for param in cls.CFG_PARAMS:
-            try: params_from_cfg[param] = utils.get_key_or_attr(
-                src=cfg, key=param)
-            except KeyError: pass
+            try:
+                params_from_cfg[param] = utils.get_key_or_attr(
+                    src=cfg, key=param)
+            except KeyError:
+                pass
         return JobMan(**params_from_cfg, cfg=cfg)
 
     def __init__(self, logger=None, logging_cfg=None, debug=None,
@@ -33,7 +38,8 @@ class JobMan(object):
         self.debug = debug
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
         self.cfg = cfg
-        if setup: self._setup(**kwargs)
+        if setup:
+            self._setup(**kwargs)
 
     def _setup(self, dao=None, jobman_db_uri=None, engine=None,
                max_running_jobs=50, batchable_filters=...,
@@ -45,13 +51,14 @@ class JobMan(object):
         self.engine = engine or self._generate_engine()
         self.max_running_jobs = max_running_jobs
         self.job_engine_states_ttl = job_engine_states_ttl
-        self.submission_grace_period = submission_grace_period or \
-                (2 * self.job_engine_states_ttl)
+        self.submission_grace_period = (submission_grace_period or
+                                        (2 * self.job_engine_states_ttl))
         self.default_job_time = default_job_time
         self.lock_timeout = lock_timeout
 
         self.use_batching = use_batching
-        if batchable_filters is ...: batchable_filters = []
+        if batchable_filters is ...:
+            batchable_filters = []
         self.batchable_filters = (batchable_filters
                                   + self._get_default_batchable_filters())
         self.max_batchable_wait = max_batchable_wait
@@ -62,27 +69,31 @@ class JobMan(object):
 
     def _generate_logger(self, logging_cfg=None):
         logging_cfg = logging_cfg or {}
-        logger = logging_cfg.get('logger') or \
-                logging.getLogger('jobman_%s' % id(self))
+        logger = (logging_cfg.get('logger') or
+                  logging.getLogger('jobman_%s' % id(self)))
 
         log_file = logging_cfg.get('log_file')
         if log_file:
-            logger.addHandler(logging.FileHandler(os.path.expanduser(log_file)))
-        if self.debug: logger.addHandler(logging.StreamHandler())
+            expanded_log_file = os.path.expanduser(log_file)
+            logger.addHandler(logging.FileHandler(expanded_log_file))
+        if self.debug:
+            logger.addHandler(logging.StreamHandler())
 
         level = logging_cfg.get('level')
-        if level: logger.setLevel(getattr(logging, level))
-        elif self.debug: logger.setLevel(logging.DEBUG)
-
-        fmt = logging_cfg.get('fmt') or \
-                '| %(asctime)s | %(name)s | %(levelname)s |\n%(message)s\n'
+        if level:
+            logger.setLevel(getattr(logging, level))
+        elif self.debug:
+            logger.setLevel(logging.DEBUG)
+        fmt = (logging_cfg.get('fmt') or
+               '| %(asctime)s | %(name)s | %(levelname)s |\n%(message)s\n')
         formatter = logging.Formatter(fmt)
-        for handler in logger.handlers: handler.setFormatter(formatter)
-
+        for handler in logger.handlers:
+            handler.setFormatter(formatter)
         return logger
 
     def _debug_locals(self):
-        if self.debug: debug_utils.debug_locals(logger=self.logger)
+        if self.debug:
+            debug_utils.debug_locals(logger=self.logger)
 
     def _get_default_batchable_filters(self):
         def job_spec_has_batchable(job=None):
@@ -105,16 +116,18 @@ class JobMan(object):
 
     def _ensure_lock_kvp(self):
         lock_kvp = {'key': self.LOCK_KEY, 'value': 'UNLOCKED'}
-        try: self.dao.save_kvps(kvps=[lock_kvp], replace=False)
+        try:
+            self.dao.save_kvps(kvps=[lock_kvp], replace=False)
         except self.dao.InsertError as exc:
-            if self.debug: self.logger.debug(("_ensure_lock_kvp exc: ", exc))
+            if self.debug:
+                self.logger.debug(("_ensure_lock_kvp exc: ", exc))
 
     def submit_job_spec(self, job_spec=None, source=None,
                         source_meta=None, submit_to_engine_immediately=False):
         try:
             job = self._job_spec_to_job(job_spec=job_spec,
-                                           source=source,
-                                           source_meta=source_meta)
+                                        source=source,
+                                        source_meta=source_meta)
             created_job = self._create_job(job=job)
             if submit_to_engine_immediately:
                 created_job = self._submit_job_to_engine(job=created_job)
@@ -122,8 +135,7 @@ class JobMan(object):
         except Exception as exc:
             raise self.SubmissionError() from exc
 
-    def _job_spec_to_job(self, job_spec=None, source=None,
-                            source_meta=None):
+    def _job_spec_to_job(self, job_spec=None, source=None, source_meta=None):
         return {
             'job_spec': job_spec,
             'source': source,
@@ -176,21 +188,27 @@ class JobMan(object):
         if self._job_engine_states_are_stale():
             self._update_job_engine_states(jobs=self.get_running_jobs())
         self._process_executed_jobs()
-        if self.use_batching: self._tick_batching()
+        if self.use_batching:
+            self._tick_batching()
         self._process_submittable_jobs()
 
     def _job_engine_states_are_stale(self):
         job_engine_states_age = self._get_job_engine_states_age()
-        return (job_engine_states_age is None) or \
-                (job_engine_states_age >= self.job_engine_states_ttl)
+        return (
+            (job_engine_states_age is None) or
+            (job_engine_states_age >= self.job_engine_states_ttl)
+        )
 
     def _get_job_engine_states_age(self):
-        try: age = time.time() - self.get_kvp(key='job_engine_states_modified')
-        except KeyError: age = None
+        try:
+            age = time.time() - self.get_kvp(key='job_engine_states_modified')
+        except KeyError:
+            age = None
         return age
 
     def _update_job_engine_states(self, jobs=None):
-        if not jobs: return
+        if not jobs:
+            return
         keyed_engine_states = self.engine.get_keyed_engine_states(
             keyed_engine_metas=self._get_keyed_engine_metas(jobs=jobs))
         for job in jobs:
@@ -210,7 +228,8 @@ class JobMan(object):
 
     def _set_job_engine_state(self, job=None, job_engine_state=None):
         if job_engine_state is None:
-            if self._job_is_orphaned(job=job): job['status'] = 'EXECUTED'
+            if self._job_is_orphaned(job=job):
+                job['status'] = 'EXECUTED'
         else:
             job['engine_state'] = job_engine_state
             job['status'] = job_engine_state.get('status')
@@ -269,9 +288,7 @@ class JobMan(object):
         })
 
     def _job_is_batchable(self, job=None):
-        for filter_ in self.batchable_filters:
-            if filter_(job): return True
-        return False
+        return any([filter_(job) for filter_ in self.batchable_filters])
 
     def _process_batchable_jobs(self):
         with self._get_lock():
@@ -305,12 +322,15 @@ class JobMan(object):
                 partitions.append(current_partition)
                 current_partition = []
                 current_partition_time = 0
-        if current_partition: partitions.append(current_partition)
+        if current_partition:
+            partitions.append(current_partition)
         return partitions
 
     def _get_job_time(self, job=None):
-        try: job_time = job['job_spec']['resources']['time']
-        except KeyError: job_time = None
+        try:
+            job_time = job['job_spec']['resources']['time']
+        except KeyError:
+            job_time = None
         return job_time or self.default_job_time
 
     def _make_batch_job(self, subjobs=None):
@@ -329,15 +349,15 @@ class JobMan(object):
             'status': 'PENDING'
         })
 
-
     def _process_submittable_jobs(self):
         with self._get_lock():
             submittable_jobs = self._get_submittable_jobs(
                 exclude_batchable_jobs=(not self.use_batching))
             num_submissions = 0
-            num_slots = self.get_num_free_slots() 
+            num_slots = self.get_num_free_slots()
             for job in submittable_jobs:
-                if num_submissions > num_slots: break
+                if num_submissions > num_slots:
+                    break
                 try:
                     self._submit_job_to_engine(job=job)
                     num_submissions += 1
@@ -347,8 +367,10 @@ class JobMan(object):
     @contextlib.contextmanager
     def _get_lock(self):
         self._acquire_lock()
-        try: yield
-        finally: self._release_lock()
+        try:
+            yield
+        finally:
+            self._release_lock()
 
     def _acquire_lock(self):
         start_time = time.time()
@@ -376,7 +398,8 @@ class JobMan(object):
 
     def _submit_job_to_engine(self, job=None):
         try:
-            submit_to_engine_fn = self._get_submit_to_engine_fn_for_job(job=job)
+            submit_to_engine_fn = self._get_submit_to_engine_fn_for_job(
+                job=job)
             engine_meta = submit_to_engine_fn(job=job)
             job.update({'engine_meta': engine_meta, 'status': 'RUNNING'})
             return self.save_jobs(jobs=[job])[0]
@@ -386,7 +409,8 @@ class JobMan(object):
             raise self.SubmissionError() from exc
 
     def _get_submit_to_engine_fn_for_job(self, job=None):
-        if job.get('is_batch'): return self._submit_batch_job_to_engine
+        if job.get('is_batch'):
+            return self._submit_batch_job_to_engine
         return self._submit_single_job_to_engine
 
     def _submit_single_job_to_engine(self, job=None):
