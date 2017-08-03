@@ -9,10 +9,7 @@ from jobman.batch_builders.bash_batch_builder import BashBatchBuilder
 
 
 class Entrypoint(object):
-    @classmethod
-    def run(cls): cls()._run()
-
-    def _run(self):
+    def run(self):
         self._setup()
         job_specs = self._generate_job_specs()
         for job_spec in job_specs:
@@ -51,7 +48,8 @@ class Entrypoint(object):
             '''
         ).lstrip().format(ctx=ctx)
         entrypoint_path = os.path.join(jobdir, entrypoint_name)
-        with open(entrypoint_path, 'w') as f: f.write(entrypoint_content)
+        with open(entrypoint_path, 'w') as f:
+            f.write(entrypoint_content)
         os.chmod(entrypoint_path, 0o755)
         job_spec = {
             'dir': jobdir,
@@ -65,4 +63,6 @@ class Entrypoint(object):
             self.jobman.tick()
             time.sleep(1)
 
-if __name__ == '__main__': Entrypoint.run()
+
+if __name__ == '__main__':
+    Entrypoint().run()
