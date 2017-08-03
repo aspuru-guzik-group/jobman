@@ -7,11 +7,12 @@ from .base_engine import BaseEngine
 
 
 class LocalEngine(BaseEngine):
-    ENGINE_ENTRYPOINT_TPL ='JOBMAN.ENTRYPOINT.{job_id}.sh'
+    ENGINE_ENTRYPOINT_TPL = 'JOBMAN.ENTRYPOINT.{job_id}.sh'
 
     def __init__(self, *args, db_uri=':memory:', sqlite=sqlite3, **kwargs):
         super().__init__(*args, **kwargs)
-        if db_uri == 'sqlite://': db_uri = ':memory:'
+        if db_uri == 'sqlite://':
+            db_uri = ':memory:'
         elif db_uri.startswith('sqlite:///'):
             db_uri = db_uri.replace('sqlite:///', '')
         self.conn = sqlite.connect(db_uri)
@@ -41,7 +42,8 @@ class LocalEngine(BaseEngine):
             job['job_spec']['dir'],
             self.ENGINE_ENTRYPOINT_TPL.format(job_id=job_id)
         )
-        with open(entrypoint_path, 'w') as f: f.write(entrypoint_content)
+        with open(entrypoint_path, 'w') as f:
+            f.write(entrypoint_content)
         os.chmod(entrypoint_path, 0o755)
         return entrypoint_path
 
@@ -109,7 +111,7 @@ class LocalEngine(BaseEngine):
     def _generate_engine_entrypoint_cmd(self, entrypoint_path=None, job=None,
                                         job_id=None, extra_cfgs=None):
         cmd = (
-            'pushd {entrypoint_dir} > /dev/null &&'  
+            'pushd {entrypoint_dir} > /dev/null &&'
             ' {entrypoint_path} {stdout_redirect} {stderr_redirect};'
             ' popd > /dev/null;'
         ).format(
@@ -175,13 +177,14 @@ class LocalEngine(BaseEngine):
         for log_name, log_path in self._get_std_log_paths(job=job).items():
             log_content = ''
             try:
-                with open(log_path) as f: log_content = f.read()
+                with open(log_path) as f:
+                    log_content = f.read()
             except Exception as exc:
                 log_content = "COULD NOT READ LOG '{log_name}': {exc}'".format(
                     log_name=log_name, exc=exc)
             std_log_contents[log_name] = log_content
         return std_log_contents
-                
+
     def get_keyed_engine_states(self, keyed_engine_metas=None):
         keyed_job_ids = {
             key: engine_meta['job_id']
@@ -212,4 +215,3 @@ class LocalEngine(BaseEngine):
 
     def local_job_to_status(self, local_job=None):
         return self.JOB_STATUSES.EXECUTED
-

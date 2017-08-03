@@ -6,12 +6,12 @@ from .base_engine import BaseEngine
 
 class SlurmEngine(BaseEngine):
     SLURM_STATES_TO_ENGINE_JOB_STATUSES = {
-        BaseEngine.JOB_STATUSES.RUNNING: set(['CONFIGURING', 'COMPLETING',
-                                              'PENDING', 'RUNNING']),
+        BaseEngine.JOB_STATUSES.RUNNING: set([
+            'CONFIGURING', 'COMPLETING', 'PENDING', 'RUNNING']),
         BaseEngine.JOB_STATUSES.EXECUTED: set(['COMPLETED']),
-        BaseEngine.JOB_STATUSES.FAILED: set(['BOOT_FAIL', 'CANCELLED', 'FAILED',
-                                             'NODE_FAIL', 'PREEMPTED',
-                                             'TIMEOUT'])
+        BaseEngine.JOB_STATUSES.FAILED: set([
+            'BOOT_FAIL', 'CANCELLED', 'FAILED', 'NODE_FAIL', 'PREEMPTED',
+            'TIMEOUT'])
     }
 
     DEFAULT_SLURM_COMMANDS = {
@@ -26,8 +26,8 @@ class SlurmEngine(BaseEngine):
     def submit_job(self, job=None, cfg=None):
         job_spec = job['job_spec']
         workdir = job_spec['dir']
-        entrypoint_name = job_spec.get('entrypoint') or \
-                self.DEFAULT_ENTRYPOINT_NAME
+        entrypoint_name = (job_spec.get('entrypoint') or
+                           self.DEFAULT_ENTRYPOINT_NAME)
         entrypoint_path = os.path.join(workdir, entrypoint_name)
         cmd = [self.slurm_commands['sbatch'],
                ('--workdir=%s' % workdir), entrypoint_path]
@@ -75,12 +75,11 @@ class SlurmEngine(BaseEngine):
         return slurm_jobs_by_id
 
     def get_slurm_jobs_via_scontrol(self, job_ids=None):
-        if not job_ids: return {}
+        if not job_ids:
+            return {}
         all_slurm_jobs = self.get_all_slurm_jobs_via_scontrol()
         return [slurm_job for slurm_job in all_slurm_jobs
                 if slurm_job['JobId'] in job_ids]
-        #return [self.get_slurm_job_via_scontrol(job_id=job_id)
-                #for job_id in job_ids]
 
     def get_all_slurm_jobs_via_scontrol(self):
         cmd = [self.slurm_commands['scontrol'], 'show', '--all', '--details',
@@ -91,7 +90,8 @@ class SlurmEngine(BaseEngine):
         if 'No jobs in the system' not in scontrol_output:
             for scontrol_line in scontrol_output.split("\n"):
                 scontrol_line = scontrol_line.strip()
-                if not scontrol_line: continue
+                if not scontrol_line:
+                    continue
                 slurm_jobs.append(self.parse_scontrol_line(scontrol_line))
         return slurm_jobs
 
@@ -103,8 +103,10 @@ class SlurmEngine(BaseEngine):
                 cmd=cmd, check=True)
             slurm_job = self.parse_scontrol_line(completed_proc.stdout)
         except self.process_runner.CalledProcessError as exc:
-            if 'Invalid job id specified' in exc.stderr: slurm_job = None
-            else: raise exc
+            if 'Invalid job id specified' in exc.stderr:
+                slurm_job = None
+            else:
+                raise exc
         return slurm_job
 
     def parse_scontrol_line(self, scontrol_line=None):
@@ -115,7 +117,8 @@ class SlurmEngine(BaseEngine):
         return parsed
 
     def get_slurm_jobs_via_sacct(self, job_ids=None):
-        if not job_ids: return []
+        if not job_ids:
+            return []
         csv_job_ids = ','.join(list(job_ids))
         cmd = [self.slurm_commands['sacct'], '--jobs=%s' % csv_job_ids,
                '--long', '--noconvert', '--parsable2', '--allocations']
@@ -139,7 +142,8 @@ class SlurmEngine(BaseEngine):
 
     def parse_sacct_line(self, sacct_line=None, fields=None):
         parsed = {}
-        for i, value in enumerate(self.split_sacct_line(sacct_line=sacct_line)):
+        line_parts = self.split_sacct_line(sacct_line=sacct_line)
+        for i, value in enumerate(line_parts):
             parsed[fields[i]] = value
         return parsed
 

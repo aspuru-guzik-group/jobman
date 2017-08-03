@@ -34,8 +34,8 @@ class JobMan(object):
         params_from_cfg = {}
         for param in cls.CFG_PARAMS:
             try:
-                params_from_cfg[param] = utils.get_key_or_attr(
-                    src=cfg, key=param)
+                params_from_cfg[param] = utils.get_key_or_attr(src=cfg,
+                                                               key=param)
             except KeyError:
                 pass
         return JobMan(**params_from_cfg, cfg=cfg)
@@ -81,14 +81,11 @@ class JobMan(object):
         logging_cfg = logging_cfg or {}
         logger = (logging_cfg.get('logger') or
                   logging.getLogger('jobman_%s' % id(self)))
-
         log_file = logging_cfg.get('log_file')
         if log_file:
-            expanded_log_file = os.path.expanduser(log_file)
-            logger.addHandler(logging.FileHandler(expanded_log_file))
+            logger.addHandler(logging.FileHandler(Path(log_file).expanduser()))
         if self.debug:
             logger.addHandler(logging.StreamHandler())
-
         level = logging_cfg.get('level')
         if level:
             logger.setLevel(getattr(logging, level))
@@ -111,8 +108,8 @@ class JobMan(object):
         return [job_spec_has_batchable]
 
     def _generate_dao(self, jobman_db_uri=None):
-        jobman_db_uri = jobman_db_uri or os.path.expanduser(
-            '~/jobman.sqlite.db')
+        jobman_db_uri = (jobman_db_uri or
+                         Path('~/jobman.sqlite.db').expanduser())
         from .dao.sqlite_dao import SqliteDAO
         return SqliteDAO(db_uri=jobman_db_uri, logger=self.logger)
 
@@ -382,7 +379,7 @@ class JobMan(object):
         })
 
     def _job_is_batchable(self, job=None):
-        return any([filter_(job) for filter_ in self.batchable_filters])
+        return any(filter_(job) for filter_ in self.batchable_filters)
 
     def _process_batchable_jobs(self):
         with self._get_lock():
