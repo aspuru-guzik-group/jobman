@@ -109,7 +109,7 @@ class JobMan(object):
 
     def _generate_dao(self, jobman_db_uri=None):
         jobman_db_uri = (jobman_db_uri or
-                         Path('~/jobman.sqlite.db').expanduser())
+                         str(Path('~/jobman.sqlite.db').expanduser()))
         from .dao.sqlite_dao import SqliteDAO
         return SqliteDAO(db_uri=jobman_db_uri, logger=self.logger)
 
@@ -344,16 +344,28 @@ class JobMan(object):
 
     def _generate_job_spec_for_dir_source_item(self, dir=None, source_key=None,
                                                source_cfg=None):
+        return self._generate_job_spec_for_job_dir(
+            job_dir=dir,
+            defaults={
+                **self.default_job_spec,
+                **source_cfg.get('default_job_spec', {})
+            }
+        )
+
+    def _generate_job_spec_for_job_dir(self, job_dir=None, defaults=...,
+                                       overrides=None):
+        if defaults is ...:
+            defaults = self.default_job_spec
         return {
-            'dir': str(dir),
-            **self.default_job_spec,
-            **source_cfg.get('default_job_spec', {}),
-            **self._load_job_spec_from_dir(dir)
+            'dir': str(job_dir),
+            **(defaults or {}),
+            **self._load_job_spec_from_job_dir(job_dir=job_dir),
+            **(overrides or {})
         }
 
-    def _load_job_spec_from_dir(self, dir=None):
+    def _load_job_spec_from_job_dir(self, job_dir=None):
         job_spec = {}
-        job_spec_path = Path(dir) / constants.JOB_SPEC_FILE_NAME
+        job_spec_path = Path(job_dir) / constants.JOB_SPEC_FILE_NAME
         if job_spec_path.exists():
             with open(job_spec_path) as f:
                 job_spec = json.load(f)
@@ -433,9 +445,7 @@ class JobMan(object):
         self.save_jobs(jobs=patched_subjobs)
         self._create_job(job={
             'key': batch_key,
-            'batch_meta': {
-                'subjob_keys': [subjob['key'] for subjob in subjobs]
-            },
+            'batch_meta': {'subjob_keys': [job['key'] for job in subjobs]},
             'is_batch': 1,
             'status': 'PENDING'
         })
@@ -515,3 +525,10 @@ class JobMan(object):
 
     def flush(self):
         self.dao.flush()
+
+    def submit_job_dir(self, job_dir=None, source_key=None, source_meta=None):
+        return self.submit_job_spec(
+            job_spec=self._generate_job_spec_for_job_dir(job_dir=job_dir),
+            source_key=source_key,
+            source_meta=source_meta
+        )
