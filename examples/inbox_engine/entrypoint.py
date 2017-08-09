@@ -41,12 +41,13 @@ class Entrypoint(object):
             },
         )
         job_specs = [self._generate_job_spec(ctx={'key': i}) for i in range(3)]
-        jobs = [self.upstream_jobman.submit_job_spec(job_spec=job_spec)
-                for job_spec in job_specs]
+        for job_spec in job_specs:
+            self.upstream_jobman.submit_job_spec(job_spec=job_spec)
         for i in range(4):
             self.upstream_jobman.tick()
             self.downstream_jobman.tick()
             time.sleep(.1)
+        jobs = self.upstream_jobman.query_jobs()
         job_statuses = [job['status'] for job in jobs]
         assert set(job_statuses) == set(['COMPLETED']), set(job_statuses)
 

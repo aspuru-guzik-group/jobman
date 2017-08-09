@@ -164,6 +164,8 @@ class JobMan(object):
 
     def _update_running_jobs(self):
         running_jobs = self.get_running_jobs()
+        if not running_jobs:
+            return
         self._update_job_engine_states(jobs=running_jobs)
         self.dao.save_jobs(running_jobs)
 
@@ -192,12 +194,12 @@ class JobMan(object):
         engine_states = engine.get_keyed_engine_states(engine_metas)
         for job in jobs:
             engine_state = engine_states.get(job['key'])
-            if engine_state is None:
+            if not engine_state:
                 if self._job_is_orphaned(job=job):
                     job['status'] = 'EXECUTED'
-                else:
-                    job['engine_state'] = engine_state
-                    job['status'] = engine_state.get('status')
+            else:
+                job['engine_state'] = engine_state
+                job['status'] = engine_state.get('status')
 
     def _job_is_orphaned(self, job=None):
         return (self._get_job_age(job=job) > self.submission_grace_period)

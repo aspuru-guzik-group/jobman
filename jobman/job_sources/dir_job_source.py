@@ -50,6 +50,14 @@ class DirJobSource(BaseJobSource):
             subdir_path=self.subdir_paths['completed']
         )
 
+    def _get_unfinished_jobs_by_status(self, status=None):
+        return self.query_jobs(query={
+            'filters': [
+                self.jobman.generate_status_filter(status='COMPLETED'),
+                {'field': 'source_tag', 'op': '!=', 'arg': self.FINISHED_TAG}
+            ]
+        })
+
     def _move_jobs_to_subdir(self, jobs=None, subdir_path=None):
         for job in jobs:
             self._move_job_to_subdir(job=job, subdir_path=subdir_path)
@@ -64,14 +72,6 @@ class DirJobSource(BaseJobSource):
         except:
             self.jobman.logger.exception("error moving job")
         job['source_tag'] = self.FINISHED_TAG
-
-    def _get_unfinished_jobs_by_status(self, status=None):
-        return self.query_jobs(query={
-            'filters': [
-                self.jobman.generate_status_filter(status='COMPLETED'),
-                {'field': 'source_tag', 'op': '!=', 'arg': self.FINISHED_TAG}
-            ]
-        })
 
     def _move_failed(self):
         self._move_jobs_to_subdir(

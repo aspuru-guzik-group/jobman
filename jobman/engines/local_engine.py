@@ -19,14 +19,15 @@ class LocalEngine(BaseBashEngine):
         entrypoint_path = self._write_engine_entrypoint(
             job=job, extra_cfgs=extra_cfgs)
         self._execute_engine_entrypoint(entrypoint_path=entrypoint_path,
-                                        extra_cfgs=extra_cfgs)
+                                        extra_cfgs=extra_cfgs,
+                                        job=job)
         engine_job = self.dao.create_job(
             job={'status': self.JOB_STATUSES.EXECUTED})
         engine_meta = {'key': engine_job['key']}
         return engine_meta
 
     def _execute_engine_entrypoint(self, entrypoint_path=None, job=None,
-                                   job_key=None, extra_cfgs=None):
+                                   extra_cfgs=None):
         self._execute_engine_entrypoint_cmd(
             entrypoint_cmd=self._generate_engine_entrypoint_cmd(
                 entrypoint_path=entrypoint_path,
@@ -94,7 +95,7 @@ class LocalEngine(BaseBashEngine):
             for external_key, engine_meta in keyed_engine_metas.items()
         }
         engine_job_keys = list(engine_job_keys_by_external_keys.values())
-        engine_jobs = self.dao.get_jobs(query={
+        engine_jobs = self.dao.query_jobs(query={
             'filters': [{'field': 'key', 'op': 'IN', 'arg': engine_job_keys}]
         })
         engine_jobs_by_engine_job_keys = {

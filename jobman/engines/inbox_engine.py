@@ -9,10 +9,11 @@ from .base_engine import BaseEngine
 
 class InboxEngine(BaseEngine):
     def __init__(self, db_uri=None, root_dir=None, transfer_fn=shutil.move,
-                 throttling_specs=None, **kwargs):
+                 sync_fn=None, throttling_specs=None, **kwargs):
         super().__init__(**kwargs)
         self.root_dir = root_dir
         self.transfer_fn = transfer_fn
+        self.sync_fn = sync_fn or self._default_sync_fn
         self.dao = EngineSqliteDAO(
             db_uri=db_uri, table_prefix='engine_%s_' % self.key,
             extra_job_fields={
@@ -26,10 +27,17 @@ class InboxEngine(BaseEngine):
             **(throttling_specs or {})
         }
 
+    def _default_sync_fn(self, src, dest):
+        dest_path = Path(dest)
+        if dest_path.exists():
+            dest_path.rmdir()
+        self.transfer_fn(src, dest)
+
     def _get_default_throttling_specs(self):
         return {
             key: {
-                'wait': 120,
+                # 'wait': 120,
+                'wait': .001,
                 'storage_key': 'LAST_%s_TIME' % key.upper(),
                 'fn': getattr(self, '_%s' % key)
             }
@@ -67,11 +75,14 @@ class InboxEngine(BaseEngine):
         if not running_engine_jobs:
             return
         remote_inventory = self._get_remote_dir_inventory()
+        jobs_to_save = []
         for engine_job in running_engine_jobs:
             remote_meta = remote_inventory.get(engine_job['key'])
             if remote_meta:
                 engine_job['remote_status'] = remote_meta['status']
                 engine_job['remote_dir'] = remote_meta['dir']
+                jobs_to_save.append(engine_job)
+        self.dao.save_jobs(jobs_to_save)
 
     def _get_remote_dir_inventory(self):
         inventory = {}
@@ -111,8 +122,7 @@ class InboxEngine(BaseEngine):
     def _sync_dir_for_engine_job(self, engine_job=None):
         local_dir = engine_job['local_dir']
         remote_dir = engine_job['remote_dir']
-        shutil.rmtree(local_dir)
-        self.transfer_fn(remote_dir, local_dir)
+        self.sync_fn(remote_dir, local_dir)
 
     def submit_job(self, job=None, extra_cfgs=None):
         engine_job_key = self.key + '__' + str(uuid.uuid4())
