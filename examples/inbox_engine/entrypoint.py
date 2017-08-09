@@ -6,6 +6,7 @@ import time
 from jobman.jobman import JobMan
 from jobman.engines.local_engine import LocalEngine
 from jobman.engines.inbox_engine import InboxEngine
+from jobman.job_sources.dir_job_source import DirJobSource
 
 
 class Entrypoint(object):
@@ -14,18 +15,30 @@ class Entrypoint(object):
         self.scratch_dir = tempfile.mkdtemp(dir=Path(this_dir, 'scratch'))
         self.root_path = Path(self.scratch_dir, 'inbox_engine_root')
         self.root_path.mkdir(parents=True)
+        self.db_uri = 'sqlite://'
         self.upstream_jobman = JobMan(
-            jobman_db_uri=':memory:',
-            engine=InboxEngine(root_dir=str(self.root_path)),
-            job_engine_states_ttl=.01,
+            jobman_db_uri=self.db_uri,
+            engines={
+                'my_inbox': InboxEngine(
+                    key='my_inbox',
+                    db_uri=self.db_uri,
+                    root_dir=str(self.root_path)
+                ),
+            },
         )
         self.downstream_jobman = JobMan(
             jobman_db_uri=':memory:',
-            engine=LocalEngine(scratch_dir=self.scratch_dir),
-            job_source_cfgs={
-                'my_root': {'type': 'dir', 'root_path': self.root_path}
+            engines={
+                'my_local': LocalEngine(
+                    key='my_local',
+                    scratch_dir=self.scratch_dir,
+                    db_uri=self.db_uri
+                ),
             },
-            job_engine_states_ttl=.01,
+            job_sources={
+                'my_root': DirJobSource(
+                    key='my_root', root_path=self.root_path)
+            },
         )
         job_specs = [self._generate_job_spec(ctx={'key': i}) for i in range(3)]
         jobs = [self.upstream_jobman.submit_job_spec(job_spec=job_spec)

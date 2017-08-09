@@ -1,10 +1,10 @@
 import logging
 import os
-import sqlite3
+import sqlite3 as sqlite
 import time
 import uuid
 
-from . import orm as _orm
+from . import orm
 
 
 class SqliteDAO(object):
@@ -14,46 +14,33 @@ class SqliteDAO(object):
     class InsertError(Exception):
         pass
 
-    def __init__(self, db_uri=':memory:', logger=None, sqlite=sqlite3,
-                 orm=_orm):
+    def __init__(self, db_uri=':memory:', orm_specs=None, table_prefix=None,
+                 ensure_tables=True, logger=None, include_kvp_orm=True):
         self.logger = logger or logging
         if db_uri == 'sqlite://':
             db_uri = ':memory:'
         elif db_uri.startswith('sqlite:///'):
             db_uri = db_uri.replace('sqlite:///', '')
         self.db_uri = db_uri
-        self.sqlite = sqlite
-
-        self.orms = self._generate_orms(orm=orm)
+        self.orms = self._generate_orms(orm_specs=orm_specs,
+                                        table_prefix=table_prefix,
+                                        include_kvp_orm=include_kvp_orm)
         self._connection = None
+        if ensure_tables:
+            self.ensure_tables()
 
-    def _generate_orms(self, orm=None):
-        return {
-            'job': orm.ORM(name='job', fields=self._generate_job_fields(),
-                           logger=self.logger),
-            'kvp': orm.ORM(name='kvp', fields=self._generate_kvp_fields(),
-                           logger=self.logger),
+    def _generate_orms(self, orm_specs=None, table_prefix=None,
+                       include_kvp_orm=None):
+        common_orm_kwargs = {'logger': self.logger,
+                             'table_prefix': table_prefix}
+        if include_kvp_orm:
+            orm_specs += [{'name': 'kvp',
+                           'fields': self._generate_kvp_fields()}]
+        orms = {
+            orm_spec['name']: orm.ORM(**{**common_orm_kwargs, **orm_spec})
+            for orm_spec in orm_specs
         }
-
-    def _generate_job_fields(self):
-        return {
-            'key': {'type': 'TEXT', 'primary_key': True,
-                    'default': self.generate_key},
-            'job_spec': {'type': 'JSON'},
-            'status': {'type': 'TEXT'},
-            'is_batch': {'type': 'INTEGER'},
-            'batch_meta': {'type': 'JSON'},
-            'batchable': {'type': 'INTEGER'},
-            'parent_batch_key': {'type': 'TEXT'},
-            'engine_meta': {'type': 'JSON'},
-            'engine_state': {'type': 'JSON'},
-            'errors': {'type': 'JSON'},
-            'source_key': {'type': 'TEXT'},
-            'source_meta': {'type': 'JSON'},
-            'source_tag': {'type': 'TEXT'},
-            'purgeable': {'type': 'INTEGER'},
-            **self._generate_timestamp_fields()
-        }
+        return orms
 
     def _generate_kvp_fields(self):
         return {
@@ -65,17 +52,21 @@ class SqliteDAO(object):
     def _generate_timestamp_fields(self):
         return {
             'created': {'type': 'INTEGER',
-                        'default': self._generate_timestamp},
+                        'default': self.generate_timestamp},
             'modified': {'type': 'INTEGER',
-                         'auto_update': self._generate_timestamp}
+                         'auto_update': self.generate_timestamp}
         }
 
-    def generate_key(self): return self._generate_uuid()
+    @classmethod
+    def generate_key(cls):
+        return cls.generate_uuid()
 
-    def _generate_uuid(self, *args, **kwargs):
+    @classmethod
+    def generate_uuid(cls, *args, **kwargs):
         return str(uuid.uuid4())
 
-    def _generate_timestamp(self, *args, **kwargs):
+    @classmethod
+    def generate_timestamp(cls, *args, **kwargs):
         return int(time.time())
 
     @property
@@ -85,63 +76,64 @@ class SqliteDAO(object):
         return self._connection
 
     def create_connection(self):
-        connection = self.sqlite.connect(self.db_uri)
-        connection.row_factory = self.sqlite.Row
+        connection = sqlite.connect(self.db_uri)
+        connection.row_factory = sqlite.Row
         return connection
 
-    def ensure_db(self):
-        should_create = False
-        if self.db_uri == ':memory':
-            should_create = True
-        elif not os.path.exists(self.db_uri):
-            should_create = True
-        if should_create:
-            self.create_db()
-
-    def create_db(self):
+    def ensure_tables(self):
         with self.connection:
-            for orm in self.orms.values():
-                orm.create_table(connection=self.connection)
+            for orm_ in self.orms.values():
+                orm_.create_table(connection=self.connection)
 
-    def create_job(self, job=None): return self.save_jobs(jobs=[job])[0]
+    def create_ent(self, ent_type=None, ent=None):
+        return self.save_ents(ent_type=ent_type, ents=[ent])[0]
 
-    def save_jobs(self, jobs=None, replace=True):
-        saved_jobs = []
+    def save_ents(self, ent_type=None, ents=None, replace=True):
+        saved_ents = []
+        ent_orm = self.orms[ent_type]
         with self.connection:
-            for job in jobs:
+            for ent in ents:
                 try:
-                    saved_job = self.orms['job'].save_object(
-                        obj=job, replace=replace, connection=self.connection)
-                except self.orms['job'].InsertError as exc:
+                    saved_ent = ent_orm.save_object(
+                        obj=ent, replace=replace, connection=self.connection)
+                except ent_orm.InsertError as exc:
                     raise self.InsertError() from exc
-                saved_jobs.append(saved_job)
-        return saved_jobs
+                saved_ents.append(saved_ent)
+        return saved_ents
 
-    def get_jobs(self, query=None):
-        return self.orms['job'].get_objects(query=query,
-                                            connection=self.connection)
+    def get_ent(self, ent_type=None, key=None):
+        ent_orm = self.orms[ent_type]
+        query = {'filters': [{'field': 'key', 'op': '=', 'arg': key}]}
+        try:
+            return ent_orm.get_objects(query=query,
+                                       connection=self.connection)[0]
+        except IndexError:
+            return None
+
+    def query_ents(self, ent_type=None, query=None):
+        ent_orm = self.orms[ent_type]
+        return ent_orm.get_objects(query=query, connection=self.connection)
 
     def save_kvps(self, kvps=None, replace=True):
-        with self.connection:
-            for kvp in kvps:
-                try:
-                    self.orms['kvp'].save_object(obj=kvp,
-                                                 connection=self.connection,
-                                                 replace=replace)
-                except self.orms['kvp'].InsertError as exc:
-                    raise self.InsertError() from exc
+        return self.save_ents(ent_type='kvp', ents=kvps, replace=replace)
 
-    def get_kvps(self, query=None):
-        return self.orms['kvp'].get_objects(query=query,
-                                            connection=self.connection)
+    def create_kvp(self, kvp=None):
+        return self.create_ent(ent_type='kvp', ent=kvp)
+
+    def query_kvps(self, query=None):
+        return self.get_ents(ent_type='kvp', query=query)
+
+    def get_kvp(self, key=None):
+        return self.get_ent(ent_type='kvp', key=key)
 
     def update_kvp(self, key=None, new_value=None, where_prev_value=...):
+        kvp_orm = self.orms['kvp']
         filters = [{'field': 'key', 'op': '=', 'arg': key}]
         if where_prev_value is not ...:
             filters.append({'field': 'value', 'op': '=',
                             'arg': where_prev_value})
         try:
-            update_result = self.orms['kvp'].update_objects(
+            update_result = kvp_orm.update_objects(
                 query={'filters': filters}, updates={'value': new_value},
                 connection=self.connection
             )

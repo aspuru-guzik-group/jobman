@@ -42,7 +42,7 @@ class JobMan(object):
 
     def _generate_logger(self, logging_cfg=None):
         logging_cfg = {**(logging_cfg or {})}
-        logging_cfg.setdefault('name', (__name__ + ':' + id(self)))
+        logging_cfg.setdefault('name', (__name__ + ':' + str(id(self))))
         if self.debug:
             logging_cfg['add_stream_handler'] = True
             logging_cfg['level'] = 'DEBUG'
@@ -54,6 +54,8 @@ class JobMan(object):
                lock_timeout=30, use_batching=False, job_spec_defaults=None):
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
         self.job_sources = job_sources or {}
+        for job_source in self.job_sources.values():
+            job_source.jobman = self
         self.engines = engines or {}
         self.default_job_time = default_job_time
         self.lock_timeout = lock_timeout
@@ -85,7 +87,7 @@ class JobMan(object):
         return [job_spec_has_batchable]
 
     def ensure_db(self):
-        self.dao.ensure_db()
+        self.dao.ensure_tables()
         self._ensure_lock_kvp()
 
     def _ensure_lock_kvp(self):
@@ -109,21 +111,20 @@ class JobMan(object):
             raise self.SubmissionError() from exc
 
     def get_num_free_slots(self):
-        return self.max_running_jobs - len(self.get_running_jobs())
+        # return self.max_running_jobs - len(self.get_running_jobs())
+        return 999
 
-    def get_jobs(self, query=None):
-        return self.dao.get_jobs(query=query)
+    def query_jobs(self, query=None):
+        return self.dao.query_jobs(query=query)
 
-    def get_job_for_key(self, key=None):
-        return self.dao.get_jobs(query={
-            'filters': [{'field': 'key', 'op': '=', 'arg': key}]
-        })[0]
+    def get_job(self, key=None):
+        return self.dao.get_job(key=key)
 
     def save_jobs(self, jobs=None):
         return self.dao.save_jobs(jobs=jobs)
 
     def get_jobs_for_status(self, status=None):
-        return self.get_jobs(query={
+        return self.query_jobs(query={
             'filters': [self.generate_status_filter(status=status)]
         })
 
@@ -171,13 +172,13 @@ class JobMan(object):
         if not include_batch_subjobs:
             filters.append({'field': 'parent_batch_key', 'op': 'IS',
                             'arg': None})
-        return self.dao.get_jobs(query={'filters': filters})
+        return self.dao.query_jobs(query={'filters': filters})
 
     def _update_job_engine_states(self, jobs=None):
         if not jobs: return  # noqa
         jobs_by_engine_key = self._group_jobs_by_engine_key(jobs=jobs)
         for engine_key, jobs_for_engine_key in jobs_by_engine_key.items():
-            self._update_job_engines_states_for_engine(
+            self._update_job_engine_states_for_engine(
                 jobs=jobs_for_engine_key, engine=self.engines[engine_key])
 
     def _group_jobs_by_engine_key(self, jobs=None):
@@ -222,7 +223,7 @@ class JobMan(object):
 
     def _get_batch_subjobs(self, batch_job=None):
         subjob_keys = batch_job['batch_meta']['subjob_keys']
-        return self.dao.get_jobs(query={
+        return self.dao.query_jobs(query={
             'filters': [{'field': 'key', 'op': 'IN', 'arg': subjob_keys}]
         })
 
@@ -267,7 +268,7 @@ class JobMan(object):
             self.save_jobs(jobs=candidate_batchable_jobs)
 
     def _get_candidate_batchable_jobs(self):
-        return self.dao.get_jobs(query={
+        return self.dao.query_jobs(query={
             'filters': [
                 self.generate_status_filter(status='PENDING'),
                 {'field': 'batchable', 'op': 'IS', 'arg': None}
@@ -284,7 +285,7 @@ class JobMan(object):
 
     def _get_batchable_jobs(self):
         age_threshold = time.time() - self.max_batchable_wait
-        return self.dao.get_jobs(query={
+        return self.dao.query_jobs(query={
             'filters': [
                 {'field': 'batchable', 'op': '=', 'arg': 1},
                 self.generate_status_filter(status='PENDING'),
@@ -344,7 +345,8 @@ class JobMan(object):
                 if num_submissions > num_slots:
                     break
                 try:
-                    self._submit_job_to_engine(job=job)
+                    engine = list(self.engines.values())[0]
+                    self._submit_job_to_engine(job=job, engine=engine)
                     num_submissions += 1
                 except self.SubmissionError:
                     self.logger.exception('SubmissionError')
@@ -379,14 +381,18 @@ class JobMan(object):
         filters = [self.generate_status_filter(status='PENDING')]
         if exclude_batchable_jobs:
             filters.append({'field': 'batchable', 'op': '! =', 'arg': 1})
-        return self.dao.get_jobs(query={'filters': filters})
+        return self.dao.query_jobs(query={'filters': filters})
 
-    def _submit_job_to_engine(self, job=None):
+    def _submit_job_to_engine(self, job=None, engine=None):
         try:
             submit_to_engine_fn = self._get_submit_to_engine_fn_for_job(
                 job=job)
-            engine_meta = submit_to_engine_fn(job=job)
-            job.update({'engine_meta': engine_meta, 'status': 'RUNNING'})
+            engine_meta = submit_to_engine_fn(job=job, engine=engine)
+            job.update({
+                'engine_key': engine.key,
+                'engine_meta': engine_meta,
+                'status': 'RUNNING'
+            })
             return self.save_jobs(jobs=[job])[0]
         except Exception as exc:
             job.update({'status': 'FAILED'})
@@ -398,14 +404,14 @@ class JobMan(object):
             return self._submit_batch_job_to_engine
         return self._submit_single_job_to_engine
 
-    def _submit_single_job_to_engine(self, job=None):
-        engine_meta = self.engine.submit_job(job=job, extra_cfgs=[self.cfg])
+    def _submit_single_job_to_engine(self, job=None, engine=None):
+        engine_meta = engine.submit_job(job=job, extra_cfgs=[self.cfg])
         return engine_meta
 
-    def _submit_batch_job_to_engine(self, job=None):
+    def _submit_batch_job_to_engine(self, job=None, engine=None):
         subjobs = self._get_batch_subjobs(batch_job=job)
-        return self.engine.submit_batch_job(batch_job=job, subjobs=subjobs,
-                                            extra_cfgs=[self.cfg])
+        return engine.submit_batch_job(batch_job=job, subjobs=subjobs,
+                                       extra_cfgs=[self.cfg])
 
     def flush(self):
         self.dao.flush()

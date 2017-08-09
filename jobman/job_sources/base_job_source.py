@@ -5,7 +5,7 @@ class BaseJobSource(object):
 
     def tick(self): raise NotImplementedError()
 
-    def get_jobs(self, query=None):
+    def query_jobs(self, query=None):
         query = query or {}
         query = {
             **query,
@@ -14,7 +14,7 @@ class BaseJobSource(object):
                 *(query.get('filters') or [])
             ]
         }
-        return self.jobman.get_jobs(query=query)
+        return self.jobman.query_jobs(query=query)
 
     def get_jobs_for_status(self, status=None):
         return self.get_jobs(query={

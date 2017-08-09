@@ -1,52 +1,43 @@
 import os
-import sqlite3
-import uuid
 
+from jobman.dao.engine_sqlite_dao import EngineSqliteDAO
 from .base_bash_engine import BaseBashEngine
 
 
 class LocalEngine(BaseBashEngine):
-    def __init__(self, *args, db_uri=':memory:', sqlite=sqlite3, **kwargs):
+    def __init__(self, *args, db_uri=None, ensure_db=None, cache_ttl=1,
+                 **kwargs):
         super().__init__(*args, **kwargs)
-        if db_uri == 'sqlite://':
-            db_uri = ':memory:'
-        elif db_uri.startswith('sqlite:///'):
-            db_uri = db_uri.replace('sqlite:///', '')
-        self.conn = sqlite.connect(db_uri)
-        self.conn.row_factory = sqlite.Row
-        self.ensure_db()
+        self.cache_ttl = cache_ttl
+        self.dao = EngineSqliteDAO(db_uri=db_uri,
+                                   table_prefix='engine_%s_' % self.key)
 
-    def ensure_db(self):
-        self.conn.execute('''CREATE TABLE IF NOT EXISTS jobs
-                          (job_id text, status text)''')
+    def tick(self):
+        pass
 
     def submit_job(self, job=None, extra_cfgs=None):
-        job_id = self._generate_job_id()
         entrypoint_path = self._write_engine_entrypoint(
             job=job, extra_cfgs=extra_cfgs)
         self._execute_engine_entrypoint(entrypoint_path=entrypoint_path,
-                                        job=job, job_id=job_id,
                                         extra_cfgs=extra_cfgs)
-        engine_meta = {'job_id': job_id}
+        engine_job = self.dao.create_job(
+            job={'status': self.JOB_STATUSES.EXECUTED})
+        engine_meta = {'key': engine_job['key']}
         return engine_meta
 
-    def _generate_job_id(self): return str(uuid.uuid4())
-
     def _execute_engine_entrypoint(self, entrypoint_path=None, job=None,
-                                   job_id=None, extra_cfgs=None):
+                                   job_key=None, extra_cfgs=None):
         self._execute_engine_entrypoint_cmd(
             entrypoint_cmd=self._generate_engine_entrypoint_cmd(
                 entrypoint_path=entrypoint_path,
                 job=job,
-                job_id=job_id,
                 extra_cfgs=extra_cfgs
             ),
             job=job,
-            job_id=job_id
         )
 
     def _generate_engine_entrypoint_cmd(self, entrypoint_path=None, job=None,
-                                        job_id=None, extra_cfgs=None):
+                                        extra_cfgs=None):
         cmd = (
             'pushd {entrypoint_dir} > /dev/null &&'
             ' {entrypoint_path} {stdout_redirect} {stderr_redirect};'
@@ -69,15 +60,10 @@ class LocalEngine(BaseBashEngine):
         return {'stdout_redirect': stdout_redirect,
                 'stderr_redirect': stderr_redirect}
 
-    def _execute_engine_entrypoint_cmd(self, entrypoint_cmd=None, job=None,
-                                       job_id=None):
+    def _execute_engine_entrypoint_cmd(self, entrypoint_cmd=None, job=None):
         try:
             self.process_runner.run_process(cmd=entrypoint_cmd, check=True,
                                             shell=True)
-            self.conn.cursor().execute(
-                "INSERT INTO jobs VALUES (?, ?)",
-                (job_id, self.JOB_STATUSES.EXECUTED,)
-            )
         except self.process_runner.CalledProcessError as called_proc_exc:
             self._handle_engine_entrypoint_called_proc_exc(
                 called_proc_exc=called_proc_exc, job=job)
@@ -103,32 +89,28 @@ class LocalEngine(BaseBashEngine):
         raise self.SubmissionError(error_msg) from called_proc_exc
 
     def get_keyed_engine_states(self, keyed_engine_metas=None):
-        keyed_job_ids = {
-            key: engine_meta['job_id']
-            for key, engine_meta in keyed_engine_metas.items()
+        engine_job_keys_by_external_keys = {
+            external_key: engine_meta['key']
+            for external_key, engine_meta in keyed_engine_metas.items()
         }
-        local_jobs_by_id = self.get_local_jobs_by_id(
-            job_ids=keyed_job_ids.values())
-        keyed_engine_states = {}
-        for key, job_id in keyed_job_ids.items():
-            local_job = local_jobs_by_id.get(job_id)
-            engine_state = self.local_job_to_engine_state(local_job=local_job)
-            keyed_engine_states[key] = engine_state
-        return keyed_engine_states
+        engine_job_keys = list(engine_job_keys_by_external_keys.values())
+        engine_jobs = self.dao.get_jobs(query={
+            'filters': [{'field': 'key', 'op': 'IN', 'arg': engine_job_keys}]
+        })
+        engine_jobs_by_engine_job_keys = {
+            engine_job['key']: engine_job
+            for engine_job in engine_jobs
+        }
+        engine_states_by_external_keys = {}
+        for external_key in engine_job_keys_by_external_keys.keys():
+            engine_job_key = engine_job_keys_by_external_keys[external_key]
+            engine_job = engine_jobs_by_engine_job_keys.get(engine_job_key)
+            engine_state = self._engine_job_to_engine_state(engine_job)
+            engine_states_by_external_keys[external_key] = engine_state
+        return engine_states_by_external_keys
 
-    def get_local_jobs_by_id(self, job_ids=None):
-        local_jobs = {}
-        rows = self.conn.cursor().execute('SELECT job_id, status from jobs')
-        for row in rows:
-            local_jobs[row['job_id']] = {k: row[k] for k in row.keys()}
-        return local_jobs
-
-    def local_job_to_engine_state(self, local_job=None):
-        engine_state = {'engine_job_state': local_job}
-        if local_job is not None:
-            engine_state['status'] = self.local_job_to_status(
-                local_job=local_job)
+    def _engine_job_to_engine_state(self, engine_job=None):
+        engine_state = {}
+        if engine_job:
+            engine_state['status'] = engine_job['status']
         return engine_state
-
-    def local_job_to_status(self, local_job=None):
-        return self.JOB_STATUSES.EXECUTED

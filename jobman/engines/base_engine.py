@@ -18,6 +18,7 @@ class BaseEngine(object):
         EXECUTED = 'EXECUTED'
         FAILED = 'FAILED'
         UNKNOWN = 'UNKNOWN'
+        FINISHED_STATUSES = [FAILED, EXECUTED]
 
     class SubmissionError(Exception):
         pass
@@ -28,8 +29,9 @@ class BaseEngine(object):
             msg += "key:'{key}'; spec: '{spec}'".format(key=key, spec=spec)
             super().__init__(msg, *args, **kwargs)
 
-    def __init__(self, process_runner=None, logger=None, debug=None, cfg=None,
-                 scratch_dir=None, build_batch_jobdir_fn=None):
+    def __init__(self, key=None, process_runner=None, logger=None, debug=None,
+                 cfg=None, scratch_dir=None, build_batch_jobdir_fn=None):
+        self.key = key
         self.debug = debug
         self.logger = self._setup_logger(logger=logger)
         self.process_runner = (process_runner or
@@ -62,7 +64,14 @@ class BaseEngine(object):
     def default_build_batch_jobdir(self, *args, **kwargs):
         return BashBatchBuilder().build_batch_jobdir(*args, **kwargs)
 
-    def submit_job(self, job=None, extra_cfgs=None): raise NotImplementedError
+    def tick(self):
+        raise NotImplementedError
+
+    def submit_job(self, job=None, extra_cfgs=None):
+        raise NotImplementedError
+
+    def get_keyed_engine_states(self, keyed_engine_metas=None):
+        raise NotImplementedError
 
     def submit_batch_job(self, batch_job=None, subjobs=None, extra_cfgs=None):
         batch_job_spec = self.build_batch_jobdir(

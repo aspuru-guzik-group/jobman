@@ -66,7 +66,7 @@ class DirJobSource(BaseJobSource):
         job['source_tag'] = self.FINISHED_TAG
 
     def _get_unfinished_jobs_by_status(self, status=None):
-        return self.get_jobs(query={
+        return self.query_jobs(query={
             'filters': [
                 self.jobman.generate_status_filter(status='COMPLETED'),
                 {'field': 'source_tag', 'op': '!=', 'arg': self.FINISHED_TAG}

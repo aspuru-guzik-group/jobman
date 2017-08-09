@@ -4,18 +4,25 @@ import textwrap
 
 
 class ORM(object):
-    class UpdateError(Exception): pass
-    class InsertError(Exception): pass
+    class UpdateError(Exception):
+        pass
 
-    def __init__(self, name=None, fields=None, json=json, logger=None):
+    class InsertError(Exception):
+        pass
+
+    def __init__(self, name=None, fields=None, json=json, table_prefix=None,
+                 logger=None):
         self.name = name
         self.fields = fields
         self.json = json
+        self.table_prefix = table_prefix
         self.logger = logger or logging
 
     def create_table(self, connection=None):
-        create_statement = 'CREATE TABLE {table} ({column_defs})'.format(
-            table=self.name,
+        create_statement = (
+            'CREATE TABLE IF NOT EXISTS {table} ({column_defs})'
+        ).format(
+            table=self.table,
             column_defs=(
                 ",\n".join([
                     self._generate_column_def(field=field, field_def=field_def)
@@ -23,6 +30,11 @@ class ORM(object):
             )
         )
         connection.execute(create_statement)
+
+    @property
+    def table(self):
+        table_prefix = self.table_prefix or ''
+        return table_prefix + self.name
 
     def _generate_column_def(self, field=None, field_def=None):
         column_def = '{field} {type}'.format(
@@ -35,12 +47,14 @@ class ORM(object):
 
     def _get_column_type(self, field_type=None):
         column_type = field_type
-        if field_type == 'JSON': column_type = 'TEXT'
+        if field_type == 'JSON':
+            column_type = 'TEXT'
         return column_type
 
     def save_object(self, obj=None, connection=None, replace=True):
         saved_record = self._save_record(record=self._obj_to_record(obj=obj),
-                                         connection=connection, replace=replace)
+                                         connection=connection,
+                                         replace=replace)
         return self._record_to_obj(record=saved_record)
 
     def _obj_to_record(self, obj=None, fields=None):
@@ -75,7 +89,8 @@ class ORM(object):
     def execute_insert_or_replace(self, fields=None, values=None, replace=None,
                                   connection=None):
         replace_sql = ''
-        if replace: replace_sql = 'OR REPLACE'
+        if replace:
+            replace_sql = 'OR REPLACE'
         statement = textwrap.dedent(
             '''
             INSERT {replace_sql} INTO {table} ({csv_fields})
@@ -83,12 +98,14 @@ class ORM(object):
             '''
         ).strip().format(
             replace_sql=replace_sql,
-            table=self.name,
+            table=self.table,
             csv_fields=(','.join(fields)),
             csv_placeholders=(','.join(['?' for field in fields]))
         )
-        try: connection.execute(statement, values)
-        except Exception as exc: raise self.InsertError() from exc
+        try:
+            connection.execute(statement, values)
+        except Exception as exc:
+            raise self.InsertError() from exc
 
     def get_objects(self, query=None, connection=None):
         query = query or {}
@@ -112,9 +129,9 @@ class ORM(object):
 
     def _execute_query(self, query=None, connection=None):
         args = []
-        statement = 'SELECT {fields} FROM {table}'.format( 
+        statement = 'SELECT {fields} FROM {table}'.format(
             fields=query.get('fields', '*'),
-            table=self.name
+            table=self.table
         )
         where_section = self._get_where_section(query=query)
         if where_section.get('content'):
@@ -170,7 +187,8 @@ class ORM(object):
 
     def _format_value_for_field(self, value=None, field_key=None):
         field = self.fields[field_key]
-        if field['type'] == 'JSON': value = self._serialize_json_value(value)
+        if field['type'] == 'JSON':
+            value = self._serialize_json_value(value)
         return value
 
     def _get_field_for_filter(self, _filter=None):
@@ -189,7 +207,8 @@ class ORM(object):
         return value
 
     def _deserialize_json_value(self, serialized_value=None):
-        if serialized_value is None or serialized_value == '': return None
+        if serialized_value is None or serialized_value == '':
+            return None
         return self.json.loads(serialized_value)
 
     def update_objects(self, updates=None, query=None, connection=None):
@@ -205,22 +224,24 @@ class ORM(object):
         where_section = self._get_where_section(query=query)
         args.extend(where_section['args'])
         where_content = where_section['content']
-        if where_content: where_content = ' WHERE ' + where_content
+        if where_content:
+            where_content = ' WHERE ' + where_content
         statement = textwrap.dedent(
             '''
             UPDATE {table}
             SET {updates_content}
             {where_content}
             '''
-        ).lstrip().format( 
-            table=self.name,
+        ).lstrip().format(
+            table=self.table,
             updates_content=updates_section['content'],
             where_content=where_content,
         )
         try:
             cursor = connection.execute(statement, args)
             return {'rowcount': cursor.rowcount}
-        except Exception as exc: raise self.UpdateError() from exc
+        except Exception as exc:
+            raise self.UpdateError() from exc
 
     def _get_updates_section(self, updates=None):
         set_items = []
