@@ -1,10 +1,10 @@
-import os
 import re
 
 from .base_engine import BaseEngine
+from .base_bash_engine import BaseBashEngine
 
 
-class SlurmEngine(BaseEngine):
+class SlurmEngine(BaseBashEngine):
     SLURM_STATES_TO_ENGINE_JOB_STATUSES = {
         BaseEngine.JOB_STATUSES.RUNNING: set([
             'CONFIGURING', 'COMPLETING', 'PENDING', 'RUNNING']),
@@ -23,14 +23,12 @@ class SlurmEngine(BaseEngine):
         super().__init__(*args, **kwargs)
         self.slurm_commands = slurm_commands or self.DEFAULT_SLURM_COMMANDS
 
-    def submit_job(self, job=None, cfg=None):
+    def submit_job(self, job=None, extra_cfgs=None):
         job_spec = job['job_spec']
-        workdir = job_spec['dir']
-        entrypoint_name = (job_spec.get('entrypoint') or
-                           self.DEFAULT_ENTRYPOINT_NAME)
-        entrypoint_path = os.path.join(workdir, entrypoint_name)
+        entrypoint_path = self._write_engine_entrypoint(
+            job=job, extra_cfgs=extra_cfgs)
         cmd = [self.slurm_commands['sbatch'],
-               ('--workdir=%s' % workdir), entrypoint_path]
+               ('--workdir=%s' % job_spec['dir']), entrypoint_path]
         try:
             completed_proc = self.process_runner.run_process(
                 cmd=cmd, check=True)
@@ -44,6 +42,18 @@ class SlurmEngine(BaseEngine):
                              stdout=called_proc_err.stdout,
                              stderr=called_proc_err.stderr)
             raise self.SubmissionError(error_msg) from called_proc_err
+
+    # Override BaseBashEngine
+    def _generate_engine_entrypoint_preamble(self, job=None, extra_cfgs=None):
+        bash_preamble = super()._generate_engine_entrypoint_preamble(
+            job=job, extra_cfgs=extra_cfgs)
+        slurm_preamble = self._generate_slurm_preamble(job=job,
+                                                       extra_cfgs=extra_cfgs)
+        return "\n".join([slurm_preamble, bash_preamble])
+
+    def _generate_slurm_preamble(self, job=None, extra_cfgs=None):
+        # @TODO!
+        return '# @TODO!'
 
     def parse_sbatch_stdout(self, sbatch_stdout=None):
         match = re.match(r'Submitted batch job (\d+)', sbatch_stdout)

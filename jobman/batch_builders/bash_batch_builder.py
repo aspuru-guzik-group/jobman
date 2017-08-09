@@ -1,12 +1,16 @@
 import os
 import textwrap
 
+from jobman.constants import CHECKPOINT_FILE_NAMES
 from .base_batch_builder import BaseBatchBuilder
 
 
 class BashBatchBuilder(BaseBatchBuilder):
-    class CfgSpecAggregationError(Exception): pass
-    class CfgSpecMergeError(Exception): pass
+    class CfgSpecAggregationError(Exception):
+        pass
+
+    class CfgSpecMergeError(Exception):
+        pass
 
     class InvalidPreambleError(Exception):
         def __init__(self, msg=None, preamble=None):
@@ -20,7 +24,8 @@ class BashBatchBuilder(BaseBatchBuilder):
     def __init__(self, *args, default_preamble=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_preamble = default_preamble or self.DEFAULT_PREAMBLE
-        self.subjob_commands_path = os.path.join(self.jobdir, 'subjob_commands')
+        self.subjob_commands_path = os.path.join(self.jobdir,
+                                                 'subjob_commands')
 
     def _get_preamble_errors(self, preamble=None):
         errors = []
@@ -48,13 +53,21 @@ class BashBatchBuilder(BaseBatchBuilder):
     def _generate_subjob_commands_content(self):
         subjob_commands = []
         for subjob in self.subjobs:
-            subjob_commands.append(self._generate_subjob_command(subjob=subjob))
+            subjob_commands.append(self._generate_subjob_command(
+                subjob=subjob))
         return "\n".join(subjob_commands)
 
     def _generate_subjob_command(self, subjob=None):
-        return "pushd {dir}; {entrypoint}; popd".format(
+        return (
+            "pushd {dir};"
+            " if {entrypoint}; then touch {completed_checkpoint};"
+            " else touch {failed_checkpoint}; fi"
+            "popd"
+        ).format(
             dir=subjob['job_spec']['dir'],
-            entrypoint=subjob['job_spec']['entrypoint']
+            entrypoint=subjob['job_spec']['entrypoint'],
+            completed_checkpoint=CHECKPOINT_FILE_NAMES['completed'],
+            failed_checkpoint=CHECKPOINT_FILE_NAMES['failed']
         )
 
     def _write_entrypoint(self, preamble=None):
@@ -63,7 +76,8 @@ class BashBatchBuilder(BaseBatchBuilder):
         os.chmod(self.entrypoint_path, 0o755)
 
     def _generate_entrypoint_content(self, preamble=None):
-        if not preamble: preamble = self._get_preamble()
+        if not preamble:
+            preamble = self._get_preamble()
         self._validate_preamble(preamble=preamble)
         return textwrap.dedent(
             """
@@ -77,8 +91,10 @@ class BashBatchBuilder(BaseBatchBuilder):
         )
 
     def _get_preamble(self):
-        try: return self._generate_preamble()
-        except NotImplementedError: return self.default_preamble
+        try:
+            return self._generate_preamble()
+        except NotImplementedError:
+            return self.default_preamble
 
     def _generate_preamble(self): raise NotImplementedError
 
@@ -118,4 +134,3 @@ class BashBatchBuilder(BaseBatchBuilder):
                         raise self.CfgSpecMergeError(error)
                 merged['default'] = cfg_spec['default']
         return merged
-

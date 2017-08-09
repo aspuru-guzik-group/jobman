@@ -12,24 +12,30 @@ class Entrypoint(object):
     def run(self):
         this_dir = Path(__file__).absolute().parent
         self.scratch_dir = tempfile.mkdtemp(dir=Path(this_dir, 'scratch'))
-        self.inbox_root = Path(self.scratch_dir, 'inbox_root')
-        self.inbox_root.mkdir(parents=True)
+        self.root_path = Path(self.scratch_dir, 'inbox_engine_root')
+        self.root_path.mkdir(parents=True)
         self.upstream_jobman = JobMan(
             jobman_db_uri=':memory:',
-            engine=InboxEngine(inbox_root=self.inbox_root)
+            engine=InboxEngine(root_dir=str(self.root_path)),
+            job_engine_states_ttl=.01,
         )
         self.downstream_jobman = JobMan(
             jobman_db_uri=':memory:',
             engine=LocalEngine(scratch_dir=self.scratch_dir),
-            sources=[]
+            source_cfgs={
+                'my_root': {'type': 'dir', 'root': self.root_path}
+            },
+            job_engine_states_ttl=.01,
         )
         job_specs = [self._generate_job_spec(ctx={'key': i}) for i in range(3)]
-        for job_spec in job_specs:
-            self.jobman.submit_job_spec(job_spec=job_spec)
+        jobs = [self.upstream_jobman.submit_job_spec(job_spec=job_spec)
+                for job_spec in job_specs]
         for i in range(3):
             self.upstream_jobman.tick()
             self.downstream_jobman.tick()
             time.sleep(.1)
+        job_statuses = [job['status'] for job in jobs]
+        assert set(job_statuses) == set(['COMPLETED']), set(job_statuses)
 
     def _generate_job_spec(self, ctx=None):
         jobdir = tempfile.mkdtemp(dir=self.scratch_dir)

@@ -6,10 +6,12 @@ import types
 
 from jobman.batch_builders.bash_batch_builder import BashBatchBuilder
 from jobman import utils
+from jobman import constants
 
 
 class BaseEngine(object):
     DEFAULT_JOB_ENTRYPOINT_NAME = 'job.sh'
+    CHECKPOINT_FILE_NAMES = constants.CHECKPOINT_FILE_NAMES
 
     class JOB_STATUSES(object):
         RUNNING = 'RUNNING'

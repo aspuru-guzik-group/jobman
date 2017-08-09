@@ -1,12 +1,11 @@
 import os
 import sqlite3
-import textwrap
 import uuid
 
-from .base_engine import BaseEngine
+from .base_bash_engine import BaseBashEngine
 
 
-class LocalEngine(BaseEngine):
+class LocalEngine(BaseBashEngine):
     ENGINE_ENTRYPOINT_TPL = 'JOBMAN.ENTRYPOINT.{job_id}.sh'
 
     def __init__(self, *args, db_uri=':memory:', sqlite=sqlite3, **kwargs):
@@ -26,7 +25,7 @@ class LocalEngine(BaseEngine):
     def submit_job(self, job=None, extra_cfgs=None):
         job_id = self._generate_job_id()
         entrypoint_path = self._write_engine_entrypoint(
-            job=job, job_id=job_id, extra_cfgs=extra_cfgs)
+            job=job, extra_cfgs=extra_cfgs)
         self._execute_engine_entrypoint(entrypoint_path=entrypoint_path,
                                         job=job, job_id=job_id,
                                         extra_cfgs=extra_cfgs)
@@ -34,66 +33,6 @@ class LocalEngine(BaseEngine):
         return engine_meta
 
     def _generate_job_id(self): return str(uuid.uuid4())
-
-    def _write_engine_entrypoint(self, job=None, job_id=None, extra_cfgs=None):
-        entrypoint_content = self._generate_engine_entrypoint_content(
-            job=job, job_id=job_id, extra_cfgs=extra_cfgs)
-        entrypoint_path = os.path.join(
-            job['job_spec']['dir'],
-            self.ENGINE_ENTRYPOINT_TPL.format(job_id=job_id)
-        )
-        with open(entrypoint_path, 'w') as f:
-            f.write(entrypoint_content)
-        os.chmod(entrypoint_path, 0o755)
-        return entrypoint_path
-
-    def _generate_engine_entrypoint_content(self, job=None, job_id=None,
-                                            extra_cfgs=None):
-        return textwrap.dedent(
-            '''
-            #!/bin/bash
-            {preamble}
-            pushd "{jobdir}" > /dev/null && {job_entrypoint}; popd > /dev/null;
-            '''
-        ).lstrip().format(
-            preamble=self._generate_engine_entrypoint_preamble(
-                job=job, job_id=job_id, extra_cfgs=extra_cfgs),
-            jobdir=job['job_spec']['dir'],
-            job_entrypoint=job['job_spec']['entrypoint'],
-        )
-
-    def _generate_engine_entrypoint_preamble(self, job=None, job_id=None,
-                                             extra_cfgs=None):
-        preamble = textwrap.dedent(
-            '''
-            {engine_preamble}
-            {env_vars_for_cfg_specs}
-            '''
-        ).lstrip().format(
-            engine_preamble=self.resolve_cfg_item(key='ENGINE_PREAMBLE',
-                                                  spec={'default': ''}),
-            env_vars_for_cfg_specs=self._generate_env_vars_for_cfg_specs(
-                job=job, extra_cfgs=extra_cfgs)
-        )
-        return preamble
-
-    def _generate_env_vars_for_cfg_specs(self, job=None, extra_cfgs=None):
-        resolved_cfgs = self.resolve_job_cfg_specs(
-            job=job, extra_cfgs=extra_cfgs)
-        return "\n".join([
-            self._kvp_to_env_var_block(kvp={'key': k, 'value': v})
-            for k, v in resolved_cfgs.items()
-        ])
-
-    def _kvp_to_env_var_block(self, kvp=None):
-        return textwrap.dedent(
-            '''
-            read -d '' {key} << EOF
-            {value}
-            EOF
-            export {key}=${key}
-            '''
-        ).lstrip().format(key=kvp['key'], value=kvp['value'].lstrip())
 
     def _execute_engine_entrypoint(self, entrypoint_path=None, job=None,
                                    job_id=None, extra_cfgs=None):
@@ -132,13 +71,6 @@ class LocalEngine(BaseEngine):
         return {'stdout_redirect': stdout_redirect,
                 'stderr_redirect': stderr_redirect}
 
-    def _get_std_log_paths(self, job=None):
-        return {
-            log_key: os.path.join(job['job_spec']['dir'], log_file_name)
-            for log_key, log_file_name in job['job_spec'].get(
-                'std_log_file_names', {}).items()
-        }
-
     def _execute_engine_entrypoint_cmd(self, entrypoint_cmd=None, job=None,
                                        job_id=None):
         try:
@@ -171,19 +103,6 @@ class LocalEngine(BaseEngine):
             )
         error_msg = "\n".join(error_msg_lines)
         raise self.SubmissionError(error_msg) from called_proc_exc
-
-    def _get_std_log_contents(self, job=None):
-        std_log_contents = {}
-        for log_name, log_path in self._get_std_log_paths(job=job).items():
-            log_content = ''
-            try:
-                with open(log_path) as f:
-                    log_content = f.read()
-            except Exception as exc:
-                log_content = "COULD NOT READ LOG '{log_name}': {exc}'".format(
-                    log_name=log_name, exc=exc)
-            std_log_contents[log_name] = log_content
-        return std_log_contents
 
     def get_keyed_engine_states(self, keyed_engine_metas=None):
         keyed_job_ids = {

@@ -44,18 +44,23 @@ class SlurmBatchBuilder(BashBatchBuilder):
     def _get_max_subjob_memory(self):
         max_mem = 0
         for subjob in self.subjobs:
-            try: subjob_mem = subjob['job_spec']['resources']['memory']
-            except KeyError: subjob_mem = None
+            try:
+                subjob_mem = subjob['job_spec']['resources']['memory']
+            except KeyError:
+                subjob_mem = None
             if subjob_mem is not None and subjob_mem > max_mem:
                 max_mem = subjob_mem
-        if max_mem == 0: max_mem = None
+        if max_mem == 0:
+            max_mem = None
         return max_mem
 
     def _get_total_batch_time(self):
         total_time = 0
         for subjob in self.subjobs:
-            try: subjob_time = subjob['job_spec']['resources']['time']
-            except KeyError: subjob_time = None
+            try:
+                subjob_time = subjob['job_spec']['resources']['time']
+            except KeyError:
+                subjob_time = None
             total_time += (subjob_time or self.default_subjob_time)
         return total_time * self.time_fudge_factor
 
