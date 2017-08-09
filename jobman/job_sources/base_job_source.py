@@ -1,4 +1,4 @@
-class BaseSourceHandler(object):
+class BaseJobSource(object):
     def __init__(self, *args, key=None, jobman=None, **kwargs):
         self.key = key
         self.jobman = jobman

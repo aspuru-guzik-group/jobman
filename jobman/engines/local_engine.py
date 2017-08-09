@@ -6,8 +6,6 @@ from .base_bash_engine import BaseBashEngine
 
 
 class LocalEngine(BaseBashEngine):
-    ENGINE_ENTRYPOINT_TPL = 'JOBMAN.ENTRYPOINT.{job_id}.sh'
-
     def __init__(self, *args, db_uri=':memory:', sqlite=sqlite3, **kwargs):
         super().__init__(*args, **kwargs)
         if db_uri == 'sqlite://':

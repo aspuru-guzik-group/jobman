@@ -21,9 +21,9 @@ class InboxEngine(BaseEngine):
     def get_keyed_engine_states(self, keyed_engine_metas=None):
         lookup = self._generate_dir_lookup()
         return {
-            key: lookup.get(
-                engine_meta['dir_name'],
-                {'status': self.JOB_STATUSES.UNKNOWN}
+            key: (
+                lookup.get(engine_meta['dir_name'])
+                or {'status': self.JOB_STATUSES.UNKNOWN}
             )
             for key, engine_meta in keyed_engine_metas.items()
         }
@@ -33,12 +33,10 @@ class InboxEngine(BaseEngine):
         for parent_dir, status in [
             ('inbox', self.JOB_STATUSES.RUNNING),
             ('queued', self.JOB_STATUSES.RUNNING),
-            ('executed', self.JOB_STATUSES.EXECUTED),
+            ('completed', self.JOB_STATUSES.EXECUTED),
+            ('failed', self.JOB_STATUSES.FAILED),
         ]:
             parent_path = Path(self.root_dir, parent_dir)
             for dir_ in parent_path.glob('*'):
-                lookup[str(dir_.name)] = {
-                    'path': str(Path(parent_path, dir_)),
-                    'status': status,
-                }
+                lookup[str(dir_.name)] = {'status': status}
         return lookup

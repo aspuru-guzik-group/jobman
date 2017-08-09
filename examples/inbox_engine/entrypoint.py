@@ -22,15 +22,15 @@ class Entrypoint(object):
         self.downstream_jobman = JobMan(
             jobman_db_uri=':memory:',
             engine=LocalEngine(scratch_dir=self.scratch_dir),
-            source_cfgs={
-                'my_root': {'type': 'dir', 'root': self.root_path}
+            job_source_cfgs={
+                'my_root': {'type': 'dir', 'root_path': self.root_path}
             },
             job_engine_states_ttl=.01,
         )
         job_specs = [self._generate_job_spec(ctx={'key': i}) for i in range(3)]
         jobs = [self.upstream_jobman.submit_job_spec(job_spec=job_spec)
                 for job_spec in job_specs]
-        for i in range(3):
+        for i in range(4):
             self.upstream_jobman.tick()
             self.downstream_jobman.tick()
             time.sleep(.1)

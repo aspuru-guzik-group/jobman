@@ -54,7 +54,7 @@ class JobMan(object):
                max_batchable_wait=120, target_batch_time=(60 * 60),
                default_job_time=(5 * 60),
                lock_timeout=30, use_batching=False, job_source_cfgs=None,
-               job_spec_defaults=None, **kwargs):
+               job_spec_defaults=None):
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
         self.engine = engine or self._generate_engine()
         self.max_running_jobs = max_running_jobs
@@ -308,10 +308,10 @@ class JobMan(object):
             if self._job_has_completed_checkpoint(job=job):
                 self._complete_job(job=job)
             else:
-                raise Exception("No completed checkpoint found for job")
+                raise Exception("No completed checkpoint file found for job")
         except Exception as exc:
             error = traceback.format_exc()
-            self.logger.warning(error)
+            self.logger.warning("warning: %s" % error)
             self._fail_job(job=job, errors=[error])
 
     def _job_has_completed_checkpoint(self, job=None):
