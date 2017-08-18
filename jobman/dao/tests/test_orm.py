@@ -23,6 +23,7 @@ class BaseTestCase(unittest.TestCase):
         }
         return orm.ORM(**merged_kwargs)
 
+
 class CreateTableTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -31,7 +32,9 @@ class CreateTableTestCase(BaseTestCase):
 
     def test_creates_table(self):
         self.orm.create_table(connection=self.connection)
-        expected_statement = 'CREATE TABLE {table} ({column_defs})'.format(
+        expected_statement = (
+            'CREATE TABLE IF NOT EXISTS {table} ({column_defs})'
+        ).format(
             table=self.name,
             column_defs=(
                 ",\n".join([
@@ -42,6 +45,7 @@ class CreateTableTestCase(BaseTestCase):
         )
         self.assertEqual(self.connection.execute.call_args,
                          call(expected_statement))
+
 
 class _GenerateColumnDefTestCase(BaseTestCase):
     def setUp(self):
@@ -73,6 +77,7 @@ class _GenerateColumnDefTestCase(BaseTestCase):
         column_def = self._get_column_def()
         self.assertEqual(column_def, expected_column_def)
 
+
 class _GetColumnTypeTestCase(BaseTestCase):
     def test_returns_field_type_for_non_json(self):
         field_type = MagicMock()
@@ -84,10 +89,11 @@ class _GetColumnTypeTestCase(BaseTestCase):
         column_type = self.orm._get_column_type(field_type=field_type)
         self.assertEqual(column_type, 'TEXT')
 
+
 class SaveObjectTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for attr in ['_obj_to_record', '_save_record']: 
+        for attr in ['_obj_to_record', '_save_record']:
             setattr(self.orm, attr, MagicMock())
         self.obj = MagicMock()
         self.replace = MagicMock()
@@ -97,9 +103,12 @@ class SaveObjectTestCase(BaseTestCase):
     def test_converts_to_record_and_saves(self):
         self.assertEqual(self.orm._obj_to_record.call_args,
                          call(obj=self.obj))
-        self.assertEqual(self.orm._save_record.call_args,
-                         call(record=self.orm._obj_to_record.return_value,
-                              connection=self.connection, replace=self.replace))
+        self.assertEqual(
+            self.orm._save_record.call_args,
+            call(record=self.orm._obj_to_record.return_value,
+                 connection=self.connection, replace=self.replace)
+        )
+
 
 class _ObjToRecordTestCase(BaseTestCase):
     def setUp(self):
@@ -120,6 +129,7 @@ class _ObjToRecordTestCase(BaseTestCase):
         record = self._obj_to_record()
         self.assertEqual(record, expected_record)
 
+
 class _ObjValToRecordValTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -139,6 +149,7 @@ class _ObjValToRecordValTestCase(BaseTestCase):
     def test_passes_through_other_fields(self):
         val = self._obj_val_to_record_val()
         self.assertEqual(val, self.value)
+
 
 class _SaveRecordTestCase(BaseTestCase):
     def setUp(self):
@@ -167,9 +178,11 @@ class _SaveRecordTestCase(BaseTestCase):
         expected_fields = sorted(self.orm.fields.keys())
         expected_values = [expected_modified_record.get(field)
                            for field in expected_fields]
-        self.assertEqual(self.orm.execute_insert_or_replace.call_args,
-                         call(fields=expected_fields, values=expected_values,
-                              replace=self.replace, connection=self.connection))
+        self.assertEqual(
+            self.orm.execute_insert_or_replace.call_args,
+            call(fields=expected_fields, values=expected_values,
+                 replace=self.replace, connection=self.connection)
+        )
 
     def test_sets_autoupdate_values(self):
         self.orm.fields = {
@@ -189,13 +202,16 @@ class _SaveRecordTestCase(BaseTestCase):
         expected_fields = sorted(self.orm.fields.keys())
         expected_values = [expected_modified_record.get(field)
                            for field in expected_fields]
-        self.assertEqual(self.orm.execute_insert_or_replace.call_args,
-                         call(fields=expected_fields, values=expected_values,
-                              replace=self.replace, connection=self.connection))
+        self.assertEqual(
+            self.orm.execute_insert_or_replace.call_args,
+            call(fields=expected_fields, values=expected_values,
+                 replace=self.replace, connection=self.connection)
+        )
 
     def test_returns_record(self):
         result = self._save_record()
         self.assertEqual(result, self.record)
+
 
 class ExecuteInsertOrReplaceTestCase(BaseTestCase):
     def setUp(self):
@@ -215,7 +231,8 @@ class ExecuteInsertOrReplaceTestCase(BaseTestCase):
 
     def _assert_execution(self, replace=None):
         replace_sql = ''
-        if replace: replace_sql = 'OR REPLACE'
+        if replace:
+            replace_sql = 'OR REPLACE'
         expected_statement = textwrap.dedent(
             '''
             INSERT {replace_sql} INTO {table} ({csv_fields})
@@ -235,35 +252,37 @@ class ExecuteInsertOrReplaceTestCase(BaseTestCase):
         self._execute_insert_or_replace(replace=replace)
         self._assert_execution(replace=replace)
 
-class GetObjectsTestCase(BaseTestCase):
+
+class QueryObjectsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for attr in ['_validate_query', '_get_records', '_record_to_obj']:
+        for attr in ['_validate_query', '_query_records', '_record_to_obj']:
             setattr(self.orm, attr, MagicMock())
-        self.orm._get_records.return_value = [MagicMock() for i in range(3)]
+        self.orm._query_records.return_value = [MagicMock() for i in range(3)]
         self.query = MagicMock()
-        self.result = self.orm.get_objects(query=self.query,
-                                           connection=self.connection)
+        self.result = self.orm.query_objects(
+            query=self.query, connection=self.connection)
 
     def test_validates_query(self):
         self.assertEqual(self.orm._validate_query.call_args,
                          call(query=self.query))
 
     def test_gets_records(self):
-        self.assertEqual(self.orm._get_records.call_args,
+        self.assertEqual(self.orm._query_records.call_args,
                          call(query=self.query, connection=self.connection))
 
     def test_returns_converted_job_records(self):
         self.assertEqual(
             self.orm._record_to_obj.call_args_list,
             [call(record=record)
-             for record in self.orm._get_records.return_value]
+             for record in self.orm._query_records.return_value]
         )
         self.assertEqual(
             self.result,
             [self.orm._record_to_obj.return_value
-             for record in self.orm._get_records.return_value]
+             for record in self.orm._query_records.return_value]
         )
+
 
 class _ExecuteQueryTestCase(BaseTestCase):
     def setUp(self):
@@ -299,12 +318,13 @@ class _ExecuteQueryTestCase(BaseTestCase):
         result = self._execute_query()
         self.assertEqual(result, self.connection.execute.return_value)
 
+
 class _GetWhereSectionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.orm._filter_to_where_item = MagicMock(return_value={
             'clause': 'some_clause',
-            'args': [1,2,3]
+            'args': [1, 2, 3]
         })
         self.query = {'filters': [MagicMock() for i in range(3)]}
 
@@ -324,6 +344,7 @@ class _GetWhereSectionTestCase(BaseTestCase):
             'args': expected_args,
         }
         self.assertEqual(where_section, expected_where_section)
+
 
 class _FilterToWhereItemTestCase(BaseTestCase):
     def setUp(self):
@@ -378,6 +399,7 @@ class _FilterToWhereItemTestCase(BaseTestCase):
         }
         self.assertEqual(result, expected_item)
 
+
 class _RecordToObjTestCase(BaseTestCase):
     def test_transforms_values(self):
         self.orm._record_val_to_obj_val = MagicMock()
@@ -390,6 +412,7 @@ class _RecordToObjTestCase(BaseTestCase):
         }
         obj = self.orm._record_to_obj(record=record)
         self.assertEqual(obj, expected_obj)
+
 
 class _RecordValToObjValTestCase(BaseTestCase):
     def setUp(self):
@@ -405,7 +428,8 @@ class _RecordValToObjValTestCase(BaseTestCase):
         self.field_def['type'] = 'JSON'
         self.orm._deserialize_json_value = MagicMock()
         obj_val = self._record_val_to_obj_val()
-        self.assertEqual(obj_val, self.orm._deserialize_json_value.return_value)
+        self.assertEqual(
+            obj_val, self.orm._deserialize_json_value.return_value)
 
     def test_passes_through_other_values(self):
         obj_val = self._record_val_to_obj_val()
@@ -436,6 +460,7 @@ class UpdateObjectsTestCase(BaseTestCase):
 
     def test_returns_update_result(self):
         self.assertEqual(self.result, self.orm._update_records.return_value)
+
 
 class _UpdateRecordsTestCase(BaseTestCase):
     def setUp(self):
@@ -470,7 +495,7 @@ class _UpdateRecordsTestCase(BaseTestCase):
             SET {updates_content}
             {where_content}
             '''
-        ).lstrip().format( 
+        ).lstrip().format(
             table=self.orm.name,
             updates_content=updates_section['content'],
             where_content=where_content
@@ -490,9 +515,10 @@ class _UpdateRecordsTestCase(BaseTestCase):
         with self.assertRaises(self.orm.UpdateError):
             self._update_records()
 
+
 class _GetUpdatesSection(BaseTestCase):
     def test_returns_expected_result(self):
-        updates = {'field_%s' % i : 'value_%s' % i for i in range(3)}
+        updates = {'field_%s' % i: 'value_%s' % i for i in range(3)}
         expected_updates_section = {
             'content': ', '.join(['%s = ?' % k for k in updates]),
             'args': list(updates.values()),

@@ -1,6 +1,6 @@
 import logging
 import os
-import sqlite3 as sqlite
+import sqlite3
 import time
 import uuid
 
@@ -15,15 +15,19 @@ class SqliteDAO(object):
         pass
 
     def __init__(self, db_uri=':memory:', orm_specs=None, table_prefix=None,
-                 ensure_tables=True, logger=None, include_kvp_orm=True):
+                 ensure_tables=True, logger=None, include_kvp_orm=True,
+                 sqlite=sqlite3, orm=orm):
         self.logger = logger or logging
         if db_uri == 'sqlite://':
             db_uri = ':memory:'
         elif db_uri.startswith('sqlite:///'):
             db_uri = db_uri.replace('sqlite:///', '')
         self.db_uri = db_uri
+        self.sqlite = sqlite
+        self.orm = orm
+        self.table_prefix = table_prefix
         self.orms = self._generate_orms(orm_specs=orm_specs,
-                                        table_prefix=table_prefix,
+                                        table_prefix=self.table_prefix,
                                         include_kvp_orm=include_kvp_orm)
         self._connection = None
         if ensure_tables:
@@ -31,13 +35,16 @@ class SqliteDAO(object):
 
     def _generate_orms(self, orm_specs=None, table_prefix=None,
                        include_kvp_orm=None):
+        orm_specs = orm_specs or []
         common_orm_kwargs = {'logger': self.logger,
                              'table_prefix': table_prefix}
         if include_kvp_orm:
-            orm_specs += [{'name': 'kvp',
-                           'fields': self._generate_kvp_fields()}]
+            orm_specs += [
+                {'name': 'kvp',
+                 'fields': self._generate_kvp_fields()}
+            ]
         orms = {
-            orm_spec['name']: orm.ORM(**{**common_orm_kwargs, **orm_spec})
+            orm_spec['name']: self.orm.ORM(**{**common_orm_kwargs, **orm_spec})
             for orm_spec in orm_specs
         }
         return orms
@@ -76,8 +83,8 @@ class SqliteDAO(object):
         return self._connection
 
     def create_connection(self):
-        connection = sqlite.connect(self.db_uri)
-        connection.row_factory = sqlite.Row
+        connection = self.sqlite.connect(self.db_uri)
+        connection.row_factory = self.sqlite.Row
         return connection
 
     def ensure_tables(self):
@@ -105,14 +112,14 @@ class SqliteDAO(object):
         ent_orm = self.orms[ent_type]
         query = {'filters': [{'field': 'key', 'op': '=', 'arg': key}]}
         try:
-            return ent_orm.get_objects(query=query,
-                                       connection=self.connection)[0]
+            return ent_orm.query_objects(
+                query=query, connection=self.connection)[0]
         except IndexError:
             return None
 
     def query_ents(self, ent_type=None, query=None):
         ent_orm = self.orms[ent_type]
-        return ent_orm.get_objects(query=query, connection=self.connection)
+        return ent_orm.query_objects(query=query, connection=self.connection)
 
     def save_kvps(self, kvps=None, replace=True):
         return self.save_ents(ent_type='kvp', ents=kvps, replace=replace)
@@ -121,7 +128,7 @@ class SqliteDAO(object):
         return self.create_ent(ent_type='kvp', ent=kvp)
 
     def query_kvps(self, query=None):
-        return self.get_ents(ent_type='kvp', query=query)
+        return self.query_ents(ent_type='kvp', query=query)
 
     def get_kvp(self, key=None):
         return self.get_ent(ent_type='kvp', key=key)

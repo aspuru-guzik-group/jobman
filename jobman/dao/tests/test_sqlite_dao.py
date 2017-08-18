@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call, MagicMock, patch
+from unittest.mock import call, MagicMock
 
 from .. import sqlite_dao
 
@@ -12,12 +12,15 @@ class BaseTestCase(unittest.TestCase):
 
     def _generate_dao(self, **kwargs):
         merged_kwargs = {
+            'ensure_tables': False,
             'db_uri': self.db_uri,
             'sqlite': MagicMock(),
             'orm': MagicMock(),
+            'table_prefix': 'some_table_prefix',
             **kwargs
         }
         return sqlite_dao.SqliteDAO(**merged_kwargs)
+
 
 class InitTestCase(BaseTestCase):
     def setUp(self):
@@ -29,40 +32,25 @@ class InitTestCase(BaseTestCase):
         self.assertEqual(
             self.orm.ORM.call_args_list,
             [
-                call(name='job', fields=self.dao._generate_job_fields(),
-                     logger=self.dao.logger),
-                call(name='kvp', fields=self.dao._generate_kvp_fields(),
-                     logger=self.dao.logger),
+                call(
+                    name='kvp',
+                    fields=self.dao._generate_kvp_fields(),
+                    logger=self.dao.logger,
+                    table_prefix=self.dao.table_prefix
+                )
             ]
         )
-        expected_orms = {'job': self.orm.ORM.return_value,
-                         'kvp': self.orm.ORM.return_value}
+        expected_orms = {'kvp': self.orm.ORM.return_value}
         self.assertEqual(self.dao.orms, expected_orms)
 
-class EnsureDbTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.dao.create_db = MagicMock()
-
-    @patch.object(sqlite_dao, 'os')
-    def test_creates_db_for_file_uri_if_file_not_exists(self, mock_os):
-        self.dao.db_uri = '/some/file.sqlite.db'
-        mock_os.path.exists.return_value = False
-        self.dao.ensure_db()
-        self.assertEqual(mock_os.path.exists.call_args, call(self.dao.db_uri))
-        self.assertEqual(self.dao.create_db.call_args, call())
-
-    def test_creates_db_for_memory_uri(self):
-        self.dao.db_uri = ':memory:'
-        self.dao.ensure_db()
-        self.assertEqual(self.dao.create_db.call_args, call())
 
 class CreateDbTestCase(BaseTestCase):
     def test_dispatches_to_orms(self):
-        self.dao.create_db()
+        self.dao.ensure_tables()
         for orm in self.dao.orms.values():
             self.assertEqual(orm.create_table.call_args,
                              call(connection=self.dao.connection))
+
 
 class ConnectionGetterTestCase(BaseTestCase):
     def setUp(self):
@@ -78,6 +66,7 @@ class ConnectionGetterTestCase(BaseTestCase):
         self.dao.connection
         self.assertEqual(len(self.dao.create_connection.call_args_list), 1)
 
+
 class CreateConnectionTestCase(BaseTestCase):
     def test_gets_connection(self):
         result = self.dao.create_connection()
@@ -89,31 +78,44 @@ class CreateConnectionTestCase(BaseTestCase):
         result = self.dao.create_connection()
         self.assertEqual(result.row_factory, self.dao.sqlite.Row)
 
-class CreateJobTestCase(BaseTestCase):
-    def test_dispatches_to_save_jobs(self):
-        self.dao.save_jobs = MagicMock()
-        job = MagicMock()
-        result = self.dao.create_job(job=job)
-        self.assertEqual(self.dao.save_jobs.call_args, call(jobs=[job]))
-        self.assertEqual(result, self.dao.save_jobs.return_value[0])
 
-class SaveJobsTestCase(BaseTestCase):
-    def test_dispatches_to_orm(self):
-        jobs = [MagicMock() for i in range(3)]
-        self.dao.save_jobs(jobs=jobs)
+class CreateEntTestCase(BaseTestCase):
+    def test_dispatches_to_save_ents(self):
+        self.dao.save_ents = MagicMock()
+        ent = MagicMock()
+        ent_type = MagicMock()
+        result = self.dao.create_ent(ent_type=ent_type, ent=ent)
         self.assertEqual(
-            self.dao.orms['job'].save_object.call_args_list,
-            [call(obj=job, connection=self.dao.connection, replace=True)
-             for job in jobs]
+            self.dao.save_ents.call_args,
+            call(ent_type=ent_type, ents=[ent])
+        )
+        self.assertEqual(result, self.dao.save_ents.return_value[0])
+
+
+class SaveEntsTestCase(BaseTestCase):
+    def test_dispatches_to_orm(self):
+        ent_type = 'some_ent_type'
+        self.dao.orms[ent_type] = MagicMock()
+        ents = [MagicMock() for i in range(3)]
+        self.dao.save_ents(ent_type=ent_type, ents=ents)
+        self.assertEqual(
+            self.dao.orms[ent_type].save_object.call_args_list,
+            [call(obj=ent, connection=self.dao.connection, replace=True)
+             for ent in ents]
         )
 
-class GetJobsTestCase(BaseTestCase):
+
+class QueryEntsTestCase(BaseTestCase):
     def test_dispatches_to_orm(self):
+        ent_type = 'some_ent_type'
         query = MagicMock()
-        result = self.dao.get_jobs(query=query)
-        self.assertEqual(self.dao.orms['job'].get_objects.call_args,
+        self.dao.orms[ent_type] = MagicMock()
+        result = self.dao.query_ents(ent_type=ent_type, query=query)
+        self.assertEqual(self.dao.orms[ent_type].query_objects.call_args,
                          call(query=query, connection=self.dao.connection))
-        self.assertEqual(result, self.dao.orms['job'].get_objects.return_value)
+        self.assertEqual(
+            result, self.dao.orms[ent_type].query_objects.return_value)
+
 
 class SaveKvpsTestCase(BaseTestCase):
     def test_dispatches_to_orm(self):
@@ -125,10 +127,12 @@ class SaveKvpsTestCase(BaseTestCase):
              for kvp in kvps]
         )
 
-class GetKvpsTestCase(BaseTestCase):
+
+class QueryKvpsTestCase(BaseTestCase):
     def test_dispatches_to_orm(self):
         query = MagicMock()
-        result = self.dao.get_kvps(query=query)
-        self.assertEqual(self.dao.orms['kvp'].get_objects.call_args,
+        result = self.dao.query_kvps(query=query)
+        self.assertEqual(self.dao.orms['kvp'].query_objects.call_args,
                          call(query=query, connection=self.dao.connection))
-        self.assertEqual(result, self.dao.orms['kvp'].get_objects.return_value)
+        self.assertEqual(
+            result, self.dao.orms['kvp'].query_objects.return_value)

@@ -6,11 +6,16 @@ from .base_bash_engine import BaseBashEngine
 
 class LocalEngine(BaseBashEngine):
     def __init__(self, *args, db_uri=None, ensure_db=None, cache_ttl=1,
-                 **kwargs):
+                 dao=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cache_ttl = cache_ttl
-        self.dao = EngineSqliteDAO(db_uri=db_uri,
-                                   table_prefix='engine_%s_' % self.key)
+        self.dao = (
+            dao
+            or EngineSqliteDAO(
+                db_uri=db_uri,
+                table_prefix='engine_%s_' % self.key
+            )
+        )
 
     def tick(self):
         pass
@@ -34,7 +39,7 @@ class LocalEngine(BaseBashEngine):
                 job=job,
                 extra_cfgs=extra_cfgs
             ),
-            job=job,
+            job=job
         )
 
     def _generate_engine_entrypoint_cmd(self, entrypoint_path=None, job=None,

@@ -1,11 +1,17 @@
+import tempfile
 import unittest
 
-from .. import jobman_inbox_engine
+from .. import inbox_engine
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.engine = jobman_inbox_engine.JobManInboxEngine()
+        self.skipTest('todo')
+        self.root_dir = tempfile.mkdtemp()
+        self.engine = inbox_engine.InboxEngine(
+            root_dir=self.root_dir,
+            db_uri='sqlite://'
+        )
 
 
 class SubmitJobTestCase(BaseTestCase):

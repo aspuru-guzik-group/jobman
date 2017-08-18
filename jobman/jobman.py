@@ -160,7 +160,8 @@ class JobMan(object):
 
     def _tick_engines(self):
         for engine in self.engines.values():
-            engine.tick()
+            if hasattr(engine, 'tick'):
+                engine.tick()
 
     def _update_running_jobs(self):
         running_jobs = self.get_running_jobs()

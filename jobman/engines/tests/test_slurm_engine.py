@@ -1,5 +1,4 @@
 import collections
-import os
 import unittest
 from unittest.mock import call, MagicMock
 
@@ -17,28 +16,36 @@ class BaseTestCase(unittest.TestCase):
         return slurm_engine.SlurmEngine(**{**default_kwargs, **kwargs})
 
     def mockify_engine_attrs(self, attrs=None):
-        for attr in attrs: setattr(self.engine, attr, MagicMock())
+        for attr in attrs:
+            setattr(self.engine, attr, MagicMock())
+
 
 class SubmitJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.mockify_engine_attrs(['_write_engine_entrypoint'])
         self.job_spec = collections.defaultdict(MagicMock, **{
             'dir': 'some_dir',
             'entrypoint': 'some_entrypoint'
         })
         self.job = collections.defaultdict(MagicMock,
                                            **{'job_spec': self.job_spec})
+        self.extra_cfgs = MagicMock()
+        self.process_runner.run_process.return_value = (
+            self.generate_successful_sbatch_proc())
 
     def _submit_job(self):
-        return self.engine.submit_job(job=self.job)
+        return self.engine.submit_job(job=self.job, extra_cfgs=self.extra_cfgs)
+
+    def test_writes_engine_entrypoint(self):
+        self._submit_job()
+        self.assertEqual(self.engine._write_engine_entrypoint.call_args,
+                         call(job=self.job, extra_cfgs=self.extra_cfgs))
 
     def test_calls_sbatch(self):
-        self.process_runner.run_process.return_value = \
-                self.generate_successful_sbatch_proc()
         self._submit_job()
-        workdir = self.job_spec['dir']
-        entrypoint_path = os.path.join(
-            workdir, self.job_spec.get('entrypoint'))
+        entrypoint_path = self.engine._write_engine_entrypoint.return_value
+        workdir = self.job['job_spec']['dir']
         expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint_path]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
@@ -51,8 +58,9 @@ class SubmitJobTestCase(BaseTestCase):
 
     def test_returns_engine_meta_for_successful_submission(self):
         job_id = '12345'
-        self.process_runner.run_process.return_value = \
-                self.generate_successful_sbatch_proc(job_id=job_id)
+        self.process_runner.run_process.return_value = (
+            self.generate_successful_sbatch_proc(job_id=job_id)
+        )
         engine_meta = self._submit_job()
         expected_engine_meta = {'job_id': job_id}
         self.assertEqual(engine_meta, expected_engine_meta)
@@ -63,6 +71,7 @@ class SubmitJobTestCase(BaseTestCase):
             stderr = 'some_stderr'
 
         self.process_runner.CalledProcessError = MockError
+
         def simulate_failed_proc(cmd, *args, **kwargs):
             proc = MagicMock()
             proc.returncode = 1
@@ -70,7 +79,9 @@ class SubmitJobTestCase(BaseTestCase):
             raise self.process_runner.CalledProcessError(
                 proc.returncode, cmd)
         self.process_runner.run_process.side_effect = simulate_failed_proc
-        with self.assertRaises(self.engine.SubmissionError): self._submit_job()
+        with self.assertRaises(self.engine.SubmissionError):
+            self._submit_job()
+
 
 class GetKeyedEngineStatesTestCase(BaseTestCase):
     def setUp(self):
@@ -85,8 +96,8 @@ class GetKeyedEngineStatesTestCase(BaseTestCase):
         self.mock_slurm_jobs_by_id = {
             job_id: MagicMock() for job_id in self.expected_job_ids
         }
-        self.engine.get_slurm_jobs_by_id.return_value = \
-                self.mock_slurm_jobs_by_id
+        self.engine.get_slurm_jobs_by_id.return_value = (
+            self.mock_slurm_jobs_by_id)
 
     def _get(self):
         return self.engine.get_keyed_engine_states(
@@ -109,8 +120,10 @@ class GetKeyedEngineStatesTestCase(BaseTestCase):
 
     def _get_sorted_slurm_job_calls(self, calls=None):
         def _key_fn(call):
-            if len(call) == 3: return id(call[2]['slurm_job'])
-            elif len(call) == 2: return id(call[1]['slurm_job'])
+            if len(call) == 3:
+                return id(call[2]['slurm_job'])
+            elif len(call) == 2:
+                return id(call[1]['slurm_job'])
         return sorted(calls, key=_key_fn)
 
     def test_returns_keyed_engine_states(self):
@@ -121,16 +134,19 @@ class GetKeyedEngineStatesTestCase(BaseTestCase):
         }
         self.assertEqual(result, expected_result)
 
+
 class GetSlurmJobsByIdTestCase(BaseTestCase):
     pass
+
 
 class GetSlurmJobsViaSacctTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job_ids = ["job_id_%s" % i for i in range(3)]
         self.mock_slurm_jobs = [MagicMock() for job_id in self.job_ids]
-        self.engine.parse_sacct_stdout = \
-                MagicMock(return_value={'records': self.mock_slurm_jobs})
+        self.engine.parse_sacct_stdout = (
+            MagicMock(return_value={'records': self.mock_slurm_jobs})
+        )
 
     def _get(self):
         return self.engine.get_slurm_jobs_via_sacct(job_ids=self.job_ids)
@@ -145,6 +161,7 @@ class GetSlurmJobsViaSacctTestCase(BaseTestCase):
 
     def test_returns_parsed_jobs(self):
         self.assertEqual(self._get(), self.mock_slurm_jobs)
+
 
 class ParseSacctOutputTestCase(BaseTestCase):
     def setUp(self):
@@ -170,6 +187,7 @@ class ParseSacctOutputTestCase(BaseTestCase):
         }
         self.assertEqual(result, expected_result)
 
+
 class SlurmJobToJobStateTestCase(BaseTestCase):
     def test_generates_expected_engine_state_for_non_null_slurm_job(self):
         self.engine.slurm_job_to_status = MagicMock()
@@ -185,6 +203,7 @@ class SlurmJobToJobStateTestCase(BaseTestCase):
         result = self.engine.slurm_job_to_engine_state(slurm_job=None)
         expected_result = {'engine_job_state': None}
         self.assertEqual(result, expected_result)
+
 
 class SlurmJobToStatusTestCase(BaseTestCase):
     def test_handles_known_statuses(self):
@@ -205,6 +224,7 @@ class SlurmJobToStatusTestCase(BaseTestCase):
         slurm_job = {'JobState': 'some_crazy_JobState'}
         self.assertEqual(self.engine.slurm_job_to_status(slurm_job=slurm_job),
                          self.engine.JOB_STATUSES.UNKNOWN)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -107,10 +107,10 @@ class ORM(object):
         except Exception as exc:
             raise self.InsertError() from exc
 
-    def get_objects(self, query=None, connection=None):
+    def query_objects(self, query=None, connection=None):
         query = query or {}
         self._validate_query(query=query)
-        records = self._get_records(query=query, connection=connection)
+        records = self._query_records(query=query, connection=connection)
         return [self._record_to_obj(record=record) for record in records]
 
     def _validate_query(self, query=None):
@@ -124,7 +124,7 @@ class ORM(object):
         return [field for field, field_def in self.fields.items()
                 if not field_def.get('unfilterable')]
 
-    def _get_records(self, query=None, connection=None):
+    def _query_records(self, query=None, connection=None):
         return self._execute_query(query=query, connection=connection)
 
     def _execute_query(self, query=None, connection=None):
