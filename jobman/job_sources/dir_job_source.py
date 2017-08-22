@@ -47,7 +47,8 @@ class DirJobSource(BaseJobSource):
     def _move_completed(self):
         self._move_jobs_to_subdir(
             jobs=self._get_unfinished_jobs_by_status(status='COMPLETED'),
-            subdir_path=self.subdir_paths['completed']
+            subdir_path=self.subdir_paths['completed'],
+            new_status='COMPLETED'
         )
 
     def _get_unfinished_jobs_by_status(self, status=None):
@@ -58,9 +59,12 @@ class DirJobSource(BaseJobSource):
             ]
         })
 
-    def _move_jobs_to_subdir(self, jobs=None, subdir_path=None):
+    def _move_jobs_to_subdir(self, jobs=None, subdir_path=None,
+                             new_status=None):
         for job in jobs:
             self._move_job_to_subdir(job=job, subdir_path=subdir_path)
+            if new_status:
+                job['status'] = new_status
         self.jobman.save_jobs(jobs=jobs)
 
     def _move_job_to_subdir(self, job=None, subdir_path=None):

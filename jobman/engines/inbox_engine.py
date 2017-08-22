@@ -128,7 +128,7 @@ class InboxEngine(BaseEngine):
         engine_job_key = self.key + '__' + str(uuid.uuid4())
         remote_dest = Path(self.root_dir, 'inbox', engine_job_key)
         local_dir = job['job_spec']['dir']
-        self.transfer_fn(local_dir, remote_dest)
+        self.transfer_fn(local_dir, str(remote_dest))
         self.dao.create_job(job={
             'key': engine_job_key,
             'local_dir': local_dir,

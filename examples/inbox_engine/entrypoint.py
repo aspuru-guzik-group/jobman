@@ -12,7 +12,7 @@ from jobman.job_sources.dir_job_source import DirJobSource
 class Entrypoint(object):
     def run(self):
         this_dir = Path(__file__).absolute().parent
-        self.scratch_dir = tempfile.mkdtemp(dir=Path(this_dir, 'scratch'))
+        self.scratch_dir = tempfile.mkdtemp(dir=str(Path(this_dir, 'scratch')))
         self.root_path = Path(self.scratch_dir, 'inbox_engine_root')
         self.root_path.mkdir(parents=True)
         self.db_uri = 'sqlite://'
@@ -43,7 +43,7 @@ class Entrypoint(object):
         job_specs = [self._generate_job_spec(ctx={'key': i}) for i in range(3)]
         for job_spec in job_specs:
             self.upstream_jobman.submit_job_spec(job_spec=job_spec)
-        for i in range(4):
+        for i in range(5):
             self.upstream_jobman.tick()
             self.downstream_jobman.tick()
             time.sleep(.1)
@@ -61,7 +61,7 @@ class Entrypoint(object):
             '''
         ).lstrip().format(ctx=ctx)
         entrypoint_path = Path(jobdir, entrypoint_name)
-        with open(entrypoint_path, 'w') as f:
+        with entrypoint_path.open('w') as f:
             f.write(entrypoint_content)
         entrypoint_path.chmod(0o755)
         job_spec = {
