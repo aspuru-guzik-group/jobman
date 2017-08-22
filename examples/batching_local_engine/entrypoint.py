@@ -22,13 +22,16 @@ class Entrypoint(object):
             dir=os.path.join(this_dir, 'scratch'))
         batch_builder = BashBatchBuilder(
             default_preamble="PARALLEL=/bin/bash")
-        self.engine = LocalEngine(
-            scratch_dir=self.scratch_dir,
-            build_batch_jobdir_fn=batch_builder.build_batch_jobdir
-        )
         self.jobman = JobMan(
             jobman_db_uri=':memory:',
-            engine=self.engine,
+            engines={
+                'my_local_engine': LocalEngine(
+                    key='my_local_engine',
+                    db_uri=':memory:',
+                    scratch_dir=self.scratch_dir,
+                    build_batch_jobdir_fn=batch_builder.build_batch_jobdir
+                )
+            },
             use_batching=True,
             lock_timeout=2,
         )
