@@ -63,17 +63,17 @@ class SlurmEngine(BaseBashEngine):
         slurm_job_id = match.group(1)
         return slurm_job_id
 
-    def get_keyed_engine_states(self, keyed_engine_metas=None):
+    def get_keyed_states(self, keyed_metas=None):
         keyed_job_ids = {key: engine_meta['job_id']
-                         for key, engine_meta in keyed_engine_metas.items()}
+                         for key, engine_meta in keyed_metas.items()}
         job_ids = list(keyed_job_ids.values())
         slurm_jobs_by_id = self.get_slurm_jobs_by_id(job_ids=job_ids)
-        keyed_engine_states = {}
+        keyed_states = {}
         for key, job_id in keyed_job_ids.items():
             slurm_job = slurm_jobs_by_id.get(job_id)
             engine_state = self.slurm_job_to_engine_state(slurm_job=slurm_job)
-            keyed_engine_states[key] = engine_state
-        return keyed_engine_states
+            keyed_states[key] = engine_state
+        return keyed_states
 
     def get_slurm_jobs_by_id(self, job_ids=None):
         if self.cfg.get('use_sacct'):

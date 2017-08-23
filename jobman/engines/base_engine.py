@@ -5,7 +5,7 @@ import tempfile
 import types
 
 from jobman.batch_builders.bash_batch_builder import BashBatchBuilder
-from jobman import utils
+from jobman.utils import dot_spec_loader
 from jobman import constants
 
 
@@ -70,7 +70,7 @@ class BaseEngine(object):
     def submit_job(self, job=None, extra_cfgs=None):
         raise NotImplementedError
 
-    def get_keyed_engine_states(self, keyed_engine_metas=None):
+    def get_keyed_states(self, keyed_metas=None):
         raise NotImplementedError
 
     def submit_batch_job(self, batch_job=None, subjobs=None, extra_cfgs=None):
@@ -122,4 +122,4 @@ class BaseEngine(object):
         raise KeyError(key)
 
     def _get_key_or_attr(self, src=None, key=None):
-        return utils.get_key_or_attr(src=src, key=key)
+        return dot_spec_loader.get_attr_or_item(obj=src, key=key)

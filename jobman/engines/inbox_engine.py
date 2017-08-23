@@ -137,10 +137,10 @@ class InboxEngine(BaseEngine):
         engine_meta = {'key': engine_job_key}
         return engine_meta
 
-    def get_keyed_engine_states(self, keyed_engine_metas=None):
+    def get_keyed_states(self, keyed_metas=None):
         engine_job_keys_by_external_keys = {
             external_key: engine_meta['key']
-            for external_key, engine_meta in keyed_engine_metas.items()
+            for external_key, engine_meta in keyed_metas.items()
         }
         engine_job_keys = list(engine_job_keys_by_external_keys.values())
         engine_jobs = self.dao.query_jobs(query={

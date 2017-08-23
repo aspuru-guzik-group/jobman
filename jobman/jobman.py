@@ -1,4 +1,5 @@
 import collections
+import collections.abc
 import json
 import os
 from pathlib import Path
@@ -6,8 +7,10 @@ import time
 import traceback
 
 from . import constants
-from . import debug_utils
-from . import utils
+from .utils import debug_utils
+from .utils import dot_spec_loader
+from .utils import logging_utils
+from .worker import Worker
 
 
 class JobMan(object):
@@ -18,14 +21,16 @@ class JobMan(object):
         pass
 
     CFG_PARAMS = [
-        'dao', 'jobman_db_uri', 'sources', 'workers', 'default_job_time',
+        'dao', 'jobman_db_uri', 'source_specs', 'worker_specs',
+        'default_job_time',
     ]
 
     job_spec_defaults = {'entrypoint': 'entrypoint.sh'}
 
     @classmethod
     def from_cfg(cls, cfg=None):
-        params_from_cfg = utils.get_keys_or_attrs(src=cfg, keys=cls.CFG_PARAMS)
+        params_from_cfg = dot_spec_loader.get_attrs_or_items(
+            obj=cfg, keys=cls.CFG_PARAMS)
         return JobMan(**params_from_cfg, cfg=cfg)
 
     def __init__(self, logging_cfg=None, debug=None, setup=True, cfg=None,
@@ -42,15 +47,13 @@ class JobMan(object):
         if self.debug:
             logging_cfg['add_stream_handler'] = True
             logging_cfg['level'] = 'DEBUG'
-        return utils.generate_logger(logging_cfg)
+        return logging_utils.generate_logger(logging_cfg)
 
-    def _setup(self, dao=None, jobman_db_uri=None, sources=None,
-               workers=None, job_spec_defaults=None):
+    def _setup(self, dao=None, jobman_db_uri=None, source_specs=None,
+               worker_specs=None, job_spec_defaults=None):
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
-        self.sources = sources or {}
-        for source in self.sources.values():
-            source.jobman = self
-        self.workers = workers or {}
+        self.sources = self._source_specs_to_sources(source_specs)
+        self.workers = self._worker_specs_to_workers(worker_specs)
         self.job_spec_defaults = job_spec_defaults or self.job_spec_defaults
         self.dao.ensure_db()
         self._kvps = {}
@@ -66,6 +69,50 @@ class JobMan(object):
         from .dao.jobman_sqlite_dao import JobmanSqliteDAO
         return JobmanSqliteDAO(db_uri=jobman_db_uri, logger=self.logger)
 
+    def _source_specs_to_sources(self, source_specs=None):
+        sources = {}
+        for source_key, source_spec in (source_specs or {}).items():
+            sources[source_key] = self._source_spec_to_source(
+                source_key=source_key, source_spec=source_spec)
+        return sources
+
+    def _source_spec_to_source(self, source_key=None, source_spec=None):
+        if isinstance(source_spec, collections.abc.Mapping):
+            source_class = source_spec['source_class']
+            if isinstance(source_class, str):
+                source_class = dot_spec_loader.load_from_dot_spec(source_class)
+            source = source_class(**{
+                'key': source_key,
+                'jobman': self,
+                **(source_spec.get('source_params') or {}),
+            })
+        else:
+            source = source_spec
+            source.key = source_key
+            source.jobman = self
+        return source
+
+    def _worker_specs_to_workers(self, worker_specs=None):
+        workers = {}
+        for worker_key, worker_spec in (worker_specs or {}).items():
+            workers[worker_key] = self._worker_spec_to_worker(
+                worker_key=worker_key, worker_spec=worker_spec)
+        return workers
+
+    def _worker_spec_to_worker(self, worker_key=None, worker_spec=None):
+        if isinstance(worker_spec, collections.abc.Mapping):
+            worker_class = worker_spec.get('worker_class') or Worker
+            if isinstance(worker_class, str):
+                worker_class = dot_spec_loader.load_from_dot_spec(worker_class)
+            worker = worker_class(**{
+                'key': worker_key,
+                **(worker_spec.get('worker_params') or {})
+            })
+        else:
+            worker = worker_spec
+            worker.key = worker_key
+        return worker
+
     def tick(self):
         self._tick_workers()
         self._update_running_jobs()
@@ -74,11 +121,10 @@ class JobMan(object):
         self._tick_sources()
 
     def _tick_workers(self):
-        for worker in self.workers.values():
-            if hasattr(worker, 'tick'): worker.tick()  # noqa
+        for worker in self.workers.values(): worker.tick()  # noqa
 
     def _update_running_jobs(self):
-        running_jobs = self.dao.get_running_jobs()
+        running_jobs = self.dao.get_jobs_for_status(status='RUNNING')
         if not running_jobs: return  # noqa
         self._update_job_worker_states(jobs=running_jobs)
         self.dao.save_jobs(running_jobs)
@@ -98,7 +144,7 @@ class JobMan(object):
 
     def _update_job_worker_states_for_worker(self, jobs=None, worker=None):
         worker_metas = {job['key']: job.get('worker_meta') for job in jobs}
-        worker_states = worker.get_keyed_worker_states(worker_metas)
+        worker_states = worker.get_keyed_states(keyed_metas=worker_metas)
         for job in jobs:
             worker_state = worker_states.get(job['key'])
             if not worker_state:
@@ -145,16 +191,20 @@ class JobMan(object):
         self.dao.save_jobs(jobs=[job])
 
     def _submit_pending_jobs(self):
-        raise NotImplementedError
         tallies = collections.defaultdict(int)
         with self.dao.get_lock():
             pending_jobs = self.dao.get_jobs_for_status(status='PENDING')
             for job in pending_jobs:
                 tallies['visited'] += 1
                 try:
-                    worker = list(self.workers.values())[0]
-                    self._submit_job_to_worker(job=job, worker=worker)
-                    tallies['submitted'] += 1
+                    for worker in self.workers.values():
+                        try:
+                            if worker.can_accept_job(job=job):
+                                self._submit_job_to_worker(
+                                    job=job, worker=worker)
+                                tallies['submitted'] += 1
+                        except worker.IncompatibleJobError:
+                            continue
                 except self.SubmissionError:
                     tallies['errors'] += 1
                     self.logger.exception('SubmissionError')

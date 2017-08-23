@@ -2,23 +2,6 @@ from pathlib import Path
 import logging
 
 
-def get_key_or_attr(src=None, key=None, default=...):
-    try: return src[key]  # noqa
-    except: pass  # noqa
-    try: return getattr(src, key)  # noqa
-    except: pass  # noqa
-    if default is not ...: return default  # noqa
-    raise KeyError(key)
-
-
-def get_keys_or_attrs(src=None, keys=None):
-    result = {}
-    for key in keys:
-        try: result[key] = get_key_or_attr(src=src, key=key)  # noqa
-        except: pass  # noqa
-    return result
-
-
 def generate_logger(logging_cfg=None):
     logging_cfg = logging_cfg or {}
     logger = (

@@ -70,7 +70,6 @@ class JobmanSqliteDAO(SqliteDAO):
     def generate_source_key_filter(self, source_key=None):
         return {'field': 'source_key', 'op': '=', 'arg': source_key}
 
-    @property
     @contextlib.contextmanager
     def get_lock(self):
         self._acquire_lock()
