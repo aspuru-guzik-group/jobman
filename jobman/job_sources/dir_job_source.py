@@ -54,7 +54,7 @@ class DirJobSource(BaseJobSource):
     def _get_unfinished_jobs_by_status(self, status=None):
         return self.query_jobs(query={
             'filters': [
-                self.jobman.generate_status_filter(status='COMPLETED'),
+                self.jobman.dao.generate_status_filter(status='COMPLETED'),
                 {'field': 'source_tag', 'op': '!=', 'arg': self.FINISHED_TAG}
             ]
         })
@@ -65,7 +65,7 @@ class DirJobSource(BaseJobSource):
             self._move_job_to_subdir(job=job, subdir_path=subdir_path)
             if new_status:
                 job['status'] = new_status
-        self.jobman.save_jobs(jobs=jobs)
+        self.jobman.dao.save_jobs(jobs=jobs)
 
     def _move_job_to_subdir(self, job=None, subdir_path=None):
         src = Path(job['job_spec']['dir'])
