@@ -21,7 +21,10 @@ class BaseBashEngine(BaseEngine):
         return textwrap.dedent(
             '''
             #!/bin/bash
+
+            # preamble
             {preamble}
+
             pushd "{jobdir}" > /dev/null && {job_entrypoint}
             RESULT=$?
             if [ $RESULT -eq 0 ]; then
@@ -43,12 +46,17 @@ class BaseBashEngine(BaseEngine):
     def _generate_engine_entrypoint_preamble(self, job=None, extra_cfgs=None):
         preamble = textwrap.dedent(
             '''
+            # engine_preamble
             {engine_preamble}
+            # env_vars_for_cfg_specs
             {env_vars_for_cfg_specs}
             '''
         ).lstrip().format(
-            engine_preamble=self.resolve_cfg_item(key='ENGINE_PREAMBLE',
-                                                  spec={'default': ''}),
+            engine_preamble=(
+                self.resolve_cfg_item(
+                    key='ENGINE_PREAMBLE', spec={'default': ''})
+                or ''
+            ),
             env_vars_for_cfg_specs=self._generate_env_vars_for_cfg_specs(
                 job=job, extra_cfgs=extra_cfgs)
         )
@@ -60,6 +68,7 @@ class BaseBashEngine(BaseEngine):
         return "\n".join([
             self._kvp_to_env_var_block(kvp={'key': k, 'value': v})
             for k, v in resolved_cfgs.items()
+            if v is not None
         ])
 
     def _kvp_to_env_var_block(self, kvp=None):
@@ -70,7 +79,10 @@ class BaseBashEngine(BaseEngine):
             EOF
             export {key}=${key}
             '''
-        ).lstrip().format(key=kvp['key'], value=kvp['value'].lstrip())
+        ).lstrip().format(
+            key=kvp['key'],
+            value=kvp['value'].lstrip()
+        )
 
     def _get_std_log_redirects(self, job=None):
         std_log_paths = self._get_std_log_paths(job=job)

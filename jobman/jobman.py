@@ -118,7 +118,8 @@ class JobMan(object):
         if not hasattr(worker, 'dao'):
             worker.dao = worker.generate_dao(db_uri=self.dao.db_uri)
             worker.dao.ensure_tables()
-        worker.cfgs.extend([self.cfg])
+        if self.cfg:
+            worker.cfgs.extend([self.cfg])
         worker.jobman = self
         return worker
 

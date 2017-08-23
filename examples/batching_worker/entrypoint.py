@@ -10,11 +10,9 @@ class Entrypoint(object):
     def run(self):
         this_dir = Path(__file__).absolute().parent
         self.scratch_dir = tempfile.mkdtemp(dir=str(Path(this_dir, 'scratch')))
-        self.root_path = Path(self.scratch_dir, 'inbox_engine_root')
-        self.root_path.mkdir(parents=True)
         self.mem_db_uri = 'sqlite://'
         self.jobman = JobMan(
-            label='upstream',
+            label='batching_jobman',
             jobman_db_uri=self.mem_db_uri,
             worker_specs={
                 'batching_worker': {
@@ -28,7 +26,10 @@ class Entrypoint(object):
                             ),
                             'engine_params': {
                                 'scratch_dir': self.scratch_dir,
-                                'db_uri': self.mem_db_uri
+                                'db_uri': self.mem_db_uri,
+                                'cfg': {
+                                    'PARALLEL': '/bin/bash'
+                                }
                             }
                         },
                     }

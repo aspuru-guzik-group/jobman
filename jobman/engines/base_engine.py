@@ -74,8 +74,10 @@ class BaseEngine(object):
             dest=tempfile.mkdtemp(dir=self.scratch_dir, prefix='batch.'),
             extra_cfgs=extra_cfgs
         )
-        return self.submit_job(job={'job_spec': batch_job_spec},
-                               extra_cfgs=extra_cfgs)
+        return self.submit_job(
+            job={'job_spec': batch_job_spec},
+            extra_cfgs=extra_cfgs
+        )
 
     def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None,
                            extra_cfgs=None):

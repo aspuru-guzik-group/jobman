@@ -68,8 +68,8 @@ class LocalEngine(BaseBashEngine):
 
     def _execute_engine_entrypoint_cmd(self, entrypoint_cmd=None, job=None):
         try:
-            self.process_runner.run_process(cmd=entrypoint_cmd, check=True,
-                                            shell=True)
+            self.process_runner.run_process(
+                cmd=entrypoint_cmd, check=True, shell=True)
         except self.process_runner.CalledProcessError as called_proc_exc:
             self._handle_engine_entrypoint_called_proc_exc(
                 called_proc_exc=called_proc_exc, job=job)

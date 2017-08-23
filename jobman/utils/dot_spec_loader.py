@@ -57,10 +57,10 @@ class DotSpecLoader(object):
             )
 
     @classmethod
-    def get_attr_or_item(cls, obj=None, key=None):
-        return cls()._get_attr_or_item(obj=obj, key=key)
+    def get_attr_or_item(cls, obj=None, key=None, default=...):
+        return cls()._get_attr_or_item(obj=obj, key=key, default=default)
 
-    def _get_attr_or_item(self, obj=None, key=None):
+    def _get_attr_or_item(self, obj=None, key=None, default=...):
         if isinstance(key, str) and key.endswith('()'):
             return self._get_attr_or_item(obj, key[:-2])()
         for type_ in ['sequence', 'mapping', 'mapping_view', 'attr']:
@@ -68,7 +68,9 @@ class DotSpecLoader(object):
                 return getattr(self, '_get_from_' + type_)(obj, key)
             except:
                 pass
-        return None
+        if default is ...:
+            raise KeyError(key)
+        return default
 
     def _get_from_sequence(self, obj=None, key=None):
         if isinstance(obj, collections.abc.Sequence):
@@ -95,13 +97,13 @@ def load_from_dot_spec(dot_spec=None):
     return DotSpecLoader.load_from_dot_spec(dot_spec=dot_spec)
 
 
-def get_attr_or_item(obj=None, key=None):
+def get_attr_or_item(obj=None, key=None, default=...):
     return DotSpecLoader.get_attr_or_item(obj=obj, key=key)
 
 
 def get_attrs_or_items(obj=None, keys=None):
     result = {}
     for key in keys:
-        try: result[key] = get_attr_or_item(obj=obj, key=key)  # noqa
+        try: result[key] = get_attr_or_item(obj=obj, key=key, default=None)  # noqa
         except: pass  # noqa
     return result

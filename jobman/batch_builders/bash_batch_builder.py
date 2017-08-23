@@ -18,7 +18,7 @@ class BashBatchBuilder(BaseBatchBuilder):
             msg += "\n".join(["Preamble was:", hr, preamble, hr])
             super().__init__(msg)
 
-    DEFAULT_PREAMBLE = 'PARALLEL=/bin/bash'
+    DEFAULT_PREAMBLE = 'PARALLEL=${PARALLEL:-/bin/bash}'
 
     def __init__(self, *args, default_preamble=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -36,7 +36,10 @@ class BashBatchBuilder(BaseBatchBuilder):
         self._write_subjob_commands()
         self._write_entrypoint(preamble=preamble)
         job_spec = {
-            'cfg_specs': self._get_merged_subjob_cfg_specs(),
+            'cfg_specs': {
+                'PARALLEL': {'required': False, 'output_key': 'PARALLEL'},
+                **self._get_merged_subjob_cfg_specs(),
+            },
             'dir': str(self.jobdir_path),
             'entrypoint': str(self.entrypoint_path),
             'std_log_file_names': self.std_log_file_names,
@@ -78,13 +81,16 @@ class BashBatchBuilder(BaseBatchBuilder):
         self.entrypoint_path.chmod(0o755)
 
     def _generate_entrypoint_content(self, preamble=None):
-        if not preamble:
-            preamble = self._get_preamble()
+        preamble = preamble or self._get_preamble()
         self._validate_preamble(preamble=preamble)
         return textwrap.dedent(
             """
             #!/bin/bash
+
+            # parallel preamble
             {preamble}
+
+            # parallel command
             $PARALLEL < {commands_file}
             """
         ).lstrip().format(
