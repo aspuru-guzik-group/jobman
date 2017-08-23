@@ -1,12 +1,7 @@
-import contextlib
-import time
-
 from .sqlite_dao import SqliteDAO
 
 
 class JobmanSqliteDAO(SqliteDAO):
-    LOCK_KEY = '_JOBMAN_LOCK'
-
     def __init__(self, lock_timeout=30, debug=None, **kwargs):
         self.debug = debug
         self.lock_timeout = lock_timeout
@@ -39,14 +34,6 @@ class JobmanSqliteDAO(SqliteDAO):
             **self._generate_timestamp_fields()
         }
 
-    def ensure_db(self):
-        self.ensure_tables()
-        self._ensure_lock_kvp()
-
-    def _ensure_lock_kvp(self):
-        lock_kvp = {'key': self.LOCK_KEY, 'value': 'UNLOCKED'}
-        self.save_kvps(kvps=[lock_kvp], replace=False)
-
     def create_job(self, job=None):
         return self.create_ent(ent_type='job', ent=job)
 
@@ -69,30 +56,3 @@ class JobmanSqliteDAO(SqliteDAO):
 
     def generate_source_key_filter(self, source_key=None):
         return {'field': 'source_key', 'op': '=', 'arg': source_key}
-
-    @contextlib.contextmanager
-    def get_lock(self):
-        self._acquire_lock()
-        try: yield  # noqa
-        finally: self._release_lock()  # noqa
-
-    def _acquire_lock(self):
-        start_time = time.time()
-        while time.time() - start_time < self.lock_timeout:
-            try:
-                self.update_kvp(
-                    key=self.LOCK_KEY,
-                    new_value='LOCKED',
-                    where_prev_value='UNLOCKED'
-                )
-                return
-            except self.UpdateError as exc:
-                if self.debug:
-                    self.logger.exception('UpdateError')
-                    self.logger.debug("waiting for lock")
-                time.sleep(1)
-        raise self.LockError("Could not acquire lock within timeout window")
-
-    def _release_lock(self):
-        self.update_kvp(
-            key=self.LOCK_KEY, new_value='UNLOCKED', where_prev_value='LOCKED')

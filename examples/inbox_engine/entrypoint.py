@@ -15,6 +15,7 @@ class Entrypoint(object):
         self.mem_db_uri = 'sqlite://'
 
         self.upstream_jobman = JobMan(
+            label='upstream',
             jobman_db_uri=self.mem_db_uri,
             worker_specs={
                 'inbox_worker': {
@@ -33,6 +34,7 @@ class Entrypoint(object):
             },
         )
         self.downstream_jobman = JobMan(
+            label='downstream',
             jobman_db_uri=self.mem_db_uri,
             source_specs={
                 'my_root': {
@@ -61,14 +63,13 @@ class Entrypoint(object):
         job_specs = [self._generate_job_spec(ctx={'key': i}) for i in range(3)]
         for job_spec in job_specs:
             self.upstream_jobman.submit_job_spec(job_spec=job_spec)
-        for i in range(5):
+        for i in range(7):
             self.upstream_jobman.tick()
             self.downstream_jobman.tick()
             time.sleep(.1)
         jobs = self.upstream_jobman.dao.query_jobs()
         job_statuses = [job['status'] for job in jobs]
         assert set(job_statuses) == set(['COMPLETED']), set(job_statuses)
-        print(jobs)
         print("done")
 
     def _generate_job_spec(self, ctx=None):

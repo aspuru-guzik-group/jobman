@@ -10,7 +10,7 @@ from . import constants
 from .utils import debug_utils
 from .utils import dot_spec_loader
 from .utils import logging_utils
-from .worker import Worker
+from .workers.base_worker import BaseWorker
 
 
 class JobMan(object):
@@ -21,7 +21,7 @@ class JobMan(object):
         pass
 
     CFG_PARAMS = [
-        'dao', 'jobman_db_uri', 'source_specs', 'worker_specs',
+        'dao', 'jobman_db_uri', 'label', 'source_specs', 'worker_specs',
         'default_job_time',
     ]
 
@@ -33,9 +33,10 @@ class JobMan(object):
             obj=cfg, keys=cls.CFG_PARAMS)
         return JobMan(**params_from_cfg, cfg=cfg)
 
-    def __init__(self, logging_cfg=None, debug=None, setup=True, cfg=None,
-                 **kwargs):
+    def __init__(self, logging_cfg=None, debug=None, label=None, setup=True,
+                 cfg=None, **kwargs):
         self.debug = debug or os.environ.get('JOBMAN_DEBUG')
+        self.label = label
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
         self.cfg = cfg
         if setup:
@@ -43,7 +44,10 @@ class JobMan(object):
 
     def _generate_logger(self, logging_cfg=None):
         logging_cfg = {**(logging_cfg or {})}
-        logging_cfg.setdefault('name', (__name__ + ':' + str(id(self))))
+        default_name = (
+            __name__ + ':' + (self.label if self.label else str(id(self)))
+        )
+        logging_cfg.setdefault('name', default_name)
         if self.debug:
             logging_cfg['add_stream_handler'] = True
             logging_cfg['level'] = 'DEBUG'
@@ -101,7 +105,7 @@ class JobMan(object):
 
     def _worker_spec_to_worker(self, worker_key=None, worker_spec=None):
         if isinstance(worker_spec, collections.abc.Mapping):
-            worker_class = worker_spec.get('worker_class') or Worker
+            worker_class = worker_spec.get('worker_class') or BaseWorker
             if isinstance(worker_class, str):
                 worker_class = dot_spec_loader.load_from_dot_spec(worker_class)
             worker = worker_class(**{
@@ -111,6 +115,11 @@ class JobMan(object):
         else:
             worker = worker_spec
             worker.key = worker_key
+        if not hasattr(worker, 'dao'):
+            worker.dao = worker.generate_dao(db_uri=self.dao.db_uri)
+            worker.dao.ensure_tables()
+        worker.cfgs.extend([self.cfg])
+        worker.jobman = self
         return worker
 
     def tick(self):
@@ -212,7 +221,7 @@ class JobMan(object):
 
     def _submit_job_to_worker(self, job=None, worker=None):
         try:
-            worker_meta = worker.submit_job(job=job, extra_cfgs=[self.cfg])
+            worker_meta = worker.submit_job(job=job)
             job.update({
                 'worker_key': worker.key,
                 'worker_meta': worker_meta,

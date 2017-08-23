@@ -3,3 +3,11 @@ CHECKPOINT_FILE_NAMES = {
     'completed': 'JOBMAN-COMPLETED',
     'failed': 'JOBMAN-FAILED',
 }
+
+
+class JOB_STATUSES(object):
+    RUNNING = 'RUNNING'
+    EXECUTED = 'EXECUTED'
+    FAILED = 'FAILED'
+    UNKNOWN = 'UNKNOWN'
+    COMPLETED = 'COMPLETED'

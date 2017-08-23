@@ -13,12 +13,7 @@ class BaseEngine(object):
     DEFAULT_JOB_ENTRYPOINT_NAME = 'job.sh'
     CHECKPOINT_FILE_NAMES = constants.CHECKPOINT_FILE_NAMES
 
-    class JOB_STATUSES(object):
-        RUNNING = 'RUNNING'
-        EXECUTED = 'EXECUTED'
-        FAILED = 'FAILED'
-        UNKNOWN = 'UNKNOWN'
-        FINISHED_STATUSES = [FAILED, EXECUTED]
+    JOB_STATUSES = constants.JOB_STATUSES
 
     class SubmissionError(Exception):
         pass

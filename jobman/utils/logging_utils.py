@@ -12,9 +12,9 @@ def generate_logger(logging_cfg=None):
     if log_file:
         file_handler = logging.FileHandler(Path(log_file).expanduser())
         logger.addHandler(file_handler)
-    if logging_cfg.get('stream'):
+    if not logging_cfg.get('no_stream_handler'):
         logger.addHandler(logging.StreamHandler())
-    level = logging_cfg.get('level')
+    level = logging_cfg.get('level') or 'INFO'
     if level:
         logger.setLevel(getattr(logging, level))
     formatter = logging.Formatter(

@@ -115,7 +115,8 @@ class InboxEngine(BaseEngine):
                 {'field': 'status', 'op': '=',
                  'arg': self.JOB_STATUSES.RUNNING},
                 {'field': 'remote_status', 'op': 'IN',
-                 'arg': self.JOB_STATUSES.FINISHED_STATUSES},
+                 'arg': [self.JOB_STATUSES.EXECUTED,
+                         self.JOB_STATUSES.FAILED]},
             ]
         })
 
