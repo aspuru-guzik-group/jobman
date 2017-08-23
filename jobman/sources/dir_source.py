@@ -1,10 +1,10 @@
 from pathlib import Path
 import shutil
 
-from .base_job_source import BaseJobSource
+from .base_source import BaseSource
 
 
-class DirJobSource(BaseJobSource):
+class DirSource(BaseSource):
     DEFAULT_SUBDIRS = {
         subdir: subdir
         for subdir in ['inbox', 'queued', 'completed', 'failed']

@@ -18,7 +18,7 @@ class JobMan(object):
         pass
 
     CFG_PARAMS = [
-        'dao', 'jobman_db_uri', 'job_sources', 'engines', 'default_job_time',
+        'dao', 'jobman_db_uri', 'sources', 'workers', 'default_job_time',
     ]
 
     job_spec_defaults = {'entrypoint': 'entrypoint.sh'}
@@ -44,13 +44,13 @@ class JobMan(object):
             logging_cfg['level'] = 'DEBUG'
         return utils.generate_logger(logging_cfg)
 
-    def _setup(self, dao=None, jobman_db_uri=None, job_sources=None,
-               engines=None, job_spec_defaults=None):
+    def _setup(self, dao=None, jobman_db_uri=None, sources=None,
+               workers=None, job_spec_defaults=None):
         self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
-        self.job_sources = job_sources or {}
-        for job_source in self.job_sources.values():
-            job_source.jobman = self
-        self.engines = engines or {}
+        self.sources = sources or {}
+        for source in self.sources.values():
+            source.jobman = self
+        self.workers = workers or {}
         self.job_spec_defaults = job_spec_defaults or self.job_spec_defaults
         self.dao.ensure_db()
         self._kvps = {}
@@ -67,46 +67,46 @@ class JobMan(object):
         return JobmanSqliteDAO(db_uri=jobman_db_uri, logger=self.logger)
 
     def tick(self):
-        self._tick_engines()
+        self._tick_workers()
         self._update_running_jobs()
         self._process_executed_jobs()
         self._submit_pending_jobs()
-        self._tick_job_sources()
+        self._tick_sources()
 
-    def _tick_engines(self):
-        for engine in self.engines.values():
-            if hasattr(engine, 'tick'): engine.tick()  # noqa
+    def _tick_workers(self):
+        for worker in self.workers.values():
+            if hasattr(worker, 'tick'): worker.tick()  # noqa
 
     def _update_running_jobs(self):
         running_jobs = self.dao.get_running_jobs()
         if not running_jobs: return  # noqa
-        self._update_job_engine_states(jobs=running_jobs)
+        self._update_job_worker_states(jobs=running_jobs)
         self.dao.save_jobs(running_jobs)
 
-    def _update_job_engine_states(self, jobs=None):
+    def _update_job_worker_states(self, jobs=None):
         if not jobs: return  # noqa
-        jobs_by_engine_key = self._group_jobs_by_engine_key(jobs=jobs)
-        for engine_key, jobs_for_engine_key in jobs_by_engine_key.items():
-            self._update_job_engine_states_for_engine(
-                jobs=jobs_for_engine_key, engine=self.engines[engine_key])
+        jobs_by_worker_key = self._group_jobs_by_worker_key(jobs=jobs)
+        for worker_key, jobs_for_worker_key in jobs_by_worker_key.items():
+            self._update_job_worker_states_for_worker(
+                jobs=jobs_for_worker_key, worker=self.workers[worker_key])
 
-    def _group_jobs_by_engine_key(self, jobs=None):
-        jobs_by_engine = collections.defaultdict(list)
+    def _group_jobs_by_worker_key(self, jobs=None):
+        jobs_by_worker = collections.defaultdict(list)
         for job in jobs:
-            jobs_by_engine[job['engine_key']].append(job)
-        return jobs_by_engine
+            jobs_by_worker[job['worker_key']].append(job)
+        return jobs_by_worker
 
-    def _update_job_engine_states_for_engine(self, jobs=None, engine=None):
-        engine_metas = {job['key']: job.get('engine_meta') for job in jobs}
-        engine_states = engine.get_keyed_engine_states(engine_metas)
+    def _update_job_worker_states_for_worker(self, jobs=None, worker=None):
+        worker_metas = {job['key']: job.get('worker_meta') for job in jobs}
+        worker_states = worker.get_keyed_worker_states(worker_metas)
         for job in jobs:
-            engine_state = engine_states.get(job['key'])
-            if not engine_state:
+            worker_state = worker_states.get(job['key'])
+            if not worker_state:
                 if self._job_is_orphaned(job=job):
                     job['status'] = 'EXECUTED'
             else:
-                job['engine_state'] = engine_state
-                job['status'] = engine_state.get('status')
+                job['worker_state'] = worker_state
+                job['status'] = worker_state.get('status')
 
     def _job_is_orphaned(self, job=None):
         return (self._get_job_age(job=job) > self.submission_grace_period)
@@ -152,20 +152,20 @@ class JobMan(object):
             for job in pending_jobs:
                 tallies['visited'] += 1
                 try:
-                    engine = list(self.engines.values())[0]
-                    self._submit_job_to_engine(job=job, engine=engine)
+                    worker = list(self.workers.values())[0]
+                    self._submit_job_to_worker(job=job, worker=worker)
                     tallies['submitted'] += 1
                 except self.SubmissionError:
                     tallies['errors'] += 1
                     self.logger.exception('SubmissionError')
         return tallies
 
-    def _submit_job_to_engine(self, job=None, engine=None):
+    def _submit_job_to_worker(self, job=None, worker=None):
         try:
-            engine_meta = engine.submit_job(job=job, extra_cfgs=[self.cfg])
+            worker_meta = worker.submit_job(job=job, extra_cfgs=[self.cfg])
             job.update({
-                'engine_key': engine.key,
-                'engine_meta': engine_meta,
+                'worker_key': worker.key,
+                'worker_meta': worker_meta,
                 'status': 'RUNNING'
             })
             return self.dao.save_jobs(jobs=[job])[0]
@@ -174,8 +174,8 @@ class JobMan(object):
             self.dao.save_jobs(jobs=[job])
             raise self.SubmissionError() from exc
 
-    def _tick_job_sources(self):
-        for job_source in self.job_sources.values(): job_source.tick()  # noqa
+    def _tick_sources(self):
+        for source in self.sources.values(): source.tick()  # noqa
 
     def submit_job_dir(self, job_dir=None, source_key=None, source_meta=None,
                        job_spec_defaults=None, job_spec_overrides=None):
