@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import tempfile
 
 
@@ -7,23 +7,21 @@ class BaseBatchBuilder(object):
     SUBJOBS_DIR_NAME = 'subjobs'
     std_log_file_names = {logname: logname for logname in ['stdout', 'stderr']}
 
-    def __init__(self, batch_job=None, subjobs=None, dest=None):
-        self.jobdir = dest or tempfile.mkdtemp()
-        os.makedirs(self.jobdir, exist_ok=True)
-        self.entrypoint_path = os.path.join(self.jobdir, self.ENTRYPOINT_NAME)
-
     def build_batch_jobdir(self, batch_job=None, subjobs=None, dest=None,
                            extra_cfgs=None, **kwargs):
+        self.jobdir_path = Path(dest or tempfile.mkdtemp())
+        self.jobdir_path.mkdir(parents=True, exist_ok=True)
         self.batch_job = batch_job
         self.subjobs = subjobs
-        self.dest = dest
         self.extra_cfgs = extra_cfgs
         job_spec = self._build_batch_jobdir(**kwargs)
         del self.batch_job
         del self.subjobs
-        del self.dest
+        del self.jobdir_path
         del self.extra_cfgs
         return job_spec
 
     def _build_batch_jobdir(self, **kwargs): raise NotImplementedError
-        
+
+    @property
+    def entrypoint_path(self): return (self.jobdir_path / self.ENTRYPOINT_NAME)

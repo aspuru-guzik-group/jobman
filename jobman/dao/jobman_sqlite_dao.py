@@ -25,7 +25,6 @@ class JobmanSqliteDAO(SqliteDAO):
             'batchable': {'type': 'INTEGER'},
             'worker_key': {'type': 'TEXT'},
             'worker_meta': {'type': 'JSON'},
-            'worker_state': {'type': 'JSON'},
             'errors': {'type': 'JSON'},
             'source_key': {'type': 'TEXT'},
             'source_meta': {'type': 'JSON'},

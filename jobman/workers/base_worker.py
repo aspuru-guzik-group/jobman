@@ -63,14 +63,16 @@ class BaseWorker(object):
         return worker_meta
 
     def tick(self):
-        if hasattr(self.engine, 'tick'):
-            self.engine.tick()
-        running_jobs = self.dao.get_jobs_for_status(status='RUNNING')
-        self._update_job_engine_states(jobs=running_jobs)
+        self._tick_engine()
+        self._update_job_engine_states()
         self._process_executed_jobs()
         self._submit_pending_jobs()
 
-    def _update_job_engine_states(self, jobs=None):
+    def _tick_engine(self):
+        if hasattr(self.engine, 'tick'): self.engine.tick()  # noqa
+
+    def _update_job_engine_states(self):
+        jobs = self.dao.get_jobs_for_status(status='RUNNING')
         if not jobs: return  # noqa
         keyed_engine_states = self.engine.get_keyed_states(
             keyed_metas=self._get_keyed_engine_metas(jobs=jobs))
@@ -126,14 +128,21 @@ class BaseWorker(object):
 
     def _process_executed_jobs(self):
         executed_jobs = self.dao.get_jobs_for_status(status='EXECUTED')
-        for job in executed_jobs:
-            job['status'] = 'COMPLETED'
+        for executed_job in executed_jobs:
+            self._process_executed_job(executed_job=executed_job, save=False)
         self.dao.save_jobs(jobs=executed_jobs)
+
+    def _process_executed_job(self, executed_job=None, save=True):
+        self._complete_job(executed_job)
+
+    def _complete_job(self, job=None, save=True):
+        job['status'] = 'COMPLETED'
+        if save: self.dao.save_jobs(jobs=[job])  # noqa
 
     def _submit_pending_jobs(self):
         tallies = collections.defaultdict(int)
         with self.dao.get_lock():
-            pending_jobs = self.dao.get_jobs_for_status(status='PENDING')
+            pending_jobs = self._get_pending_jobs()
             jobman_jobs = self._get_related_jobman_jobs(jobs=pending_jobs)
             worker_jobs_to_update = []
             for job in pending_jobs:
@@ -151,6 +160,9 @@ class BaseWorker(object):
                 worker_jobs_to_update.append(job)
             self.dao.save_jobs(worker_jobs_to_update)
         return tallies
+
+    def _get_pending_jobs(self):
+        return self.dao.get_jobs_for_status(status='PENDING')
 
     def _get_related_jobman_jobs(self, jobs=None):
         jobman_jobs = self.jobman.dao.query_jobs(query={

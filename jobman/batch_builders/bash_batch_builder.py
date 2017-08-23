@@ -1,4 +1,3 @@
-import os
 import textwrap
 
 from jobman.constants import CHECKPOINT_FILE_NAMES
@@ -24,8 +23,6 @@ class BashBatchBuilder(BaseBatchBuilder):
     def __init__(self, *args, default_preamble=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_preamble = default_preamble or self.DEFAULT_PREAMBLE
-        self.subjob_commands_path = os.path.join(self.jobdir,
-                                                 'subjob_commands')
 
     def _get_preamble_errors(self, preamble=None):
         errors = []
@@ -40,15 +37,19 @@ class BashBatchBuilder(BaseBatchBuilder):
         self._write_entrypoint(preamble=preamble)
         job_spec = {
             'cfg_specs': self._get_merged_subjob_cfg_specs(),
-            'dir': self.jobdir,
-            'entrypoint': self.entrypoint_path,
+            'dir': str(self.jobdir_path),
+            'entrypoint': str(self.entrypoint_path),
             'std_log_file_names': self.std_log_file_names,
         }
         return job_spec
 
     def _write_subjob_commands(self):
-        with open(self.subjob_commands_path, 'w') as f:
+        with self.subjob_commands_path.open('w') as f:
             f.write(self._generate_subjob_commands_content())
+
+    @property
+    def subjob_commands_path(self):
+        return (self.jobdir_path / 'subjob_commands.sh')
 
     def _generate_subjob_commands_content(self):
         subjob_commands = []
@@ -59,10 +60,11 @@ class BashBatchBuilder(BaseBatchBuilder):
 
     def _generate_subjob_command(self, subjob=None):
         return (
-            "pushd {dir};"
+            "pushd {dir} > /dev/null;"
             " if {entrypoint}; then touch {completed_checkpoint};"
-            " else touch {failed_checkpoint}; fi"
-            "popd"
+            " else touch {failed_checkpoint};"
+            " fi;"
+            " popd > /dev/null"
         ).format(
             dir=subjob['job_spec']['dir'],
             entrypoint=subjob['job_spec']['entrypoint'],
@@ -71,9 +73,9 @@ class BashBatchBuilder(BaseBatchBuilder):
         )
 
     def _write_entrypoint(self, preamble=None):
-        with open(self.entrypoint_path, 'w') as f:
+        with self.entrypoint_path.open('w') as f:
             f.write(self._generate_entrypoint_content(preamble=preamble))
-        os.chmod(self.entrypoint_path, 0o755)
+        self.entrypoint_path.chmod(0o755)
 
     def _generate_entrypoint_content(self, preamble=None):
         if not preamble:
@@ -86,8 +88,8 @@ class BashBatchBuilder(BaseBatchBuilder):
             $PARALLEL < {commands_file}
             """
         ).lstrip().format(
-            preamble=preamble,
-            commands_file=self.subjob_commands_path
+            preamble=(preamble or ''),
+            commands_file=str(self.subjob_commands_path)
         )
 
     def _get_preamble(self):

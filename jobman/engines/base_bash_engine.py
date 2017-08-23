@@ -22,7 +22,7 @@ class BaseBashEngine(BaseEngine):
             '''
             #!/bin/bash
             {preamble}
-            pushd "{jobdir}" > /dev/null && ./{job_entrypoint}
+            pushd "{jobdir}" > /dev/null && {job_entrypoint}
             RESULT=$?
             if [ $RESULT -eq 0 ]; then
                 touch {completed_checkpoint}
