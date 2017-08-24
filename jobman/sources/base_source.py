@@ -3,6 +3,8 @@ class BaseSource(object):
         self.key = key
         self.jobman = jobman
 
+    def initialize(self): raise NotImplementedError()
+
     def tick(self): raise NotImplementedError()
 
     def query_jobs(self, query=None):

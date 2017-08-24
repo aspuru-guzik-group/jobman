@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import textwrap
 
 from .base_engine import BaseEngine
@@ -14,12 +14,12 @@ class BaseBashEngine(BaseEngine):
     def _write_engine_entrypoint(self, job=None, extra_cfgs=None):
         entrypoint_content = self._generate_engine_entrypoint_content(
             job=job, extra_cfgs=extra_cfgs)
-        entrypoint_path = os.path.join(job['job_spec']['dir'],
-                                       self.ENGINE_ENTRYPOINT_TPL)
-        with open(entrypoint_path, 'w') as f:
+        entrypoint_path = Path(
+            job['job_spec']['dir'], self.ENGINE_ENTRYPOINT_TPL).absolute()
+        with entrypoint_path.open('w') as f:
             f.write(entrypoint_content)
-        os.chmod(entrypoint_path, 0o755)
-        return entrypoint_path
+        entrypoint_path.chmod(0o755)
+        return str(entrypoint_path)
 
     def _generate_engine_entrypoint_content(self, job=None, extra_cfgs=None):
         return textwrap.dedent(
@@ -109,7 +109,9 @@ class BaseBashEngine(BaseEngine):
             **(job['job_spec'].get('std_log_file_names') or {})
         }
         return {
-            log_key: os.path.join(job['job_spec']['dir'], log_file_name)
+            log_key: (
+                str(Path(job['job_spec']['dir'], log_file_name).absolute())
+            )
             for log_key, log_file_name in log_file_names_w_defaults.items()
         }
 

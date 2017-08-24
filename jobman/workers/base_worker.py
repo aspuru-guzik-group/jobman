@@ -12,27 +12,35 @@ class BaseWorker(object):
     class IncompatibleJobError(Exception):
         pass
 
-    def __init__(self, key=None, db_uri=None, dao=None, engine_spec=None,
-                 acceptance_fn_spec=None):
+    def __init__(self, key=None, initialize=True, db_uri=None, dao=None,
+                 engine_spec=None, acceptance_fn_spec=None):
         self.key = key
-        self.db_uri = db_uri  # noqa
+        self.db_uri = db_uri
         if dao:
             self.dao = dao  # noqa
             self.db_uri = self.dao.db_uri
+        if initialize:
+            self.initialize()
         self.engine = self._engine_spec_to_engine(engine_spec)
         self.acceptance_fn = self._acceptance_fn_spec_to_acceptance_fn(
             acceptance_fn_spec)
         self.cfgs = []
 
+    def initialize(self):
+        if not hasattr(self, 'dao'):
+            self.dao = self.generate_dao(db_uri=self.db_uri)
+        self.dao.ensure_tables()
+
     def _engine_spec_to_engine(self, engine_spec=None):
         engine_class = engine_spec['engine_class']
         if isinstance(engine_class, str):
             engine_class = dot_spec_loader.load_from_dot_spec(engine_class)
+        engine_key = self.key + '_engine'
         engine = engine_class(**{
+            'key': engine_key,
             'db_uri': self.db_uri,
             **(engine_spec.get('engine_params') or {})
         })
-        engine.key = self.key + '_engine'
         return engine
 
     def _acceptance_fn_spec_to_acceptance_fn(self, acceptance_fn_spec=None):
@@ -61,7 +69,7 @@ class BaseWorker(object):
     def generate_dao(self, db_uri=None):
         return worker_sqlite_dao.WorkerSqliteDAO(
             db_uri=db_uri,
-            table_prefix=('_worker_' + self.key)
+            table_prefix=('_worker_' + self.key + '_')
         )
 
     def can_accept_job(self, job=None):
@@ -73,7 +81,7 @@ class BaseWorker(object):
     def submit_job(self, job=None):
         worker_job = self.dao.create_job(job={
             'key': job['key'],
-            'status': 'PENDING',
+            'status': self.JOB_STATUSES.PENDING,
         })
         worker_meta = {'key': worker_job['key']}
         return worker_meta
@@ -88,7 +96,8 @@ class BaseWorker(object):
         if hasattr(self.engine, 'tick'): self.engine.tick()  # noqa
 
     def _update_job_engine_states(self):
-        jobs = self.dao.get_jobs_for_status(status='RUNNING')
+        jobs = self.dao.get_jobs_for_status(
+            status=self.JOB_STATUSES.RUNNING)
         if not jobs: return  # noqa
         keyed_engine_states = self.engine.get_keyed_states(
             keyed_metas=self._get_keyed_engine_metas(jobs=jobs))
@@ -109,7 +118,7 @@ class BaseWorker(object):
     def _set_job_engine_state(self, job=None, job_engine_state=None):
         if job_engine_state is None:
             if self._job_is_orphaned(job=job):
-                job['status'] = 'EXECUTED'
+                job['status'] = self.JOB_STATUSES.EXECUTED
         else:
             job['engine_state'] = job_engine_state
             job['status'] = job_engine_state.get('status')
@@ -143,42 +152,53 @@ class BaseWorker(object):
         return {'status': status}
 
     def _process_executed_jobs(self):
-        executed_jobs = self.dao.get_jobs_for_status(status='EXECUTED')
-        for executed_job in executed_jobs:
+        claimed_executed_jobs = self.dao.claim_jobs(query={
+            'filters': [
+                self.dao.generate_status_filter(
+                    status=self.JOB_STATUSES.EXECUTED),
+            ],
+            'limit': 100,
+        })
+        for executed_job in claimed_executed_jobs:
             self._process_executed_job(executed_job=executed_job, save=False)
-        self.dao.save_jobs(jobs=executed_jobs)
+        self.dao.save_jobs(jobs=claimed_executed_jobs)
 
     def _process_executed_job(self, executed_job=None, save=True):
-        self._complete_job(executed_job)
+        self._complete_job(executed_job, save=save)
 
     def _complete_job(self, job=None, save=True):
-        job['status'] = 'COMPLETED'
+        job['status'] = self.JOB_STATUSES.COMPLETED
         if save: self.dao.save_jobs(jobs=[job])  # noqa
 
     def _submit_pending_jobs(self):
         tallies = collections.defaultdict(int)
-        with self.dao.get_lock():
-            pending_jobs = self._get_pending_jobs()
-            jobman_jobs = self._get_related_jobman_jobs(jobs=pending_jobs)
-            worker_jobs_to_update = []
-            for job in pending_jobs:
-                tallies['visited'] += 1
-                try:
-                    engine_meta = self._submit_jobman_job_to_engine(
-                        jobman_jobs[job['key']])
-                    job['engine_meta'] = engine_meta
-                    job['status'] = self.JOB_STATUSES.RUNNING
-                    tallies['submitted'] += 1
-                except self.engine.SubmissionError:
-                    job['status'] = self.JOB_STATUSES.FAILED
-                    tallies['errors'] += 1
-                    self.logger.exception('SubmissionError')
-                worker_jobs_to_update.append(job)
-            self.dao.save_jobs(worker_jobs_to_update)
+        claimed_pending_jobs = self._claim_pending_jobs()
+        jobman_jobs = self._get_related_jobman_jobs(jobs=claimed_pending_jobs)
+        worker_jobs_to_update = []
+        for job in claimed_pending_jobs:
+            tallies['visited'] += 1
+            try:
+                engine_meta = self._submit_jobman_job_to_engine(
+                    jobman_jobs[job['key']])
+                job['engine_meta'] = engine_meta
+                job['status'] = self.JOB_STATUSES.RUNNING
+                tallies['submitted'] += 1
+            except self.engine.SubmissionError:
+                job['status'] = self.JOB_STATUSES.FAILED
+                tallies['errors'] += 1
+                self.logger.exception('SubmissionError')
+            worker_jobs_to_update.append(job)
+        self.dao.save_jobs(worker_jobs_to_update)
         return tallies
 
-    def _get_pending_jobs(self):
-        return self.dao.get_jobs_for_status(status='PENDING')
+    def _claim_pending_jobs(self):
+        return self.dao.claim_jobs(query={
+            'filters': [
+                self.dao.generate_status_filter(
+                    status=self.JOB_STATUSES.PENDING)
+            ],
+            'limit': 100
+        })
 
     def _get_related_jobman_jobs(self, jobs=None):
         jobman_jobs = self.jobman.dao.query_jobs(query={

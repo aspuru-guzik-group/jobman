@@ -14,9 +14,6 @@ from .workers.base_worker import BaseWorker
 
 
 class JobMan(object):
-    class LockError(Exception):
-        pass
-
     class SubmissionError(Exception):
         pass
 
@@ -27,20 +24,35 @@ class JobMan(object):
 
     job_spec_defaults = {'entrypoint': './entrypoint.sh'}
 
-    @classmethod
-    def from_cfg(cls, cfg=None):
-        params_from_cfg = dot_spec_loader.get_attrs_or_items(
-            obj=cfg, keys=cls.CFG_PARAMS)
-        return JobMan(**params_from_cfg, cfg=cfg)
+    JOB_STATUSES = constants.JOB_STATUSES
 
-    def __init__(self, logging_cfg=None, debug=None, label=None, setup=True,
-                 cfg=None, **kwargs):
-        self.debug = debug or os.environ.get('JOBMAN_DEBUG')
+    @classmethod
+    def from_cfg(cls, cfg=None, overrides=None):
+        kwargs_from_cfg = dot_spec_loader.get_attrs_or_items(
+            obj=cfg, keys=cls.CFG_PARAMS)
+        kwargs = {
+            **kwargs_from_cfg,
+            **(overrides or {}),
+            'cfg': cfg
+        }
+        return JobMan(**kwargs)
+
+    def __init__(self, label=None, cfg=None, source_specs=None,
+                 job_spec_defaults=None, worker_specs=None, dao=None,
+                 jobman_db_uri=None, initialize=True, logging_cfg=None,
+                 debug=None):
         self.label = label
+        self.debug = debug or os.environ.get('JOBMAN_DEBUG')
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
         self.cfg = cfg
-        if setup:
-            self._setup(**kwargs)
+        self.source_specs = source_specs
+        self.worker_specs = worker_specs
+        self.dao = dao
+        self.jobman_db_uri = self.dao.db_uri if self.dao else jobman_db_uri
+        self.job_spec_defaults = job_spec_defaults or self.job_spec_defaults
+        self._kvps = {}
+        if initialize:
+            self.initialize()
 
     def _generate_logger(self, logging_cfg=None):
         logging_cfg = {**(logging_cfg or {})}
@@ -53,72 +65,98 @@ class JobMan(object):
             logging_cfg['level'] = 'DEBUG'
         return logging_utils.generate_logger(logging_cfg)
 
-    def _setup(self, dao=None, jobman_db_uri=None, source_specs=None,
-               worker_specs=None, job_spec_defaults=None):
-        self.dao = dao or self._generate_dao(jobman_db_uri=jobman_db_uri)
-        self.sources = self._source_specs_to_sources(source_specs)
-        self.workers = self._worker_specs_to_workers(worker_specs)
-        self.job_spec_defaults = job_spec_defaults or self.job_spec_defaults
-        self.dao.ensure_db()
-        self._kvps = {}
+    def initialize(self):
+        self.dao = self.dao or self._generate_dao(
+            jobman_db_uri=self.jobman_db_uri,
+            initialize=True
+        )
+        self.sources = self._source_specs_to_sources(
+            source_specs=self.source_specs,
+            initialize=True
+        )
+        self.workers = self._worker_specs_to_workers(
+            worker_specs=self.worker_specs,
+            initialize=True
+        )
 
     def _debug_locals(self):
         if self.debug: debug_utils.debug_locals(logger=self.logger)  # noqa
 
-    def _generate_dao(self, jobman_db_uri=None):
+    def _generate_dao(self, jobman_db_uri=None, initialize=...):
         jobman_db_uri = (
             jobman_db_uri or
             os.path.expanduser('~/jobman.sqlite.db')
         )
         from .dao.jobman_sqlite_dao import JobmanSqliteDAO
-        return JobmanSqliteDAO(db_uri=jobman_db_uri, logger=self.logger)
+        dao_kwargs = {
+            'db_uri': jobman_db_uri,
+            'logger': self.logger
+        }
+        if initialize is not ...:
+            dao_kwargs['initialize'] = initialize
+        return JobmanSqliteDAO(**dao_kwargs)
 
-    def _source_specs_to_sources(self, source_specs=None):
+    def _source_specs_to_sources(self, source_specs=None, initialize=...):
         sources = {}
         for source_key, source_spec in (source_specs or {}).items():
             sources[source_key] = self._source_spec_to_source(
-                source_key=source_key, source_spec=source_spec)
+                source_key=source_key,
+                source_spec=source_spec,
+                initialize=initialize
+            )
         return sources
 
-    def _source_spec_to_source(self, source_key=None, source_spec=None):
+    def _source_spec_to_source(self, source_key=None, source_spec=None,
+                               initialize=...):
         if isinstance(source_spec, collections.abc.Mapping):
             source_class = source_spec['source_class']
             if isinstance(source_class, str):
                 source_class = dot_spec_loader.load_from_dot_spec(source_class)
-            source = source_class(**{
+            source_kwargs = {
                 'key': source_key,
                 'jobman': self,
                 **(source_spec.get('source_params') or {}),
-            })
+            }
+            if initialize is not ...:
+                source_kwargs['initialize'] = initialize
+            source = source_class(**source_kwargs)
         else:
             source = source_spec
             source.key = source_key
             source.jobman = self
+            if initialize is not ...:
+                source.initialize()
         return source
 
-    def _worker_specs_to_workers(self, worker_specs=None):
+    def _worker_specs_to_workers(self, worker_specs=None, initialize=...):
         workers = {}
         for worker_key, worker_spec in (worker_specs or {}).items():
             workers[worker_key] = self._worker_spec_to_worker(
-                worker_key=worker_key, worker_spec=worker_spec)
+                worker_key=worker_key,
+                worker_spec=worker_spec,
+                initialize=initialize
+            )
         return workers
 
-    def _worker_spec_to_worker(self, worker_key=None, worker_spec=None):
+    def _worker_spec_to_worker(self, worker_key=None, worker_spec=None,
+                               initialize=...):
         if isinstance(worker_spec, collections.abc.Mapping):
             worker_class = worker_spec.get('worker_class') or BaseWorker
             if isinstance(worker_class, str):
                 worker_class = dot_spec_loader.load_from_dot_spec(worker_class)
-            worker = worker_class(**{
+            worker_kwargs = {
                 'key': worker_key,
                 'db_uri': self.dao.db_uri,
                 **(worker_spec.get('worker_params') or {})
-            })
+            }
+            if initialize is not ...:
+                worker_kwargs['initialize'] = initialize
+            worker = worker_class(**worker_kwargs)
         else:
             worker = worker_spec
             worker.key = worker_key
-        if not hasattr(worker, 'dao'):
-            worker.dao = worker.generate_dao(db_uri=self.dao.db_uri)
-            worker.dao.ensure_tables()
+            if initialize is not ...:
+                worker.initialize()
         if self.cfg:
             worker.cfgs.extend([self.cfg])
         worker.jobman = self
@@ -135,7 +173,8 @@ class JobMan(object):
         for worker in self.workers.values(): worker.tick()  # noqa
 
     def _update_running_jobs(self):
-        running_jobs = self.dao.get_jobs_for_status(status='RUNNING')
+        running_jobs = self.dao.get_jobs_for_status(
+            status=self.JOB_STATUSES.RUNNING)
         if not running_jobs: return  # noqa
         self._update_job_worker_states(jobs=running_jobs)
         self.dao.save_jobs(running_jobs)
@@ -160,7 +199,7 @@ class JobMan(object):
             worker_state = worker_states.get(job['key'])
             if not worker_state:
                 if self._job_is_orphaned(job=job):
-                    job['status'] = 'EXECUTED'
+                    job['status'] = self.JOB_STATUSES.EXECUTED
             else:
                 job['worker_state'] = worker_state
                 job['status'] = worker_state.get('status')
@@ -172,13 +211,21 @@ class JobMan(object):
         return time.time() - job['created']
 
     def _process_executed_jobs(self):
-        for executed_job in self.dao.get_jobs_for_status(status='EXECUTED'):
-            self._process_executed_job(executed_job=executed_job)
+        claimed_executed_jobs = self.dao.claim_jobs(query={
+            'filters': [
+                self.dao.generate_status_filter(
+                    status=self.JOB_STATUSES.EXECUTED),
+            ],
+            'limit': 100
+        })
+        for executed_job in claimed_executed_jobs:
+            self._process_executed_job(executed_job=executed_job, save=False)
+        self.dao.save_jobs(claimed_executed_jobs)
 
-    def _process_executed_job(self, executed_job=None):
+    def _process_executed_job(self, executed_job=None, save=True):
         try:
             if self._job_has_completed_checkpoint(executed_job):
-                self._complete_job(executed_job)
+                self._complete_job(executed_job, save=save)
             else:
                 raise Exception(
                     (
@@ -191,7 +238,7 @@ class JobMan(object):
         except Exception as exc:
             error = traceback.format_exc()
             self.logger.warning("warning: %s" % error)
-            self._fail_job(executed_job, errors=[error])
+            self._fail_job(executed_job, errors=[error], save=save)
 
     def _job_has_completed_checkpoint(self, job=None):
         return Path(
@@ -199,33 +246,57 @@ class JobMan(object):
             constants.CHECKPOINT_FILE_NAMES['completed']
         ).exists()
 
-    def _complete_job(self, job=None):
-        job['status'] = 'COMPLETED'
-        self.dao.save_jobs(jobs=[job])
+    def _complete_job(self, job=None, save=True):
+        job['status'] = self.JOB_STATUSES.COMPLETED
+        if save:
+            self.dao.save_jobs(jobs=[job])
 
-    def _fail_job(self, job=None, errors=None):
-        job['status'] = 'FAILED'
+    def _fail_job(self, job=None, errors=None, save=True):
+        job['status'] = self.JOB_STATUSES.FAILED
         job['errors'] = errors
-        self.dao.save_jobs(jobs=[job])
+        if save:
+            self.dao.save_jobs(jobs=[job])
 
     def _submit_pending_jobs(self):
         tallies = collections.defaultdict(int)
-        with self.dao.get_lock():
-            pending_jobs = self.dao.get_jobs_for_status(status='PENDING')
-            for job in pending_jobs:
-                tallies['visited'] += 1
-                try:
-                    for worker in self.workers.values():
-                        try:
-                            if worker.can_accept_job(job=job):
-                                self._submit_job_to_worker(
-                                    job=job, worker=worker)
-                                tallies['submitted'] += 1
-                        except worker.IncompatibleJobError:
-                            continue
-                except self.SubmissionError:
-                    tallies['errors'] += 1
-                    self.logger.exception('SubmissionError')
+        claimed_pending_jobs = self.dao.claim_jobs(query={
+            'filters': [
+                self.dao.generate_status_filter(
+                    status=self.JOB_STATUSES.PENDING)
+            ],
+            'limit': 100
+        })
+        unsubmittable_jobs = []
+        for job in claimed_pending_jobs:
+            tallies['visited'] += 1
+            try:
+                submitted = False
+                for worker in self.workers.values():
+                    try:
+                        if worker.can_accept_job(job=job):
+                            self._submit_job_to_worker(
+                                job=job, worker=worker)
+                            submitted = True
+                            break
+                    except worker.IncompatibleJobError:
+                        continue
+                if submitted:
+                    tallies['submitted'] += 1
+                else:
+                    unsubmittable_jobs.append(job)
+            except self.SubmissionError:
+                tallies['errors'] += 1
+                self.logger.exception('SubmissionError')
+        tallies['unsubmittable'] = len(unsubmittable_jobs)
+        unsubmittable_job_keys = [job['key'] for job in unsubmittable_jobs]
+        self.dao.update_jobs(
+            updates={'status': self.JOB_STATUSES.PENDING},
+            query={
+                'filters': [
+                    {'field': 'key', 'op': 'IN', 'arg': unsubmittable_job_keys}
+                ]
+            }
+        )
         return tallies
 
     def _submit_job_to_worker(self, job=None, worker=None):
@@ -234,11 +305,11 @@ class JobMan(object):
             job.update({
                 'worker_key': worker.key,
                 'worker_meta': worker_meta,
-                'status': 'RUNNING'
+                'status': self.JOB_STATUSES.RUNNING,
             })
             return self.dao.save_jobs(jobs=[job])[0]
         except Exception as exc:
-            job.update({'status': 'FAILED'})
+            job.update({'status': self.JOB_STATUSES.FAILED})
             self.dao.save_jobs(jobs=[job])
             raise self.SubmissionError() from exc
 
@@ -281,7 +352,7 @@ class JobMan(object):
                 'job_spec': job_spec,
                 'source_key': source_key,
                 'source_meta': source_meta,
-                'status': 'PENDING',
+                'status': self.JOB_STATUSES.PENDING,
             })
         except Exception as exc:
             raise self.SubmissionError() from exc

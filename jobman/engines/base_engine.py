@@ -59,6 +59,9 @@ class BaseEngine(object):
     def default_build_batch_jobdir(self, *args, **kwargs):
         return BashBatchBuilder().build_batch_jobdir(*args, **kwargs)
 
+    def initialize(self):
+        raise NotImplementedError
+
     def tick(self):
         raise NotImplementedError
 

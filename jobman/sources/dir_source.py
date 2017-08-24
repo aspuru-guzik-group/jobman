@@ -13,16 +13,15 @@ class DirSource(BaseSource):
     FINISHED_TAG = 'FINISHED'
 
     def __init__(self, *args, root_path=None, subdir_paths=None,
-                 ensure_subdirs=True, job_spec_defaults=None,
-                 lock_file_name=None, transfer_fn=shutil.move, **kwargs):
+                 job_spec_defaults=None, lock_file_name=None,
+                 transfer_fn=shutil.move, initialize=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.root_path = Path(root_path)
         self.subdir_paths = self._setup_subdir_paths(subdir_paths=subdir_paths)
-        if ensure_subdirs:
-            self._ensure_subdirs()
         self.job_spec_defaults = job_spec_defaults or {}
         self.lock_file_name = lock_file_name or self.DEFAULT_LOCK_FILE_NAME
         self.transfer_fn = transfer_fn
+        if initialize: self.initialize()  # noqa
 
     def _setup_subdir_paths(self, subdir_paths=None):
         return {
@@ -32,7 +31,7 @@ class DirSource(BaseSource):
             }).items()
         }
 
-    def _ensure_subdirs(self):
+    def initialize(self):
         for subdir_path in self.subdir_paths.values():
             subdir_path.mkdir(parents=True, exist_ok=True)
 
@@ -96,7 +95,9 @@ class DirSource(BaseSource):
         if lock_path.exists():
             return
         lock_path.touch()
-        dest_path_in_queued = self.subdir_paths['queued'] / item_path.name
+        dest_path_in_queued = (
+            self.subdir_paths['queued'] / item_path.name
+        ).absolute()
         self.transfer_fn(str(item_path), str(dest_path_in_queued))
         (dest_path_in_queued / self.lock_file_name).unlink()
         self.jobman.submit_job_dir(

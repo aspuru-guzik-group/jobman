@@ -10,6 +10,9 @@ class ORM(object):
     class InsertError(Exception):
         pass
 
+    class IntegrityError(Exception):
+        pass
+
     def __init__(self, name=None, fields=None, json=json, table_prefix=None,
                  logger=None):
         self.name = name
@@ -104,6 +107,8 @@ class ORM(object):
         )
         try:
             connection.execute(statement, values)
+        except connection.IntegrityError as exc:
+            raise self.IntegrityError() from exc
         except Exception as exc:
             raise self.InsertError() from exc
 
@@ -137,6 +142,12 @@ class ORM(object):
         if where_section.get('content'):
             statement += '\nWHERE ' + where_section['content']
             args.extend(where_section['args'])
+        limit_section = self._get_limit_section(query=query)
+        order_by_section = self._get_order_by_section(query=query)
+        if order_by_section.get('content'):
+            statement += '\n' + order_by_section['content']
+        if limit_section.get('content'):
+            statement += '\n' + limit_section['content']
         return connection.execute(statement, args)
 
     def _get_where_section(self, query=None):
@@ -193,6 +204,28 @@ class ORM(object):
 
     def _get_field_for_filter(self, _filter=None):
         return self.fields[_filter['field']]
+
+    def _get_order_by_section(self, query=None):
+        content = ''
+        order_by = query.get('order_by')
+        if order_by:
+            content = 'ORDER BY'
+            if not isinstance(order_by, list):
+                order_by = [order_by]
+            content += ', '.join([
+                '{field} {direction}'.format(
+                    field=order_by_spec['field'],
+                    direction=order_by_spec['direction']
+                )
+                for order_by_spec in order_by
+            ])
+        return {'content': content, 'args': []}
+
+    def _get_limit_section(self, query=None):
+        content = ''
+        if 'limit' in query:
+            content = 'LIMIT %s' % query['limit']
+        return {'content': content, 'args': []}
 
     def _record_to_obj(self, record=None):
         obj = {}

@@ -1,11 +1,11 @@
-import os
+from pathlib import Path
 
 from jobman.dao.engine_sqlite_dao import EngineSqliteDAO
 from .base_bash_engine import BaseBashEngine
 
 
 class LocalEngine(BaseBashEngine):
-    def __init__(self, *args, db_uri=None, ensure_db=None, cache_ttl=1,
+    def __init__(self, *args, db_uri=None, initialize=True, cache_ttl=1,
                  dao=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cache_ttl = cache_ttl
@@ -13,12 +13,16 @@ class LocalEngine(BaseBashEngine):
             dao
             or EngineSqliteDAO(
                 db_uri=db_uri,
-                table_prefix='engine_%s_' % self.key
+                table_prefix='engine_%s_' % self.key,
+                initialize=initialize
             )
         )
 
     def tick(self):
         pass
+
+    def initialize(self):
+        self.dao.initialize()
 
     def submit_job(self, job=None, extra_cfgs=None):
         entrypoint_path = self._write_engine_entrypoint(
@@ -49,7 +53,7 @@ class LocalEngine(BaseBashEngine):
             ' {entrypoint_path} {stdout_redirect} {stderr_redirect};'
             ' popd > /dev/null;'
         ).format(
-            entrypoint_dir=os.path.dirname(entrypoint_path),
+            entrypoint_dir=Path(entrypoint_path).parent.absolute(),
             entrypoint_path=entrypoint_path,
             **self._get_std_log_redirects(job=job)
         )

@@ -1,4 +1,3 @@
-import contextlib
 import logging
 import os
 import sqlite3
@@ -9,24 +8,24 @@ from . import orm
 
 
 class SqliteDAO(object):
-    LOCK_KEY = '_JOBMAN_LOCK'
-
     class UpdateError(Exception):
         pass
 
     class InsertError(Exception):
         pass
 
+    class IntegrityError(Exception):
+        pass
+
     def __init__(self, db_uri=':memory:', orm_specs=None, table_prefix=None,
-                 ensure_db=True, logger=None, include_kvp_orm=True,
-                 lock_timeout=5, debug=None, sqlite=sqlite3, orm=orm):
+                 initialize=True, logger=None, include_kvp_orm=True,
+                 debug=None, sqlite=sqlite3, orm=orm):
         self.logger = logger or logging
         if db_uri == 'sqlite://':
             db_uri = ':memory:'
         elif db_uri.startswith('sqlite:///'):
             db_uri = db_uri.replace('sqlite:///', '')
         self.db_uri = db_uri
-        self.lock_timeout = lock_timeout
         self.debug = debug
         self.sqlite = sqlite
         self.orm = orm
@@ -35,7 +34,7 @@ class SqliteDAO(object):
                                         table_prefix=self.table_prefix,
                                         include_kvp_orm=include_kvp_orm)
         self._connection = None
-        if ensure_db:
+        if initialize:
             self.ensure_db()
 
     def _generate_orms(self, orm_specs=None, table_prefix=None,
@@ -94,19 +93,11 @@ class SqliteDAO(object):
 
     def ensure_db(self):
         self.ensure_tables()
-        self._ensure_lock_kvp()
 
     def ensure_tables(self):
         with self.connection:
             for orm_ in self.orms.values():
                 orm_.create_table(connection=self.connection)
-
-    def _ensure_lock_kvp(self):
-        lock_kvp = {'key': self.LOCK_KEY, 'value': 'UNLOCKED'}
-        try:
-            self.save_kvps(kvps=[lock_kvp], replace=False)
-        except self.InsertError:
-            pass
 
     def create_ent(self, ent_type=None, ent=None):
         return self.save_ents(ent_type=ent_type, ents=[ent])[0]
@@ -119,6 +110,8 @@ class SqliteDAO(object):
                 try:
                     saved_ent = ent_orm.save_object(
                         obj=ent, replace=replace, connection=self.connection)
+                except ent_orm.IntegrityError as exc:
+                    raise self.IntegrityError() from exc
                 except ent_orm.InsertError as exc:
                     raise self.InsertError() from exc
                 saved_ents.append(saved_ent)
@@ -136,6 +129,15 @@ class SqliteDAO(object):
     def query_ents(self, ent_type=None, query=None):
         ent_orm = self.orms[ent_type]
         return ent_orm.query_objects(query=query, connection=self.connection)
+
+    def update_ents(self, ent_type=None, updates=None, query=None):
+        ent_orm = self.orms[ent_type]
+        with self.connection:
+            return ent_orm.update_objects(
+                updates=updates,
+                query=query,
+                connection=self.connection
+            )
 
     def save_kvps(self, kvps=None, replace=True):
         return self.save_ents(ent_type='kvp', ents=kvps, replace=replace)
@@ -166,30 +168,3 @@ class SqliteDAO(object):
 
     def flush(self):
         os.remove(self.db_uri)
-
-    @contextlib.contextmanager
-    def get_lock(self):
-        self._acquire_lock()
-        try: yield  # noqa
-        finally: self._release_lock()  # noqa
-
-    def _acquire_lock(self):
-        start_time = time.time()
-        while time.time() - start_time < self.lock_timeout:
-            try:
-                self.update_kvp(
-                    key=self.LOCK_KEY,
-                    new_value='LOCKED',
-                    where_prev_value='UNLOCKED'
-                )
-                return
-            except self.UpdateError as exc:
-                if self.debug:
-                    self.logger.exception('UpdateError')
-                    self.logger.debug("waiting for lock")
-                time.sleep(1)
-        raise self.LockError("Could not acquire lock within timeout window")
-
-    def _release_lock(self):
-        self.update_kvp(
-            key=self.LOCK_KEY, new_value='UNLOCKED', where_prev_value='LOCKED')

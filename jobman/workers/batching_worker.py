@@ -143,22 +143,22 @@ class BatchingWorker(BaseWorker):
         })
 
     def _submit_pending_batch_jobs(self):
-        with self.dao.get_lock():
-            pending_batch_jobs = self._get_pending_batch_jobs()
-            for job in pending_batch_jobs:
-                try:
-                    engine_meta = self._submit_batch_job_to_engine(job)
-                    job['engine_meta'] = engine_meta
-                    job['status'] = self.JOB_STATUSES.RUNNING
-                except self.engine.SubmissionError:
-                    job['status'] = self.JOB_STATUSES.FAILED
-                    self.logger.exception('SubmissionError')
-            self.dao.save_jobs(pending_batch_jobs)
+        pending_batch_jobs = self._claim_pending_batch_jobs()
+        for job in pending_batch_jobs:
+            try:
+                engine_meta = self._submit_batch_job_to_engine(job)
+                job['engine_meta'] = engine_meta
+                job['status'] = self.JOB_STATUSES.RUNNING
+            except self.engine.SubmissionError:
+                job['status'] = self.JOB_STATUSES.FAILED
+                self.logger.exception('SubmissionError')
+        self.dao.save_jobs(pending_batch_jobs)
 
-    def _get_pending_batch_jobs(self):
-        return self.dao.query_jobs(query={
+    def _claim_pending_batch_jobs(self):
+        return self.dao.claim_jobs(query={
             'filters': [
-                self.dao.generate_status_filter(status='PENDING'),
+                self.dao.generate_status_filter(
+                    status=self.JOB_STATUSES.PENDING),
                 {'field': 'is_batch', 'op': '=', 'arg': 1},
             ]
         })
@@ -172,8 +172,11 @@ class BatchingWorker(BaseWorker):
             extra_cfgs=self.cfgs
         )
 
-    def _get_pending_jobs(self, exclude_batchable_jobs=True):
+    def _claim_pending_jobs(self, exclude_batchable_jobs=True):
         filters = [self.dao.generate_status_filter(status='PENDING')]
         if exclude_batchable_jobs:
             filters.append({'field': 'batchable', 'op': '! =', 'arg': 1})
-        return self.dao.query_jobs(query={'filters': filters})
+        return self.dao.claim_jobs(query={
+            'filters': filters,
+            'limit': 100,
+        })
