@@ -16,16 +16,18 @@ class BaseTestCase(unittest.TestCase):
         return defaultdict(MagicMock)
 
     def mockify_builder_attrs(self, attrs=None):
-        for attr in attrs: setattr(self.builder, attr, MagicMock())
+        for attr in attrs:
+            setattr(self.builder, attr, MagicMock())
 
-class _BuildBatchJobdirTestCase(BaseTestCase):
+
+class BuildBatchJobdirTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_builder_attrs(attrs=['_get_merged_subjob_cfg_specs',
                                           '_write_subjob_commands',
                                           '_write_entrypoint'])
         self.preamble = MagicMock()
-        self.result = self.builder._build_batch_jobdir(preamble=self.preamble)
+        self.result = self.builder.build_batch_jobdir(preamble=self.preamble)
 
     def test_writes_subjob_commands(self):
         self.assertEqual(self.builder._write_subjob_commands.call_args, call())
@@ -40,13 +42,16 @@ class _BuildBatchJobdirTestCase(BaseTestCase):
 
     def test_returns_expected_job_spec(self):
         expected_job_spec = {
-            'cfg_specs': (self.builder._get_merged_subjob_cfg_specs
-                          .return_value),
-            'dir': self.builder.jobdir,
-            'entrypoint': self.builder.entrypoint_path,
+            'cfg_specs': {
+                'PARALLEL': {'required': False, 'output_key': 'PARALLEL'},
+                **self.builder._get_merged_subjob_cfg_specs.return_value,
+            },
+            'dir': str(self.builder.jobdir_path),
+            'entrypoint': str(self.builder.entrypoint_path),
             'std_log_file_names': self.builder.std_log_file_names,
         }
         self.assertEqual(self.result, expected_job_spec)
+
 
 class _GetMergedSubJobCfgSpecsTestCase(BaseTestCase):
     def setUp(self):

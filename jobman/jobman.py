@@ -25,7 +25,7 @@ class JobMan(object):
         'default_job_time',
     ]
 
-    job_spec_defaults = {'entrypoint': 'entrypoint.sh'}
+    job_spec_defaults = {'entrypoint': './entrypoint.sh'}
 
     @classmethod
     def from_cfg(cls, cfg=None):
@@ -110,6 +110,7 @@ class JobMan(object):
                 worker_class = dot_spec_loader.load_from_dot_spec(worker_class)
             worker = worker_class(**{
                 'key': worker_key,
+                'db_uri': self.dao.db_uri,
                 **(worker_spec.get('worker_params') or {})
             })
         else:
@@ -179,7 +180,14 @@ class JobMan(object):
             if self._job_has_completed_checkpoint(executed_job):
                 self._complete_job(executed_job)
             else:
-                raise Exception("No completed checkpoint file found for job")
+                raise Exception(
+                    (
+                        "No completed checkpoint file found for job."
+                        " job_dir was: '{job_dir}'."
+                    ).format(
+                        job_dir=(executed_job.get('job_spec', {}).get('dir'))
+                    )
+                )
         except Exception as exc:
             error = traceback.format_exc()
             self.logger.warning("warning: %s" % error)

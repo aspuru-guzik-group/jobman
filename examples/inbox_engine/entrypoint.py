@@ -9,7 +9,8 @@ from jobman.jobman import JobMan
 class Entrypoint(object):
     def run(self):
         this_dir = Path(__file__).absolute().parent
-        self.scratch_dir = tempfile.mkdtemp(dir=str(Path(this_dir, 'scratch')))
+        self.scratch_dir = tempfile.mkdtemp(dir=str(Path(this_dir, 'scratch')),
+                                            prefix='%d.' % (time.time()))
         self.root_path = Path(self.scratch_dir, 'inbox_engine_root')
         self.root_path.mkdir(parents=True)
         self.mem_db_uri = 'sqlite://'
@@ -25,7 +26,6 @@ class Entrypoint(object):
                                 'jobman.engines.inbox_engine:InboxEngine'
                             ),
                             'engine_params': {
-                                'db_uri': self.mem_db_uri,
                                 'root_dir': str(self.root_path)
                             }
                         }
@@ -53,7 +53,6 @@ class Entrypoint(object):
                             ),
                             'engine_params': {
                                 'scratch_dir': self.scratch_dir,
-                                'db_uri': self.mem_db_uri
                             }
                         },
                     }

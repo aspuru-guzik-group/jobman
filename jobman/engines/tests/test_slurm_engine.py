@@ -83,15 +83,15 @@ class SubmitJobTestCase(BaseTestCase):
             self._submit_job()
 
 
-class GetKeyedEngineStatesTestCase(BaseTestCase):
+class GetKeyedStatesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_engine_attrs(attrs=['get_slurm_jobs_by_id',
                                          'slurm_job_to_engine_state'])
-        self.keyed_engine_metas = {i: MagicMock() for i in range(3)}
+        self.keyed_metas = {i: MagicMock() for i in range(3)}
         self.expected_job_ids = [
             engine_meta['job_id']
-            for engine_meta in self.keyed_engine_metas.values()
+            for engine_meta in self.keyed_metas.values()
         ]
         self.mock_slurm_jobs_by_id = {
             job_id: MagicMock() for job_id in self.expected_job_ids
@@ -100,8 +100,8 @@ class GetKeyedEngineStatesTestCase(BaseTestCase):
             self.mock_slurm_jobs_by_id)
 
     def _get(self):
-        return self.engine.get_keyed_engine_states(
-            keyed_engine_metas=self.keyed_engine_metas)
+        return self.engine.get_keyed_states(
+            keyed_metas=self.keyed_metas)
 
     def test_gets_slurm_jobs_by_id(self):
         self._get()
@@ -126,11 +126,11 @@ class GetKeyedEngineStatesTestCase(BaseTestCase):
                 return id(call[1]['slurm_job'])
         return sorted(calls, key=_key_fn)
 
-    def test_returns_keyed_engine_states(self):
+    def test_returns_keyed_states(self):
         result = self._get()
         expected_result = {
             key: self.engine.slurm_job_to_engine_state.return_value
-            for key in self.keyed_engine_metas
+            for key in self.keyed_metas
         }
         self.assertEqual(result, expected_result)
 

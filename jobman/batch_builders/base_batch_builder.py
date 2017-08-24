@@ -15,10 +15,6 @@ class BaseBatchBuilder(object):
         self.subjobs = subjobs
         self.extra_cfgs = extra_cfgs
         job_spec = self._build_batch_jobdir(**kwargs)
-        del self.batch_job
-        del self.subjobs
-        del self.jobdir_path
-        del self.extra_cfgs
         return job_spec
 
     def _build_batch_jobdir(self, **kwargs): raise NotImplementedError

@@ -12,7 +12,7 @@ class BaseTestCase(unittest.TestCase):
 
     def _generate_dao(self, **kwargs):
         merged_kwargs = {
-            'ensure_tables': False,
+            'ensure_db': False,
             'db_uri': self.db_uri,
             'sqlite': MagicMock(),
             'orm': MagicMock(),
@@ -46,7 +46,7 @@ class InitTestCase(BaseTestCase):
 
 class CreateDbTestCase(BaseTestCase):
     def test_dispatches_to_orms(self):
-        self.dao.ensure_tables()
+        self.dao.ensure_db()
         for orm in self.dao.orms.values():
             self.assertEqual(orm.create_table.call_args,
                              call(connection=self.dao.connection))

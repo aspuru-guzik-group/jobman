@@ -1,3 +1,4 @@
+import collections
 import os
 import textwrap
 import unittest
@@ -12,7 +13,10 @@ class BaseTestCase(unittest.TestCase):
             process_runner=MagicMock(),
             dao=MagicMock()
         )
-        self.job = MagicMock()
+        self.job = collections.defaultdict(MagicMock)
+        self.job['job_spec'] = collections.defaultdict(MagicMock, **{
+            'dir': 'some_job_dir',
+        })
         self.extra_cfgs = MagicMock()
 
     def mockify_engine_attrs(self, attrs=None):
@@ -83,8 +87,12 @@ class _GenerateEngineEntrypointPreambleTestCase(BaseTestCase):
     def test_returns_expected_preamble_content(self):
         expected_content = textwrap.dedent(
             '''
+            # start preamble
+            # engine_preamble
             {engine_preamble}
+            # env_vars_for_cfg_specs
             {env_vars_for_cfg_specs}
+            # end preamble
             '''
         ).lstrip().format(
             engine_preamble=self.engine.resolve_cfg_item.return_value,
@@ -206,7 +214,7 @@ class _GetStdLogRedirectsTestCase(BaseTestCase):
         self.assertEqual(self.result, expected_redirects)
 
 
-class _GetStdLogPathsestCase(BaseTestCase):
+class _GetStdLogPathsTestCase(BaseTestCase):
     def test_returns_expected_paths(self):
         self.job = {
             'job_spec': {
@@ -219,8 +227,10 @@ class _GetStdLogPathsestCase(BaseTestCase):
         result = self.engine._get_std_log_paths(job=self.job)
         expected_paths = {
             log_key: os.path.join(self.job['job_spec']['dir'], log_file_name)
-            for log_key, log_file_name in self.job['job_spec'].get(
-                'std_log_file_names', {}).items()
+            for log_key, log_file_name in ({
+                **self.engine.DEFAULT_STD_LOG_FILE_NAMES,
+                **self.job['job_spec'].get('std_log_file_names', {}),
+            }).items()
         }
         self.assertEqual(result, expected_paths)
 

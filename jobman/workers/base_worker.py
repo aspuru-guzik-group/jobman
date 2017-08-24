@@ -12,9 +12,13 @@ class BaseWorker(object):
     class IncompatibleJobError(Exception):
         pass
 
-    def __init__(self, key=None, db_uri=None, engine_spec=None,
+    def __init__(self, key=None, db_uri=None, dao=None, engine_spec=None,
                  acceptance_fn_spec=None):
         self.key = key
+        self.db_uri = db_uri  # noqa
+        if dao:
+            self.dao = dao  # noqa
+            self.db_uri = self.dao.db_uri
         self.engine = self._engine_spec_to_engine(engine_spec)
         self.acceptance_fn = self._acceptance_fn_spec_to_acceptance_fn(
             acceptance_fn_spec)
@@ -24,7 +28,10 @@ class BaseWorker(object):
         engine_class = engine_spec['engine_class']
         if isinstance(engine_class, str):
             engine_class = dot_spec_loader.load_from_dot_spec(engine_class)
-        engine = engine_class(**(engine_spec.get('engine_params') or {}))
+        engine = engine_class(**{
+            'db_uri': self.db_uri,
+            **(engine_spec.get('engine_params') or {})
+        })
         engine.key = self.key + '_engine'
         return engine
 
@@ -41,6 +48,15 @@ class BaseWorker(object):
         return acceptance_fn
 
     def default_acceptance_fn(self, job=None, **kwargs): return True
+
+    @property
+    def dao(self):
+        if not hasattr(self, '_dao'):
+            self._dao = self.generate_dao(db_uri=self.db_uri)
+        return self._dao
+
+    @dao.setter
+    def dao(self, value): self._dao = value
 
     def generate_dao(self, db_uri=None):
         return worker_sqlite_dao.WorkerSqliteDAO(
