@@ -1,0 +1,901 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.dao package &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="jobman package" href="jobman.html"/>
+        <link rel="next" title="jobman.engines package" href="jobman.engines.html"/>
+        <link rel="prev" title="jobman.batch_builders package" href="jobman.batch_builders.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="jobman.html">jobman package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html">jobman.batch_builders package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">jobman.dao package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.dao.engine_sqlite_dao">jobman.dao.engine_sqlite_dao module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.dao.jobman_sqlite_dao">jobman.dao.jobman_sqlite_dao module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.dao.jobs_dao_mixin">jobman.dao.jobs_dao_mixin module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.dao.orm">jobman.dao.orm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.dao.sqlite_dao">jobman.dao.sqlite_dao module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.dao.utils">jobman.dao.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.dao.worker_sqlite_dao">jobman.dao.worker_sqlite_dao module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html">jobman.engines package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html">jobman.sources package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html">jobman.utils package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html">jobman.workers package</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../api.html">API Documentation</a> &raquo;</li>
+        
+          <li><a href="jobman.html">jobman package</a> &raquo;</li>
+        
+      <li>jobman.dao package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <!-- User defined GitHub URL -->
+              <a href="https://github.com/aspuru-guzik-group/jobman/blob/master/docs/sphinx/api/jobman.dao.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-jobman.dao">
+<span id="jobman-dao-package"></span><h1>jobman.dao package<a class="headerlink" href="#module-jobman.dao" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-jobman.dao.engine_sqlite_dao">
+<span id="jobman-dao-engine-sqlite-dao-module"></span><h2>jobman.dao.engine_sqlite_dao module<a class="headerlink" href="#module-jobman.dao.engine_sqlite_dao" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.dao.engine_sqlite_dao.EngineSqliteDAO">
+<em class="property">class </em><code class="descclassname">jobman.dao.engine_sqlite_dao.</code><code class="descname">EngineSqliteDAO</code><span class="sig-paren">(</span><em>table_prefix=None</em>, <em>extra_job_fields=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/engine_sqlite_dao.html#EngineSqliteDAO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.engine_sqlite_dao.EngineSqliteDAO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.jobs_dao_mixin.JobsDaoMixin</span></code></a>, <a class="reference internal" href="#jobman.dao.sqlite_dao.SqliteDAO" title="jobman.dao.sqlite_dao.SqliteDAO"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.sqlite_dao.SqliteDAO</span></code></a></p>
+<dl class="class">
+<dt id="jobman.dao.engine_sqlite_dao.EngineSqliteDAO.JobSchema">
+<em class="property">class </em><code class="descname">JobSchema</code><a class="reference internal" href="../_modules/jobman/dao/engine_sqlite_dao.html#EngineSqliteDAO.JobSchema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.engine_sqlite_dao.EngineSqliteDAO.JobSchema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.dao.utils.TimestampedSchemaMixin" title="jobman.dao.utils.TimestampedSchemaMixin"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.utils.TimestampedSchemaMixin</span></code></a>, <a class="reference internal" href="#jobman.dao.utils.Schema" title="jobman.dao.utils.Schema"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.utils.Schema</span></code></a></p>
+<p>Fields for job records.</p>
+<dl class="attribute">
+<dt id="jobman.dao.engine_sqlite_dao.EngineSqliteDAO.JobSchema.key">
+<code class="descname">key</code><em class="property"> = {'type': 'TEXT', 'primary_key': True, 'default': &lt;function generate_key&gt;}</em><a class="headerlink" href="#jobman.dao.engine_sqlite_dao.EngineSqliteDAO.JobSchema.key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.engine_sqlite_dao.EngineSqliteDAO.JobSchema.status">
+<code class="descname">status</code><em class="property"> = {'type': 'TEXT'}</em><a class="headerlink" href="#jobman.dao.engine_sqlite_dao.EngineSqliteDAO.JobSchema.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.dao.jobman_sqlite_dao">
+<span id="jobman-dao-jobman-sqlite-dao-module"></span><h2>jobman.dao.jobman_sqlite_dao module<a class="headerlink" href="#module-jobman.dao.jobman_sqlite_dao" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO">
+<em class="property">class </em><code class="descclassname">jobman.dao.jobman_sqlite_dao.</code><code class="descname">JobmanSqliteDAO</code><span class="sig-paren">(</span><em>lock_timeout=30</em>, <em>debug=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobman_sqlite_dao.html#JobmanSqliteDAO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.jobs_dao_mixin.JobsDaoMixin</span></code></a>, <a class="reference internal" href="#jobman.dao.sqlite_dao.SqliteDAO" title="jobman.dao.sqlite_dao.SqliteDAO"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.sqlite_dao.SqliteDAO</span></code></a></p>
+<p>DAO for JobMan</p>
+<dl class="class">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema">
+<em class="property">class </em><code class="descname">JobSchema</code><a class="reference internal" href="../_modules/jobman/dao/jobman_sqlite_dao.html#JobmanSqliteDAO.JobSchema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.dao.utils.TimestampedSchemaMixin" title="jobman.dao.utils.TimestampedSchemaMixin"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.utils.TimestampedSchemaMixin</span></code></a>, <a class="reference internal" href="#jobman.dao.utils.Schema" title="jobman.dao.utils.Schema"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.utils.Schema</span></code></a></p>
+<p>Fields for job records.</p>
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.batchable">
+<code class="descname">batchable</code><em class="property"> = {'type': 'INTEGER'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.batchable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flag to indicate whether a job can be included in a batch.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.errors">
+<code class="descname">errors</code><em class="property"> = {'type': 'JSON'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.errors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.job_spec">
+<code class="descname">job_spec</code><em class="property"> = {'type': 'JSON'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.job_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict of job metadata/parameters.</p>
+<p>A job_spec often includes these items:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>batchable</dt>
+<dd>Whether a job can be included in a batch.</dd>
+<dt>dir</dt>
+<dd>Absolute path to job_dir.</dd>
+<dt>cfg</dt>
+<dd>Extra cfg values to provide to cfg resolvers.</dd>
+<dt>resources</dt>
+<dd>Resources job requires.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.key">
+<code class="descname">key</code><em class="property"> = {'type': 'TEXT', 'primary_key': True, 'default': &lt;function generate_key&gt;}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.purgeable">
+<code class="descname">purgeable</code><em class="property"> = {'type': 'INTEGER'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.purgeable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether a job can be purged from the db.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key">
+<code class="descname">source_key</code><em class="property"> = {'type': 'TEXT'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Key for source that provided this job.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta">
+<code class="descname">source_meta</code><em class="property"> = {'type': 'JSON'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Metadata from source, to allow source to correlated jobman records
+with its own records.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_tag">
+<code class="descname">source_tag</code><em class="property"> = {'type': 'TEXT'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>A tag that the source can set. This is often useful for sources
+which want to do some sort of post-processing before marking a job
+as complete.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.status">
+<code class="descname">status</code><em class="property"> = {'type': 'TEXT'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.worker_key">
+<code class="descname">worker_key</code><em class="property"> = {'type': 'TEXT'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.worker_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Key for worker handling the job.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.worker_meta">
+<code class="descname">worker_meta</code><em class="property"> = {'type': 'JSON'}</em><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.worker_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Metadata to retrieve related state from worker.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.generate_source_key_filter">
+<code class="descname">generate_source_key_filter</code><span class="sig-paren">(</span><em>source_key=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobman_sqlite_dao.html#JobmanSqliteDAO.generate_source_key_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.generate_source_key_filter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.dao.jobs_dao_mixin">
+<span id="jobman-dao-jobs-dao-mixin-module"></span><h2>jobman.dao.jobs_dao_mixin module<a class="headerlink" href="#module-jobman.dao.jobs_dao_mixin" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin">
+<em class="property">class </em><code class="descclassname">jobman.dao.jobs_dao_mixin.</code><code class="descname">JobsDaoMixin</code><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Common methods used by daos that work with jobs.</p>
+<dl class="class">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES">
+<em class="property">class </em><code class="descname">JOB_STATUSES</code><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.CLAIMED">
+<code class="descname">CLAIMED</code><em class="property"> = 'CLAIMED'</em><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.CLAIMED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.COMPLETED">
+<code class="descname">COMPLETED</code><em class="property"> = 'COMPLETED'</em><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.COMPLETED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.EXECUTED">
+<code class="descname">EXECUTED</code><em class="property"> = 'EXECUTED'</em><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.EXECUTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.FAILED">
+<code class="descname">FAILED</code><em class="property"> = 'FAILED'</em><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.FAILED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.PENDING">
+<code class="descname">PENDING</code><em class="property"> = 'PENDING'</em><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.PENDING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.RUNNING">
+<code class="descname">RUNNING</code><em class="property"> = 'RUNNING'</em><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.RUNNING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.UNKNOWN">
+<code class="descname">UNKNOWN</code><em class="property"> = 'UNKNOWN'</em><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.claim_jobs">
+<code class="descname">claim_jobs</code><span class="sig-paren">(</span><em>query=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.claim_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.claim_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Claim jobs which match a query.</p>
+<p>Sets status to <a class="reference internal" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.CLAIMED" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin.JOB_STATUSES.CLAIMED"><code class="xref py py-attr docutils literal"><span class="pre">JOB_STATUSES.CLAIMED</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>query</strong> – A query dict per <a class="reference internal" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs"><code class="xref py py-meth docutils literal"><span class="pre">query_jobs()</span></code></a>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a list of claimed jobs.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.create_job">
+<code class="descname">create_job</code><span class="sig-paren">(</span><em>job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.create_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.create_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a job record.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>job</strong> – a job dict. Format of dict depends on schema for DAO.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job record from DAO.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.generate_status_filter">
+<code class="descname">generate_status_filter</code><span class="sig-paren">(</span><em>status=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.generate_status_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.generate_status_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a status filter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>status</strong> – job status</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">status_filter_dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_job">
+<code class="descname">get_job</code><span class="sig-paren">(</span><em>key=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.get_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a job that has the given key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>key</strong> – job key</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job_record</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_jobs_for_status">
+<code class="descname">get_jobs_for_status</code><span class="sig-paren">(</span><em>status=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.get_jobs_for_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_jobs_for_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get jobs that have a given status.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>status</strong> – job status</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job_records</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs">
+<code class="descname">query_jobs</code><span class="sig-paren">(</span><em>query=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.query_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>query DAO for jobs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>query</strong> – A query dict per
+<a class="reference internal" href="#jobman.dao.sqlite_dao.SqliteDAO.query_ents" title="jobman.dao.sqlite_dao.SqliteDAO.query_ents"><code class="xref py py-meth docutils literal"><span class="pre">jobman.dao.sqlite_dao.SqliteDAO.query_ents()</span></code></a>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a list of job records matching query.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.save_jobs">
+<code class="descname">save_jobs</code><span class="sig-paren">(</span><em>jobs=None</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.save_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.save_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save jobs to DAO.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>jobs</strong> – A list of job dicts.</li>
+<li><strong>replace</strong> – If True will overrwrite existing records. If False will
+raise errors for key collisions.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">saved jobs.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.jobs_dao_mixin.JobsDaoMixin.update_jobs">
+<code class="descname">update_jobs</code><span class="sig-paren">(</span><em>updates=None</em>, <em>query=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/jobs_dao_mixin.html#JobsDaoMixin.update_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.update_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update jobs which match a query.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>query</strong> – A query dict per <a class="reference internal" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs"><code class="xref py py-meth docutils literal"><span class="pre">query_jobs()</span></code></a>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a dict with a ‘rowcount’ item indicating how many records were</dt>
+<dd>updated.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.dao.orm">
+<span id="jobman-dao-orm-module"></span><h2>jobman.dao.orm module<a class="headerlink" href="#module-jobman.dao.orm" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.dao.orm.ORM">
+<em class="property">class </em><code class="descclassname">jobman.dao.orm.</code><code class="descname">ORM</code><span class="sig-paren">(</span><em>name=None</em>, <em>fields=None</em>, <em>json=&lt;module 'json' from '/Users/adorsk/anaconda/envs/jobman/lib/python3.6/json/__init__.py'&gt;</em>, <em>table_prefix=None</em>, <em>logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="exception">
+<dt id="jobman.dao.orm.ORM.InsertError">
+<em class="property">exception </em><code class="descname">InsertError</code><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.InsertError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.InsertError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="jobman.dao.orm.ORM.IntegrityError">
+<em class="property">exception </em><code class="descname">IntegrityError</code><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.IntegrityError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.IntegrityError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="jobman.dao.orm.ORM.UpdateError">
+<em class="property">exception </em><code class="descname">UpdateError</code><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.UpdateError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.UpdateError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.orm.ORM.create_table">
+<code class="descname">create_table</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.create_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.create_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.orm.ORM.execute_insert_or_replace">
+<code class="descname">execute_insert_or_replace</code><span class="sig-paren">(</span><em>fields=None</em>, <em>values=None</em>, <em>replace=None</em>, <em>connection=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.execute_insert_or_replace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.execute_insert_or_replace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.orm.ORM.query_objects">
+<code class="descname">query_objects</code><span class="sig-paren">(</span><em>query=None</em>, <em>connection=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.query_objects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.query_objects" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.orm.ORM.save_object">
+<code class="descname">save_object</code><span class="sig-paren">(</span><em>obj=None</em>, <em>connection=None</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.save_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.save_object" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.orm.ORM.table">
+<code class="descname">table</code><a class="headerlink" href="#jobman.dao.orm.ORM.table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.orm.ORM.update_objects">
+<code class="descname">update_objects</code><span class="sig-paren">(</span><em>updates=None</em>, <em>query=None</em>, <em>connection=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/orm.html#ORM.update_objects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.orm.ORM.update_objects" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.dao.sqlite_dao">
+<span id="jobman-dao-sqlite-dao-module"></span><h2>jobman.dao.sqlite_dao module<a class="headerlink" href="#module-jobman.dao.sqlite_dao" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO">
+<em class="property">class </em><code class="descclassname">jobman.dao.sqlite_dao.</code><code class="descname">SqliteDAO</code><span class="sig-paren">(</span><em>db_uri=':memory:'</em>, <em>orm_specs=None</em>, <em>table_prefix=None</em>, <em>initialize=True</em>, <em>logger=None</em>, <em>include_kvp_orm=True</em>, <em>debug=None</em>, <em>sqlite=&lt;module 'sqlite3' from '/Users/adorsk/anaconda/envs/jobman/lib/python3.6/sqlite3/__init__.py'&gt;</em>, <em>orm=&lt;module 'jobman.dao.orm' from '/Users/adorsk/projects/jobman/jobman/dao/orm.py'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="exception">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.InsertError">
+<em class="property">exception </em><code class="descname">InsertError</code><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.InsertError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.InsertError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.IntegrityError">
+<em class="property">exception </em><code class="descname">IntegrityError</code><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.IntegrityError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.IntegrityError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.UpdateError">
+<em class="property">exception </em><code class="descname">UpdateError</code><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.UpdateError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.UpdateError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.connection">
+<code class="descname">connection</code><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.create_connection">
+<code class="descname">create_connection</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.create_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.create_connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.create_ent">
+<code class="descname">create_ent</code><span class="sig-paren">(</span><em>ent_type=None</em>, <em>ent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.create_ent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.create_ent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.create_kvp">
+<code class="descname">create_kvp</code><span class="sig-paren">(</span><em>kvp=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.create_kvp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.create_kvp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.ensure_tables">
+<code class="descname">ensure_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.ensure_tables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.ensure_tables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.flush">
+<code class="descname">flush</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.flush"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.flush" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.generate_key">
+<code class="descname">generate_key</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.generate_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.generate_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.get_ent">
+<code class="descname">get_ent</code><span class="sig-paren">(</span><em>ent_type=None</em>, <em>key=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.get_ent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.get_ent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.get_kvp">
+<code class="descname">get_kvp</code><span class="sig-paren">(</span><em>key=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.get_kvp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.get_kvp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.initialize">
+<code class="descname">initialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.query_ents">
+<code class="descname">query_ents</code><span class="sig-paren">(</span><em>ent_type=None</em>, <em>query=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.query_ents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.query_ents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query ents.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ent_type</strong> – </li>
+<li><strong>query</strong> – <p>a query dict of this form:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;some_field&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="s1">&#39;some_arg&#39;</span><span class="p">}</span>
+        <span class="c1"># other filters...</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s1">&#39;order_by&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;some_field&#39;</span><span class="p">,</span> <span class="s1">&#39;direction&#39;</span><span class="p">:</span> <span class="s1">&#39;ASC&#39;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;some_other_field&#39;</span><span class="p">,</span> <span class="s1">&#39;direction&#39;</span><span class="p">:</span> <span class="s1">&#39;DESC&#39;</span><span class="p">},</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.query_kvps">
+<code class="descname">query_kvps</code><span class="sig-paren">(</span><em>query=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.query_kvps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.query_kvps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.save_ents">
+<code class="descname">save_ents</code><span class="sig-paren">(</span><em>ent_type=None</em>, <em>ents=None</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.save_ents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.save_ents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.save_kvps">
+<code class="descname">save_kvps</code><span class="sig-paren">(</span><em>kvps=None</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.save_kvps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.save_kvps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.update_ents">
+<code class="descname">update_ents</code><span class="sig-paren">(</span><em>ent_type=None</em>, <em>updates=None</em>, <em>query=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.update_ents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.update_ents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.dao.sqlite_dao.SqliteDAO.update_kvp">
+<code class="descname">update_kvp</code><span class="sig-paren">(</span><em>key=None</em>, <em>new_value=None</em>, <em>where_prev_value=Ellipsis</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/sqlite_dao.html#SqliteDAO.update_kvp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.sqlite_dao.SqliteDAO.update_kvp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.dao.utils">
+<span id="jobman-dao-utils-module"></span><h2>jobman.dao.utils module<a class="headerlink" href="#module-jobman.dao.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.dao.utils.Schema">
+<em class="property">class </em><code class="descclassname">jobman.dao.utils.</code><code class="descname">Schema</code><a class="reference internal" href="../_modules/jobman/dao/utils.html#Schema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.Schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Base class for defining ORM schemas.</p>
+<dl class="classmethod">
+<dt id="jobman.dao.utils.Schema.get_field_infos">
+<em class="property">classmethod </em><code class="descname">get_field_infos</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/utils.html#Schema.get_field_infos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.Schema.get_field_infos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jobman.dao.utils.SchemaMeta">
+<em class="property">class </em><code class="descclassname">jobman.dao.utils.</code><code class="descname">SchemaMeta</code><a class="reference internal" href="../_modules/jobman/dao/utils.html#SchemaMeta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.SchemaMeta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">type</span></code></p>
+<p>Metaclass to propagate doc strings for Schema subclasses.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="jobman.dao.utils.TimestampedSchemaMixin">
+<em class="property">class </em><code class="descclassname">jobman.dao.utils.</code><code class="descname">TimestampedSchemaMixin</code><a class="reference internal" href="../_modules/jobman/dao/utils.html#TimestampedSchemaMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.TimestampedSchemaMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.dao.utils.Schema" title="jobman.dao.utils.Schema"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.utils.Schema</span></code></a></p>
+<p>Provides created and modified timestamp fields.</p>
+<dl class="attribute">
+<dt id="jobman.dao.utils.TimestampedSchemaMixin.created">
+<code class="descname">created</code><em class="property"> = {'type': 'FLOAT', 'default': &lt;function generate_timestamp&gt;}</em><a class="headerlink" href="#jobman.dao.utils.TimestampedSchemaMixin.created" title="Permalink to this definition">¶</a></dt>
+<dd><p>created</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.utils.TimestampedSchemaMixin.modified">
+<code class="descname">modified</code><em class="property"> = {'type': 'FLOAT', 'auto_update': &lt;function generate_timestamp&gt;}</em><a class="headerlink" href="#jobman.dao.utils.TimestampedSchemaMixin.modified" title="Permalink to this definition">¶</a></dt>
+<dd><p>modified</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="jobman.dao.utils.generate_key">
+<code class="descclassname">jobman.dao.utils.</code><code class="descname">generate_key</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/utils.html#generate_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.generate_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jobman.dao.utils.generate_timestamp">
+<code class="descclassname">jobman.dao.utils.</code><code class="descname">generate_timestamp</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/utils.html#generate_timestamp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.generate_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jobman.dao.utils.generate_timestamp_fields">
+<code class="descclassname">jobman.dao.utils.</code><code class="descname">generate_timestamp_fields</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/utils.html#generate_timestamp_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.generate_timestamp_fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jobman.dao.utils.generate_uuid">
+<code class="descclassname">jobman.dao.utils.</code><code class="descname">generate_uuid</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/utils.html#generate_uuid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.utils.generate_uuid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-jobman.dao.worker_sqlite_dao">
+<span id="jobman-dao-worker-sqlite-dao-module"></span><h2>jobman.dao.worker_sqlite_dao module<a class="headerlink" href="#module-jobman.dao.worker_sqlite_dao" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO">
+<em class="property">class </em><code class="descclassname">jobman.dao.worker_sqlite_dao.</code><code class="descname">WorkerSqliteDAO</code><span class="sig-paren">(</span><em>table_prefix=None</em>, <em>extra_job_fields=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/dao/worker_sqlite_dao.html#WorkerSqliteDAO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.dao.jobs_dao_mixin.JobsDaoMixin" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.jobs_dao_mixin.JobsDaoMixin</span></code></a>, <a class="reference internal" href="#jobman.dao.sqlite_dao.SqliteDAO" title="jobman.dao.sqlite_dao.SqliteDAO"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.sqlite_dao.SqliteDAO</span></code></a></p>
+<dl class="class">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema">
+<em class="property">class </em><code class="descname">JobSchema</code><a class="reference internal" href="../_modules/jobman/dao/worker_sqlite_dao.html#WorkerSqliteDAO.JobSchema"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.dao.utils.TimestampedSchemaMixin" title="jobman.dao.utils.TimestampedSchemaMixin"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.utils.TimestampedSchemaMixin</span></code></a>, <a class="reference internal" href="#jobman.dao.utils.Schema" title="jobman.dao.utils.Schema"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.utils.Schema</span></code></a></p>
+<p>Fields for job records.</p>
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.batch_meta">
+<code class="descname">batch_meta</code><em class="property"> = {'type': 'JSON'}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.batch_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Metadata for batch jobs, often includes list of subjobs</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.batchable">
+<code class="descname">batchable</code><em class="property"> = {'type': 'INTEGER'}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.batchable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flag to indicate whether a job can be included in a batch.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.engine_key">
+<code class="descname">engine_key</code><em class="property"> = {'type': 'TEXT'}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.engine_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Key for engine handling the job.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.engine_meta">
+<code class="descname">engine_meta</code><em class="property"> = {'type': 'JSON'}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.engine_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Metadata to retrieve related state from engine.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.is_batch">
+<code class="descname">is_batch</code><em class="property"> = {'type': 'INTEGER'}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.is_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flag to indicate whether a job is a batch job.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.key">
+<code class="descname">key</code><em class="property"> = {'type': 'TEXT', 'primary_key': True, 'default': &lt;function generate_key&gt;}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.parent_batch_key">
+<code class="descname">parent_batch_key</code><em class="property"> = {'type': 'Text'}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.parent_batch_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>If job is part of batch, this is the parent batch job’s key.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.status">
+<code class="descname">status</code><em class="property"> = {'type': 'TEXT'}</em><a class="headerlink" href="#jobman.dao.worker_sqlite_dao.WorkerSqliteDAO.JobSchema.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="jobman.engines.html" class="btn btn-neutral float-right" title="jobman.engines package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="jobman.batch_builders.html" class="btn btn-neutral" title="jobman.batch_builders package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

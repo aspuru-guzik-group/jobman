@@ -1,0 +1,365 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.utils package &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="jobman package" href="jobman.html"/>
+        <link rel="next" title="jobman.workers package" href="jobman.workers.html"/>
+        <link rel="prev" title="jobman.sources package" href="jobman.sources.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="jobman.html">jobman package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html">jobman.batch_builders package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html">jobman.dao package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html">jobman.engines package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html">jobman.sources package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">jobman.utils package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.utils.config_utils">jobman.utils.config_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.utils.debug_utils">jobman.utils.debug_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.utils.dot_spec_loader">jobman.utils.dot_spec_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.utils.import_utils">jobman.utils.import_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.utils.logging_utils">jobman.utils.logging_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.utils.testing_utils">jobman.utils.testing_utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html">jobman.workers package</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../api.html">API Documentation</a> &raquo;</li>
+        
+          <li><a href="jobman.html">jobman package</a> &raquo;</li>
+        
+      <li>jobman.utils package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <!-- User defined GitHub URL -->
+              <a href="https://github.com/aspuru-guzik-group/jobman/blob/master/docs/sphinx/api/jobman.utils.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-jobman.utils">
+<span id="jobman-utils-package"></span><h1>jobman.utils package<a class="headerlink" href="#module-jobman.utils" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-jobman.utils.config_utils">
+<span id="jobman-utils-config-utils-module"></span><h2>jobman.utils.config_utils module<a class="headerlink" href="#module-jobman.utils.config_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="jobman.utils.config_utils.generate_default_config_content">
+<code class="descclassname">jobman.utils.config_utils.</code><code class="descname">generate_default_config_content</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/config_utils.html#generate_default_config_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.config_utils.generate_default_config_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-jobman.utils.debug_utils">
+<span id="jobman-utils-debug-utils-module"></span><h2>jobman.utils.debug_utils module<a class="headerlink" href="#module-jobman.utils.debug_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="jobman.utils.debug_utils.debug_locals">
+<code class="descclassname">jobman.utils.debug_utils.</code><code class="descname">debug_locals</code><span class="sig-paren">(</span><em>frames_back=1</em>, <em>logger=&lt;module 'logging' from '/Users/adorsk/anaconda/envs/jobman/lib/python3.6/logging/__init__.py'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/debug_utils.html#debug_locals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.debug_utils.debug_locals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-jobman.utils.dot_spec_loader">
+<span id="jobman-utils-dot-spec-loader-module"></span><h2>jobman.utils.dot_spec_loader module<a class="headerlink" href="#module-jobman.utils.dot_spec_loader" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for loading values from python dot specs paths.</p>
+<dl class="class">
+<dt id="jobman.utils.dot_spec_loader.DotSpecLoader">
+<em class="property">class </em><code class="descclassname">jobman.utils.dot_spec_loader.</code><code class="descname">DotSpecLoader</code><a class="reference internal" href="../_modules/jobman/utils/dot_spec_loader.html#DotSpecLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.dot_spec_loader.DotSpecLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="classmethod">
+<dt id="jobman.utils.dot_spec_loader.DotSpecLoader.get_attr_or_item">
+<em class="property">classmethod </em><code class="descname">get_attr_or_item</code><span class="sig-paren">(</span><em>obj=None</em>, <em>key=None</em>, <em>default=Ellipsis</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/dot_spec_loader.html#DotSpecLoader.get_attr_or_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.dot_spec_loader.DotSpecLoader.get_attr_or_item" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="jobman.utils.dot_spec_loader.DotSpecLoader.get_obj_value_from_dot_spec">
+<em class="property">classmethod </em><code class="descname">get_obj_value_from_dot_spec</code><span class="sig-paren">(</span><em>obj=None</em>, <em>dot_spec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/dot_spec_loader.html#DotSpecLoader.get_obj_value_from_dot_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.dot_spec_loader.DotSpecLoader.get_obj_value_from_dot_spec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="jobman.utils.dot_spec_loader.DotSpecLoader.load_from_dot_spec">
+<em class="property">classmethod </em><code class="descname">load_from_dot_spec</code><span class="sig-paren">(</span><em>dot_spec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/dot_spec_loader.html#DotSpecLoader.load_from_dot_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.dot_spec_loader.DotSpecLoader.load_from_dot_spec" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dot_spec</strong> (<em>str</em>) – dot_spec should be a period-separated path,
+like a python module path.  A dot_spec can two parts separated
+by a ‘:’. In this case the first part of the path will be
+interpreted as a module path, and the second part of the path
+will be interpreted as the dot_path to a member of that module.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="jobman.utils.dot_spec_loader.get_attr_or_item">
+<code class="descclassname">jobman.utils.dot_spec_loader.</code><code class="descname">get_attr_or_item</code><span class="sig-paren">(</span><em>obj=None</em>, <em>key=None</em>, <em>default=Ellipsis</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/dot_spec_loader.html#get_attr_or_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.dot_spec_loader.get_attr_or_item" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jobman.utils.dot_spec_loader.get_attrs_or_items">
+<code class="descclassname">jobman.utils.dot_spec_loader.</code><code class="descname">get_attrs_or_items</code><span class="sig-paren">(</span><em>obj=None</em>, <em>keys=None</em>, <em>default=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/dot_spec_loader.html#get_attrs_or_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.dot_spec_loader.get_attrs_or_items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jobman.utils.dot_spec_loader.load_from_dot_spec">
+<code class="descclassname">jobman.utils.dot_spec_loader.</code><code class="descname">load_from_dot_spec</code><span class="sig-paren">(</span><em>dot_spec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/dot_spec_loader.html#load_from_dot_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.dot_spec_loader.load_from_dot_spec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-jobman.utils.import_utils">
+<span id="jobman-utils-import-utils-module"></span><h2>jobman.utils.import_utils module<a class="headerlink" href="#module-jobman.utils.import_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="jobman.utils.import_utils.get_random_module_name_for_path">
+<code class="descclassname">jobman.utils.import_utils.</code><code class="descname">get_random_module_name_for_path</code><span class="sig-paren">(</span><em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/import_utils.html#get_random_module_name_for_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.import_utils.get_random_module_name_for_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="jobman.utils.import_utils.load_module_from_path">
+<code class="descclassname">jobman.utils.import_utils.</code><code class="descname">load_module_from_path</code><span class="sig-paren">(</span><em>path=None</em>, <em>module_name=None</em>, <em>randomize_module_name=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/import_utils.html#load_module_from_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.import_utils.load_module_from_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-jobman.utils.logging_utils">
+<span id="jobman-utils-logging-utils-module"></span><h2>jobman.utils.logging_utils module<a class="headerlink" href="#module-jobman.utils.logging_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="jobman.utils.logging_utils.generate_logger">
+<code class="descclassname">jobman.utils.logging_utils.</code><code class="descname">generate_logger</code><span class="sig-paren">(</span><em>logging_cfg=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/logging_utils.html#generate_logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.logging_utils.generate_logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-jobman.utils.testing_utils">
+<span id="jobman-utils-testing-utils-module"></span><h2>jobman.utils.testing_utils module<a class="headerlink" href="#module-jobman.utils.testing_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="jobman.utils.testing_utils.generate_echo_job_dir">
+<code class="descclassname">jobman.utils.testing_utils.</code><code class="descname">generate_echo_job_dir</code><span class="sig-paren">(</span><em>job_dir_path=None</em>, <em>message=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/utils/testing_utils.html#generate_echo_job_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.utils.testing_utils.generate_echo_job_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="jobman.workers.html" class="btn btn-neutral float-right" title="jobman.workers package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="jobman.sources.html" class="btn btn-neutral" title="jobman.sources package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

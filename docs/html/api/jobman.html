@@ -1,0 +1,679 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman package &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="API Documentation" href="../api.html"/>
+        <link rel="next" title="jobman.batch_builders package" href="jobman.batch_builders.html"/>
+        <link rel="prev" title="API Documentation" href="../api.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">jobman package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="jobman.batch_builders.html">jobman.batch_builders package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="jobman.dao.html">jobman.dao package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="jobman.engines.html">jobman.engines package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="jobman.sources.html">jobman.sources package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="jobman.utils.html">jobman.utils package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="jobman.workers.html">jobman.workers package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.cli">jobman.cli module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.constants">jobman.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.jobman">jobman.jobman module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html">jobman.batch_builders package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html">jobman.dao package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html">jobman.engines package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html">jobman.sources package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html">jobman.utils package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html">jobman.workers package</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../api.html">API Documentation</a> &raquo;</li>
+        
+      <li>jobman package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <!-- User defined GitHub URL -->
+              <a href="https://github.com/aspuru-guzik-group/jobman/blob/master/docs/sphinx/api/jobman.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-jobman">
+<span id="jobman-package"></span><h1>jobman package<a class="headerlink" href="#module-jobman" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="jobman.batch_builders.html">jobman.batch_builders package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html#module-jobman.batch_builders.base_batch_builder">jobman.batch_builders.base_batch_builder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html#module-jobman.batch_builders.bash_batch_builder">jobman.batch_builders.bash_batch_builder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html#module-jobman.batch_builders.slurm_batch_builder">jobman.batch_builders.slurm_batch_builder module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="jobman.dao.html">jobman.dao package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#module-jobman.dao.engine_sqlite_dao">jobman.dao.engine_sqlite_dao module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#module-jobman.dao.jobman_sqlite_dao">jobman.dao.jobman_sqlite_dao module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#module-jobman.dao.jobs_dao_mixin">jobman.dao.jobs_dao_mixin module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#module-jobman.dao.orm">jobman.dao.orm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#module-jobman.dao.sqlite_dao">jobman.dao.sqlite_dao module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#module-jobman.dao.utils">jobman.dao.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html#module-jobman.dao.worker_sqlite_dao">jobman.dao.worker_sqlite_dao module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="jobman.engines.html">jobman.engines package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html#module-jobman.engines.base_bash_engine">jobman.engines.base_bash_engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html#module-jobman.engines.base_engine">jobman.engines.base_engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html#module-jobman.engines.inbox_engine">jobman.engines.inbox_engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html#module-jobman.engines.local_engine">jobman.engines.local_engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html#module-jobman.engines.slurm_engine">jobman.engines.slurm_engine module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="jobman.sources.html">jobman.sources package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html#module-jobman.sources.base_source">jobman.sources.base_source module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html#module-jobman.sources.dir_source">jobman.sources.dir_source module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="jobman.utils.html">jobman.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html#module-jobman.utils.config_utils">jobman.utils.config_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html#module-jobman.utils.debug_utils">jobman.utils.debug_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html#module-jobman.utils.dot_spec_loader">jobman.utils.dot_spec_loader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html#module-jobman.utils.import_utils">jobman.utils.import_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html#module-jobman.utils.logging_utils">jobman.utils.logging_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html#module-jobman.utils.testing_utils">jobman.utils.testing_utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="jobman.workers.html">jobman.workers package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html#module-jobman.workers.base_worker">jobman.workers.base_worker module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html#module-jobman.workers.batching_worker">jobman.workers.batching_worker module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-jobman.cli">
+<span id="jobman-cli-module"></span><h2>jobman.cli module<a class="headerlink" href="#module-jobman.cli" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.cli.Cli">
+<em class="property">class </em><code class="descclassname">jobman.cli.</code><code class="descname">Cli</code><a class="reference internal" href="../_modules/jobman/cli.html#Cli"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.cli.Cli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="exception">
+<dt id="jobman.cli.Cli.UnrecognizedCommandError">
+<em class="property">exception </em><code class="descname">UnrecognizedCommandError</code><span class="sig-paren">(</span><em>msg=None</em>, <em>command=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/cli.html#Cli.UnrecognizedCommandError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.cli.Cli.UnrecognizedCommandError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.cli.Cli.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>args=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/cli.html#Cli.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.cli.Cli.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="jobman.cli.main">
+<code class="descclassname">jobman.cli.</code><code class="descname">main</code><span class="sig-paren">(</span><em>args=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/cli.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.cli.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-jobman.constants">
+<span id="jobman-constants-module"></span><h2>jobman.constants module<a class="headerlink" href="#module-jobman.constants" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.constants.JOB_STATUSES">
+<em class="property">class </em><code class="descclassname">jobman.constants.</code><code class="descname">JOB_STATUSES</code><a class="reference internal" href="../_modules/jobman/constants.html#JOB_STATUSES"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.constants.JOB_STATUSES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="jobman.constants.JOB_STATUSES.CLAIMED">
+<code class="descname">CLAIMED</code><em class="property"> = 'CLAIMED'</em><a class="headerlink" href="#jobman.constants.JOB_STATUSES.CLAIMED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.constants.JOB_STATUSES.COMPLETED">
+<code class="descname">COMPLETED</code><em class="property"> = 'COMPLETED'</em><a class="headerlink" href="#jobman.constants.JOB_STATUSES.COMPLETED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.constants.JOB_STATUSES.EXECUTED">
+<code class="descname">EXECUTED</code><em class="property"> = 'EXECUTED'</em><a class="headerlink" href="#jobman.constants.JOB_STATUSES.EXECUTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.constants.JOB_STATUSES.FAILED">
+<code class="descname">FAILED</code><em class="property"> = 'FAILED'</em><a class="headerlink" href="#jobman.constants.JOB_STATUSES.FAILED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.constants.JOB_STATUSES.PENDING">
+<code class="descname">PENDING</code><em class="property"> = 'PENDING'</em><a class="headerlink" href="#jobman.constants.JOB_STATUSES.PENDING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.constants.JOB_STATUSES.RUNNING">
+<code class="descname">RUNNING</code><em class="property"> = 'RUNNING'</em><a class="headerlink" href="#jobman.constants.JOB_STATUSES.RUNNING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.constants.JOB_STATUSES.UNKNOWN">
+<code class="descname">UNKNOWN</code><em class="property"> = 'UNKNOWN'</em><a class="headerlink" href="#jobman.constants.JOB_STATUSES.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.jobman">
+<span id="jobman-jobman-module"></span><h2>jobman.jobman module<a class="headerlink" href="#module-jobman.jobman" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.jobman.CfgParams">
+<em class="property">class </em><code class="descclassname">jobman.jobman.</code><code class="descname">CfgParams</code><a class="reference internal" href="../_modules/jobman/jobman.html#CfgParams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.CfgParams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>JobMan Config Parameters</p>
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.auto_initialize">
+<code class="descname">auto_initialize</code><em class="property"> = True</em><a class="headerlink" href="#jobman.jobman.CfgParams.auto_initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>If True then create jobman db and initialize sources/engines.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.dao">
+<code class="descname">dao</code><em class="property"> = Ellipsis</em><a class="headerlink" href="#jobman.jobman.CfgParams.dao" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of a JobManDAO. Usually only used for testing.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.db_uri">
+<code class="descname">db_uri</code><em class="property"> = Ellipsis</em><a class="headerlink" href="#jobman.jobman.CfgParams.db_uri" title="Permalink to this definition">¶</a></dt>
+<dd><p>A database uri.</p>
+<p>Currently can only use Sqlite uris. For example,
+‘sqlite://’ for an in-memory db, or ‘sqlite:////absolute/path/to/db.sqlite’
+for a file-based db.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.debug">
+<code class="descname">debug</code><em class="property"> = Ellipsis</em><a class="headerlink" href="#jobman.jobman.CfgParams.debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>set to True to operate in debug mode. Logs more verbose statements.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="jobman.jobman.CfgParams.get_cfg_infos">
+<em class="property">classmethod </em><code class="descname">get_cfg_infos</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/jobman.html#CfgParams.get_cfg_infos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.CfgParams.get_cfg_infos" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.label">
+<code class="descname">label</code><em class="property"> = Ellipsis</em><a class="headerlink" href="#jobman.jobman.CfgParams.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>A label to identify this jobman instance. Useful for logging.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.logging_cfg">
+<code class="descname">logging_cfg</code><em class="property"> = Ellipsis</em><a class="headerlink" href="#jobman.jobman.CfgParams.logging_cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>logging config, per <a class="reference internal" href="jobman.utils.html#jobman.utils.logging_utils.generate_logger" title="jobman.utils.logging_utils.generate_logger"><code class="xref py py-meth docutils literal"><span class="pre">jobman.utils.logging_utils.generate_logger()</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.source_specs">
+<code class="descname">source_specs</code><em class="property"> = Ellipsis</em><a class="headerlink" href="#jobman.jobman.CfgParams.source_specs" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict of keyed source specs.</p>
+<p>A source spec is a dict with this shape:</p>
+<blockquote>
+<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="c1"># a dot_spec path to a source class</span>
+    <span class="s1">&#39;source_class&#39;</span><span class="p">:</span> <span class="s1">&#39;jobman.sources.dir_source:DirSource&#39;</span>
+    <span class="c1"># a dict of params to pass as kwargs when instantiating the</span>
+    <span class="c1"># source.</span>
+    <span class="s1">&#39;source_params&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;root_path&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_path</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.CfgParams.worker_specs">
+<code class="descname">worker_specs</code><em class="property"> = Ellipsis</em><a class="headerlink" href="#jobman.jobman.CfgParams.worker_specs" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict of keyed worker specs.</p>
+<p>A worker spec is a dict with this shape:</p>
+<blockquote>
+<div><div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="c1"># a dot_spec path to a worker class</span>
+    <span class="s1">&#39;worker_class&#39;</span><span class="p">:</span> <span class="s1">&#39;jobman.workers.base_worker:BaseWorker&#39;</span>
+    <span class="c1"># a dict of params to pass as kwargs when instantiating the</span>
+    <span class="c1"># worker.</span>
+    <span class="s1">&#39;worker_params&#39;</span><span class="p">:</span> <span class="p">{</span>
+         <span class="c1"># a spec for the worker&#39;s engine.</span>
+         <span class="s1">&#39;engine_spec&#39;</span><span class="p">:</span> <span class="p">{</span>
+             <span class="s1">&#39;engine_class&#39;</span><span class="p">:</span> <span class="p">(</span>
+                 <span class="s1">&#39;jobman.engines.local_engine:LocalEngine&#39;</span>
+             <span class="p">),</span>
+             <span class="s1">&#39;engine_params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                 <span class="s1">&#39;scratch_dir&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scratch_dir</span><span class="p">,</span>
+                 <span class="c1"># This is usually where engine configs go.</span>
+                 <span class="s1">&#39;cfg&#39;</span><span class="p">:</span> <span class="p">{</span>
+                     <span class="s1">&#39;MY_EXE&#39;</span><span class="p">:</span> <span class="s1">&#39;/my/cluster/path/to/my_exe&#39;</span><span class="p">,</span>
+                     <span class="c1"># other cluster-specific params...</span>
+                 <span class="p">}</span>
+             <span class="p">}</span>
+         <span class="p">},</span>
+         <span class="c1"># other worker params...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="jobman.jobman.JobMan">
+<em class="property">class </em><code class="descclassname">jobman.jobman.</code><code class="descname">JobMan</code><span class="sig-paren">(</span><em>label=None</em>, <em>cfg=None</em>, <em>source_specs=None</em>, <em>job_spec_defaults=None</em>, <em>worker_specs=None</em>, <em>dao=None</em>, <em>db_uri=None</em>, <em>auto_initialize=True</em>, <em>logging_cfg=None</em>, <em>debug=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/jobman.html#JobMan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.JobMan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Central JobMan object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>label</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.label" title="jobman.jobman.CfgParams.label"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.label</span></code></a> .</li>
+<li><strong>cfg</strong> – cfg object or dict.</li>
+<li><strong>source_specs</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.source_specs" title="jobman.jobman.CfgParams.source_specs"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.source_specs</span></code></a> .</li>
+<li><strong>job_spec_defaults</strong> – per <a class="reference internal" href="#jobman.jobman.JobMan.job_spec_defaults" title="jobman.jobman.JobMan.job_spec_defaults"><code class="xref py py-attr docutils literal"><span class="pre">job_spec_defaults</span></code></a> .</li>
+<li><strong>worker_specs</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.worker_specs" title="jobman.jobman.CfgParams.worker_specs"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.worker_specs</span></code></a> .</li>
+<li><strong>dao</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.dao" title="jobman.jobman.CfgParams.dao"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.dao</span></code></a> .</li>
+<li><strong>db_uri</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.db_uri" title="jobman.jobman.CfgParams.db_uri"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.db_uri</span></code></a> .</li>
+<li><strong>auto_initialize</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.auto_initialize" title="jobman.jobman.CfgParams.auto_initialize"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.auto_initialize</span></code></a> .</li>
+<li><strong>logging_cfg</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.logging_cfg" title="jobman.jobman.CfgParams.logging_cfg"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.logging_cfg</span></code></a> .</li>
+<li><strong>debug</strong> – per <a class="reference internal" href="#jobman.jobman.CfgParams.debug" title="jobman.jobman.CfgParams.debug"><code class="xref py py-attr docutils literal"><span class="pre">CfgParams.debug</span></code></a> .</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES">
+<em class="property">class </em><code class="descname">JOB_STATUSES</code><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES.CLAIMED">
+<code class="descname">CLAIMED</code><em class="property"> = 'CLAIMED'</em><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES.CLAIMED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES.COMPLETED">
+<code class="descname">COMPLETED</code><em class="property"> = 'COMPLETED'</em><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES.COMPLETED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES.EXECUTED">
+<code class="descname">EXECUTED</code><em class="property"> = 'EXECUTED'</em><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES.EXECUTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES.FAILED">
+<code class="descname">FAILED</code><em class="property"> = 'FAILED'</em><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES.FAILED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES.PENDING">
+<code class="descname">PENDING</code><em class="property"> = 'PENDING'</em><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES.PENDING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES.RUNNING">
+<code class="descname">RUNNING</code><em class="property"> = 'RUNNING'</em><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES.RUNNING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.JOB_STATUSES.UNKNOWN">
+<code class="descname">UNKNOWN</code><em class="property"> = 'UNKNOWN'</em><a class="headerlink" href="#jobman.jobman.JobMan.JOB_STATUSES.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="jobman.jobman.JobMan.SubmissionError">
+<em class="property">exception </em><code class="descname">SubmissionError</code><a class="reference internal" href="../_modules/jobman/jobman.html#JobMan.SubmissionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.JobMan.SubmissionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="jobman.jobman.JobMan.from_cfg">
+<em class="property">classmethod </em><code class="descname">from_cfg</code><span class="sig-paren">(</span><em>cfg=None</em>, <em>overrides=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/jobman.html#JobMan.from_cfg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.JobMan.from_cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a JobMan instance from a cfg.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cfg</strong> – can be an object or dict. Keys or attrs per
+<a class="reference internal" href="#jobman.jobman.CfgParams" title="jobman.jobman.CfgParams"><code class="xref py py-class docutils literal"><span class="pre">CfgParams</span></code></a>.</li>
+<li><strong>overrides</strong> – dict of cfg overrides</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">JobMan instance</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.jobman.JobMan.initialize">
+<code class="descname">initialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/jobman.html#JobMan.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.JobMan.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize dao, sources, and workers.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.jobman.JobMan.job_spec_defaults">
+<code class="descname">job_spec_defaults</code><em class="property"> = {'entrypoint': './entrypoint.sh'}</em><a class="headerlink" href="#jobman.jobman.JobMan.job_spec_defaults" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default job_spec values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.jobman.JobMan.submit_job_dir">
+<code class="descname">submit_job_dir</code><span class="sig-paren">(</span><em>job_dir=None</em>, <em>source_key=None</em>, <em>source_meta=None</em>, <em>job_spec_defaults=None</em>, <em>job_spec_overrides=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/jobman.html#JobMan.submit_job_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.JobMan.submit_job_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit a job dir.</p>
+<p>Creates a job_spec for dir. Attempts to read job_spec file from dir
+if provided.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_dir</strong> – absolute path to job_dir</li>
+<li><strong>source_key</strong> – per
+<a class="reference internal" href="jobman.dao.html#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key" title="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key"><code class="xref py py-attr docutils literal"><span class="pre">jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key</span></code></a></li>
+<li><strong>source_meta</strong> – per
+<a class="reference internal" href="jobman.dao.html#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta" title="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta"><code class="xref py py-attr docutils literal"><span class="pre">jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta</span></code></a></li>
+<li><strong>job_spec_defaults</strong> – default values for job_spec that will be
+generated for dir.</li>
+<li><strong>job_spec_overrides</strong> – job_spec value overrides. Will be set after any
+job_spec values are read from job_dir.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">return per <a class="reference internal" href="#jobman.jobman.JobMan.submit_job_spec" title="jobman.jobman.JobMan.submit_job_spec"><code class="xref py py-meth docutils literal"><span class="pre">submit_job_spec()</span></code></a>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.jobman.JobMan.submit_job_spec">
+<code class="descname">submit_job_spec</code><span class="sig-paren">(</span><em>job_spec=None</em>, <em>source_key=None</em>, <em>source_meta=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/jobman.html#JobMan.submit_job_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.JobMan.submit_job_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit a job spec.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_spec</strong> – per
+<a class="reference internal" href="jobman.dao.html#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.job_spec" title="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.job_spec"><code class="xref py py-attr docutils literal"><span class="pre">jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.job_spec</span></code></a></li>
+<li><strong>source_key</strong> – per
+<a class="reference internal" href="jobman.dao.html#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key" title="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key"><code class="xref py py-attr docutils literal"><span class="pre">jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key</span></code></a></li>
+<li><strong>source_meta</strong> – per
+<a class="reference internal" href="jobman.dao.html#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta" title="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta"><code class="xref py py-attr docutils literal"><span class="pre">jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta</span></code></a></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>return job record per</dt>
+<dd><p class="first last"><a class="reference internal" href="jobman.dao.html#jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema" title="jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema"><code class="xref py py-class docutils literal"><span class="pre">jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema</span></code></a></p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.jobman.JobMan.tick">
+<code class="descname">tick</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/jobman.html#JobMan.tick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.jobman.JobMan.tick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tick JobMan components.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="jobman.batch_builders.html" class="btn btn-neutral float-right" title="jobman.batch_builders package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../api.html" class="btn btn-neutral" title="API Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

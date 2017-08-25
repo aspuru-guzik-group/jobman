@@ -1,0 +1,391 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.engines.inbox_engine &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>jobman.engines.inbox_engine</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jobman.engines.inbox_engine</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="kn">from</span> <span class="nn">jobman.dao.engine_sqlite_dao</span> <span class="k">import</span> <span class="n">EngineSqliteDAO</span>
+<span class="kn">from</span> <span class="nn">.base_engine</span> <span class="k">import</span> <span class="n">BaseEngine</span>
+
+
+<div class="viewcode-block" id="InboxEngine"><a class="viewcode-back" href="../../../api/jobman.engines.html#jobman.engines.inbox_engine.InboxEngine">[docs]</a><span class="k">class</span> <span class="nc">InboxEngine</span><span class="p">(</span><span class="n">BaseEngine</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_uri</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">root_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transfer_fn</span><span class="o">=</span><span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">,</span>
+                 <span class="n">sync_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">throttling_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span> <span class="o">=</span> <span class="n">root_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transfer_fn</span> <span class="o">=</span> <span class="n">transfer_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync_fn</span> <span class="o">=</span> <span class="n">sync_fn</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_sync_fn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span> <span class="o">=</span> <span class="n">EngineSqliteDAO</span><span class="p">(</span>
+            <span class="n">db_uri</span><span class="o">=</span><span class="n">db_uri</span><span class="p">,</span> <span class="n">table_prefix</span><span class="o">=</span><span class="s1">&#39;engine_</span><span class="si">%s</span><span class="s1">_&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
+            <span class="n">extra_job_fields</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;local_dir&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TEXT&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;remote_status&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TEXT&#39;</span><span class="p">},</span>
+                <span class="s1">&#39;remote_dir&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TEXT&#39;</span><span class="p">},</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">throttling_specs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_default_throttling_specs</span><span class="p">(),</span>
+            <span class="o">**</span><span class="p">(</span><span class="n">throttling_specs</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_default_sync_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="n">dest_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dest_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">dest_path</span><span class="o">.</span><span class="n">rmdir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transfer_fn</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_default_throttling_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="p">{</span>
+                <span class="c1"># &#39;wait&#39;: 120,</span>
+                <span class="s1">&#39;wait&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">001</span><span class="p">,</span>
+                <span class="s1">&#39;storage_key&#39;</span><span class="p">:</span> <span class="s1">&#39;LAST_</span><span class="si">%s</span><span class="s1">_TIME&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                <span class="s1">&#39;fn&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;scan_remote_dirs&#39;</span><span class="p">,</span> <span class="s1">&#39;sync_dirs&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="InboxEngine.tick"><a class="viewcode-back" href="../../../api/jobman.engines.html#jobman.engines.inbox_engine.InboxEngine.tick">[docs]</a>    <span class="k">def</span> <span class="nf">tick</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">throttling_spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">throttling_specs</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_run_throttling_spec</span><span class="p">(</span><span class="n">throttling_spec</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to run throttling spec&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_run_throttling_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">throttling_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">last_run_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">kvp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_kvp</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">throttling_spec</span><span class="p">[</span><span class="s1">&#39;storage_key&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">kvp</span><span class="p">:</span>
+            <span class="n">last_run_time</span> <span class="o">=</span> <span class="n">kvp</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+        <span class="n">needs_run</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">last_run_time</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">last_run_time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">throttling_spec</span><span class="p">[</span><span class="s1">&#39;wait&#39;</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">needs_run</span><span class="p">:</span>
+            <span class="n">throttling_spec</span><span class="p">[</span><span class="s1">&#39;fn&#39;</span><span class="p">]()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_kvps</span><span class="p">(</span><span class="n">kvps</span><span class="o">=</span><span class="p">[{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">throttling_spec</span><span class="p">[</span><span class="s1">&#39;storage_key&#39;</span><span class="p">],</span>
+                                  <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()}])</span>
+
+    <span class="k">def</span> <span class="nf">_scan_remote_dirs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">running_engine_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">query_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">running_engine_jobs</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">remote_inventory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_remote_dir_inventory</span><span class="p">()</span>
+        <span class="n">jobs_to_save</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">engine_job</span> <span class="ow">in</span> <span class="n">running_engine_jobs</span><span class="p">:</span>
+            <span class="n">remote_meta</span> <span class="o">=</span> <span class="n">remote_inventory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">remote_meta</span><span class="p">:</span>
+                <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;remote_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">remote_meta</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
+                <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;remote_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">remote_meta</span><span class="p">[</span><span class="s1">&#39;dir&#39;</span><span class="p">]</span>
+                <span class="n">jobs_to_save</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">engine_job</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs_to_save</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_remote_dir_inventory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">inventory</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">subdir</span><span class="p">,</span> <span class="n">status</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s1">&#39;inbox&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;queued&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;completed&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">EXECUTED</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;failed&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">FAILED</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="n">remote_subdir_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">subdir</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dir_</span> <span class="ow">in</span> <span class="n">remote_subdir_path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">):</span>
+                <span class="n">inventory</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">dir_</span><span class="o">.</span><span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+                    <span class="s1">&#39;dir&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">dir_</span><span class="p">),</span>
+                <span class="p">}</span>
+        <span class="k">return</span> <span class="n">inventory</span>
+
+    <span class="k">def</span> <span class="nf">_sync_dirs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">engine_jobs_to_sync</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_engine_jobs_to_sync</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">engine_jobs_to_sync</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">engine_job</span> <span class="ow">in</span> <span class="n">engine_jobs_to_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sync_dir_for_engine_job</span><span class="p">(</span><span class="n">engine_job</span><span class="p">)</span>
+            <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;remote_status&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">engine_jobs_to_sync</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_engine_jobs_to_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">query_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">},</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;remote_status&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;IN&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">EXECUTED</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">FAILED</span><span class="p">]},</span>
+            <span class="p">]</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">_sync_dir_for_engine_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine_job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">local_dir</span> <span class="o">=</span> <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;local_dir&#39;</span><span class="p">]</span>
+        <span class="n">remote_dir</span> <span class="o">=</span> <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;remote_dir&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync_fn</span><span class="p">(</span><span class="n">remote_dir</span><span class="p">,</span> <span class="n">local_dir</span><span class="p">)</span>
+
+<div class="viewcode-block" id="InboxEngine.submit_job"><a class="viewcode-back" href="../../../api/jobman.engines.html#jobman.engines.inbox_engine.InboxEngine.submit_job">[docs]</a>    <span class="k">def</span> <span class="nf">submit_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">engine_job_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;__&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">remote_dest</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;inbox&#39;</span><span class="p">,</span> <span class="n">engine_job_key</span><span class="p">)</span>
+        <span class="n">local_dir</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">][</span><span class="s1">&#39;dir&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transfer_fn</span><span class="p">(</span><span class="n">local_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">remote_dest</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">engine_job_key</span><span class="p">,</span>
+            <span class="s1">&#39;local_dir&#39;</span><span class="p">:</span> <span class="n">local_dir</span><span class="p">,</span>
+            <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span>
+        <span class="p">})</span>
+        <span class="n">engine_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">engine_job_key</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">engine_meta</span></div>
+
+<div class="viewcode-block" id="InboxEngine.get_keyed_states"><a class="viewcode-back" href="../../../api/jobman.engines.html#jobman.engines.inbox_engine.InboxEngine.get_keyed_states">[docs]</a>    <span class="k">def</span> <span class="nf">get_keyed_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keyed_metas</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">engine_job_keys_by_external_keys</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">external_key</span><span class="p">:</span> <span class="n">engine_meta</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">external_key</span><span class="p">,</span> <span class="n">engine_meta</span> <span class="ow">in</span> <span class="n">keyed_metas</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">engine_job_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">engine_job_keys_by_external_keys</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">engine_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">query_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;IN&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">engine_job_keys</span><span class="p">}]</span>
+        <span class="p">})</span>
+        <span class="n">engine_jobs_by_engine_job_keys</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]:</span> <span class="n">engine_job</span>
+            <span class="k">for</span> <span class="n">engine_job</span> <span class="ow">in</span> <span class="n">engine_jobs</span>
+        <span class="p">}</span>
+        <span class="n">engine_states_by_external_keys</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">external_key</span> <span class="ow">in</span> <span class="n">engine_job_keys_by_external_keys</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">engine_job_key</span> <span class="o">=</span> <span class="n">engine_job_keys_by_external_keys</span><span class="p">[</span><span class="n">external_key</span><span class="p">]</span>
+            <span class="n">engine_job</span> <span class="o">=</span> <span class="n">engine_jobs_by_engine_job_keys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_job_key</span><span class="p">)</span>
+            <span class="n">engine_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine_job_to_engine_state</span><span class="p">(</span><span class="n">engine_job</span><span class="p">)</span>
+            <span class="n">engine_states_by_external_keys</span><span class="p">[</span><span class="n">external_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">engine_state</span>
+        <span class="k">return</span> <span class="n">engine_states_by_external_keys</span></div>
+
+    <span class="k">def</span> <span class="nf">_engine_job_to_engine_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine_job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">engine_state</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">engine_job</span><span class="p">:</span>
+            <span class="n">engine_state</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">engine_job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">engine_state</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

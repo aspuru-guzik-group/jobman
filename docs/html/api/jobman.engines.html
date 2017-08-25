@@ -1,0 +1,550 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.engines package &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="jobman package" href="jobman.html"/>
+        <link rel="next" title="jobman.sources package" href="jobman.sources.html"/>
+        <link rel="prev" title="jobman.dao package" href="jobman.dao.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="jobman.html">jobman package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.batch_builders.html">jobman.batch_builders package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html">jobman.dao package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">jobman.engines package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.engines.base_bash_engine">jobman.engines.base_bash_engine module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.engines.base_engine">jobman.engines.base_engine module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.engines.inbox_engine">jobman.engines.inbox_engine module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.engines.local_engine">jobman.engines.local_engine module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.engines.slurm_engine">jobman.engines.slurm_engine module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html">jobman.sources package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html">jobman.utils package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html">jobman.workers package</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../api.html">API Documentation</a> &raquo;</li>
+        
+          <li><a href="jobman.html">jobman package</a> &raquo;</li>
+        
+      <li>jobman.engines package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <!-- User defined GitHub URL -->
+              <a href="https://github.com/aspuru-guzik-group/jobman/blob/master/docs/sphinx/api/jobman.engines.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-jobman.engines">
+<span id="jobman-engines-package"></span><h1>jobman.engines package<a class="headerlink" href="#module-jobman.engines" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-jobman.engines.base_bash_engine">
+<span id="jobman-engines-base-bash-engine-module"></span><h2>jobman.engines.base_bash_engine module<a class="headerlink" href="#module-jobman.engines.base_bash_engine" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.engines.base_bash_engine.BaseBashEngine">
+<em class="property">class </em><code class="descclassname">jobman.engines.base_bash_engine.</code><code class="descname">BaseBashEngine</code><span class="sig-paren">(</span><em>key=None</em>, <em>process_runner=None</em>, <em>logger=None</em>, <em>debug=None</em>, <em>cfg=None</em>, <em>scratch_dir=None</em>, <em>build_batch_jobdir_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_bash_engine.html#BaseBashEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_bash_engine.BaseBashEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.engines.base_engine.BaseEngine" title="jobman.engines.base_engine.BaseEngine"><code class="xref py py-class docutils literal"><span class="pre">jobman.engines.base_engine.BaseEngine</span></code></a></p>
+<dl class="attribute">
+<dt id="jobman.engines.base_bash_engine.BaseBashEngine.DEFAULT_STD_LOG_FILE_NAMES">
+<code class="descname">DEFAULT_STD_LOG_FILE_NAMES</code><em class="property"> = {'stdout': 'stdout', 'stderr': 'stderr'}</em><a class="headerlink" href="#jobman.engines.base_bash_engine.BaseBashEngine.DEFAULT_STD_LOG_FILE_NAMES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_bash_engine.BaseBashEngine.ENGINE_ENTRYPOINT_TPL">
+<code class="descname">ENGINE_ENTRYPOINT_TPL</code><em class="property"> = 'JOBMAN.ENTRYPOINT.sh'</em><a class="headerlink" href="#jobman.engines.base_bash_engine.BaseBashEngine.ENGINE_ENTRYPOINT_TPL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.engines.base_engine">
+<span id="jobman-engines-base-engine-module"></span><h2>jobman.engines.base_engine module<a class="headerlink" href="#module-jobman.engines.base_engine" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.engines.base_engine.BaseEngine">
+<em class="property">class </em><code class="descclassname">jobman.engines.base_engine.</code><code class="descname">BaseEngine</code><span class="sig-paren">(</span><em>key=None</em>, <em>process_runner=None</em>, <em>logger=None</em>, <em>debug=None</em>, <em>cfg=None</em>, <em>scratch_dir=None</em>, <em>build_batch_jobdir_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.CHECKPOINT_FILE_NAMES">
+<code class="descname">CHECKPOINT_FILE_NAMES</code><em class="property"> = {'completed': 'JOBMAN-COMPLETED', 'failed': 'JOBMAN-FAILED'}</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.CHECKPOINT_FILE_NAMES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="jobman.engines.base_engine.BaseEngine.CfgItemResolutionError">
+<em class="property">exception </em><code class="descname">CfgItemResolutionError</code><span class="sig-paren">(</span><em>msg=None</em>, <em>key=None</em>, <em>spec=None</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.CfgItemResolutionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.CfgItemResolutionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.DEFAULT_JOB_ENTRYPOINT_NAME">
+<code class="descname">DEFAULT_JOB_ENTRYPOINT_NAME</code><em class="property"> = 'job.sh'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.DEFAULT_JOB_ENTRYPOINT_NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES">
+<em class="property">class </em><code class="descname">JOB_STATUSES</code><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES.CLAIMED">
+<code class="descname">CLAIMED</code><em class="property"> = 'CLAIMED'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES.CLAIMED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES.COMPLETED">
+<code class="descname">COMPLETED</code><em class="property"> = 'COMPLETED'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES.COMPLETED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES.EXECUTED">
+<code class="descname">EXECUTED</code><em class="property"> = 'EXECUTED'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES.EXECUTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES.FAILED">
+<code class="descname">FAILED</code><em class="property"> = 'FAILED'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES.FAILED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES.PENDING">
+<code class="descname">PENDING</code><em class="property"> = 'PENDING'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES.PENDING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES.RUNNING">
+<code class="descname">RUNNING</code><em class="property"> = 'RUNNING'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES.RUNNING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.base_engine.BaseEngine.JOB_STATUSES.UNKNOWN">
+<code class="descname">UNKNOWN</code><em class="property"> = 'UNKNOWN'</em><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.JOB_STATUSES.UNKNOWN" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="jobman.engines.base_engine.BaseEngine.SubmissionError">
+<em class="property">exception </em><code class="descname">SubmissionError</code><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.SubmissionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.SubmissionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.build_batch_jobdir">
+<code class="descname">build_batch_jobdir</code><span class="sig-paren">(</span><em>batch_job=None</em>, <em>subjobs=None</em>, <em>dest=None</em>, <em>extra_cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.build_batch_jobdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.build_batch_jobdir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.default_build_batch_jobdir">
+<code class="descname">default_build_batch_jobdir</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.default_build_batch_jobdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.default_build_batch_jobdir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.generate_default_process_runner">
+<code class="descname">generate_default_process_runner</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.generate_default_process_runner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.generate_default_process_runner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.get_keyed_states">
+<code class="descname">get_keyed_states</code><span class="sig-paren">(</span><em>keyed_metas=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.get_keyed_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.get_keyed_states" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.initialize">
+<code class="descname">initialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.resolve_cfg_item">
+<code class="descname">resolve_cfg_item</code><span class="sig-paren">(</span><em>key=None</em>, <em>spec=None</em>, <em>cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.resolve_cfg_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.resolve_cfg_item" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.resolve_job_cfg_specs">
+<code class="descname">resolve_job_cfg_specs</code><span class="sig-paren">(</span><em>job=None</em>, <em>extra_cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.resolve_job_cfg_specs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.resolve_job_cfg_specs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.submit_batch_job">
+<code class="descname">submit_batch_job</code><span class="sig-paren">(</span><em>batch_job=None</em>, <em>subjobs=None</em>, <em>extra_cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.submit_batch_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.submit_batch_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.submit_job">
+<code class="descname">submit_job</code><span class="sig-paren">(</span><em>job=None</em>, <em>extra_cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.submit_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.submit_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.base_engine.BaseEngine.tick">
+<code class="descname">tick</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/base_engine.html#BaseEngine.tick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.base_engine.BaseEngine.tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.engines.inbox_engine">
+<span id="jobman-engines-inbox-engine-module"></span><h2>jobman.engines.inbox_engine module<a class="headerlink" href="#module-jobman.engines.inbox_engine" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.engines.inbox_engine.InboxEngine">
+<em class="property">class </em><code class="descclassname">jobman.engines.inbox_engine.</code><code class="descname">InboxEngine</code><span class="sig-paren">(</span><em>db_uri=None</em>, <em>root_dir=None</em>, <em>transfer_fn=&lt;function move&gt;</em>, <em>sync_fn=None</em>, <em>throttling_specs=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/inbox_engine.html#InboxEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.inbox_engine.InboxEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.engines.base_engine.BaseEngine" title="jobman.engines.base_engine.BaseEngine"><code class="xref py py-class docutils literal"><span class="pre">jobman.engines.base_engine.BaseEngine</span></code></a></p>
+<dl class="method">
+<dt id="jobman.engines.inbox_engine.InboxEngine.get_keyed_states">
+<code class="descname">get_keyed_states</code><span class="sig-paren">(</span><em>keyed_metas=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/inbox_engine.html#InboxEngine.get_keyed_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.inbox_engine.InboxEngine.get_keyed_states" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.inbox_engine.InboxEngine.submit_job">
+<code class="descname">submit_job</code><span class="sig-paren">(</span><em>job=None</em>, <em>extra_cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/inbox_engine.html#InboxEngine.submit_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.inbox_engine.InboxEngine.submit_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.inbox_engine.InboxEngine.tick">
+<code class="descname">tick</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/inbox_engine.html#InboxEngine.tick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.inbox_engine.InboxEngine.tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.engines.local_engine">
+<span id="jobman-engines-local-engine-module"></span><h2>jobman.engines.local_engine module<a class="headerlink" href="#module-jobman.engines.local_engine" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.engines.local_engine.LocalEngine">
+<em class="property">class </em><code class="descclassname">jobman.engines.local_engine.</code><code class="descname">LocalEngine</code><span class="sig-paren">(</span><em>*args</em>, <em>db_uri=None</em>, <em>initialize=True</em>, <em>cache_ttl=1</em>, <em>dao=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/local_engine.html#LocalEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.local_engine.LocalEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.engines.base_bash_engine.BaseBashEngine" title="jobman.engines.base_bash_engine.BaseBashEngine"><code class="xref py py-class docutils literal"><span class="pre">jobman.engines.base_bash_engine.BaseBashEngine</span></code></a></p>
+<dl class="method">
+<dt id="jobman.engines.local_engine.LocalEngine.get_keyed_states">
+<code class="descname">get_keyed_states</code><span class="sig-paren">(</span><em>keyed_metas=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/local_engine.html#LocalEngine.get_keyed_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.local_engine.LocalEngine.get_keyed_states" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.local_engine.LocalEngine.initialize">
+<code class="descname">initialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/local_engine.html#LocalEngine.initialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.local_engine.LocalEngine.initialize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.local_engine.LocalEngine.submit_job">
+<code class="descname">submit_job</code><span class="sig-paren">(</span><em>job=None</em>, <em>extra_cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/local_engine.html#LocalEngine.submit_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.local_engine.LocalEngine.submit_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.local_engine.LocalEngine.tick">
+<code class="descname">tick</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/local_engine.html#LocalEngine.tick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.local_engine.LocalEngine.tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.engines.slurm_engine">
+<span id="jobman-engines-slurm-engine-module"></span><h2>jobman.engines.slurm_engine module<a class="headerlink" href="#module-jobman.engines.slurm_engine" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.engines.slurm_engine.SlurmEngine">
+<em class="property">class </em><code class="descclassname">jobman.engines.slurm_engine.</code><code class="descname">SlurmEngine</code><span class="sig-paren">(</span><em>*args</em>, <em>slurm_commands=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.engines.base_bash_engine.BaseBashEngine" title="jobman.engines.base_bash_engine.BaseBashEngine"><code class="xref py py-class docutils literal"><span class="pre">jobman.engines.base_bash_engine.BaseBashEngine</span></code></a></p>
+<dl class="attribute">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.DEFAULT_SLURM_COMMANDS">
+<code class="descname">DEFAULT_SLURM_COMMANDS</code><em class="property"> = {'sacct': 'sacct', 'sbatch': 'sbatch', 'scontrol': 'scontrol'}</em><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.DEFAULT_SLURM_COMMANDS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.SLURM_STATES_TO_ENGINE_JOB_STATUSES">
+<code class="descname">SLURM_STATES_TO_ENGINE_JOB_STATUSES</code><em class="property"> = {'RUNNING': {'COMPLETING', 'PENDING', 'RUNNING', 'CONFIGURING'}, 'EXECUTED': {'COMPLETED'}, 'FAILED': {'FAILED', 'CANCELLED', 'TIMEOUT', 'BOOT_FAIL', 'NODE_FAIL', 'PREEMPTED'}}</em><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.SLURM_STATES_TO_ENGINE_JOB_STATUSES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.get_all_slurm_jobs_via_scontrol">
+<code class="descname">get_all_slurm_jobs_via_scontrol</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.get_all_slurm_jobs_via_scontrol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.get_all_slurm_jobs_via_scontrol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.get_keyed_states">
+<code class="descname">get_keyed_states</code><span class="sig-paren">(</span><em>keyed_metas=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.get_keyed_states"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.get_keyed_states" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.get_slurm_job_via_scontrol">
+<code class="descname">get_slurm_job_via_scontrol</code><span class="sig-paren">(</span><em>job_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.get_slurm_job_via_scontrol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.get_slurm_job_via_scontrol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.get_slurm_jobs_by_id">
+<code class="descname">get_slurm_jobs_by_id</code><span class="sig-paren">(</span><em>job_ids=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.get_slurm_jobs_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.get_slurm_jobs_by_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.get_slurm_jobs_via_sacct">
+<code class="descname">get_slurm_jobs_via_sacct</code><span class="sig-paren">(</span><em>job_ids=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.get_slurm_jobs_via_sacct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.get_slurm_jobs_via_sacct" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.get_slurm_jobs_via_scontrol">
+<code class="descname">get_slurm_jobs_via_scontrol</code><span class="sig-paren">(</span><em>job_ids=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.get_slurm_jobs_via_scontrol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.get_slurm_jobs_via_scontrol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.parse_sacct_line">
+<code class="descname">parse_sacct_line</code><span class="sig-paren">(</span><em>sacct_line=None</em>, <em>fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.parse_sacct_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.parse_sacct_line" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.parse_sacct_stdout">
+<code class="descname">parse_sacct_stdout</code><span class="sig-paren">(</span><em>sacct_stdout=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.parse_sacct_stdout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.parse_sacct_stdout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.parse_sbatch_stdout">
+<code class="descname">parse_sbatch_stdout</code><span class="sig-paren">(</span><em>sbatch_stdout=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.parse_sbatch_stdout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.parse_sbatch_stdout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.parse_scontrol_line">
+<code class="descname">parse_scontrol_line</code><span class="sig-paren">(</span><em>scontrol_line=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.parse_scontrol_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.parse_scontrol_line" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.slurm_job_to_engine_state">
+<code class="descname">slurm_job_to_engine_state</code><span class="sig-paren">(</span><em>slurm_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.slurm_job_to_engine_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.slurm_job_to_engine_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.slurm_job_to_status">
+<code class="descname">slurm_job_to_status</code><span class="sig-paren">(</span><em>slurm_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.slurm_job_to_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.slurm_job_to_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.split_sacct_line">
+<code class="descname">split_sacct_line</code><span class="sig-paren">(</span><em>sacct_line=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.split_sacct_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.split_sacct_line" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.engines.slurm_engine.SlurmEngine.submit_job">
+<code class="descname">submit_job</code><span class="sig-paren">(</span><em>job=None</em>, <em>extra_cfgs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/engines/slurm_engine.html#SlurmEngine.submit_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.engines.slurm_engine.SlurmEngine.submit_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="jobman.sources.html" class="btn btn-neutral float-right" title="jobman.sources package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="jobman.dao.html" class="btn btn-neutral" title="jobman.dao package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

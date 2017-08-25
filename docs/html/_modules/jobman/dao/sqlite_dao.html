@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.dao.sqlite_dao &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>jobman.dao.sqlite_dao</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jobman.dao.sqlite_dao</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">orm</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">_dao_utils</span>
+
+
+<div class="viewcode-block" id="SqliteDAO"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO">[docs]</a><span class="k">class</span> <span class="nc">SqliteDAO</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="SqliteDAO.UpdateError"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.UpdateError">[docs]</a>    <span class="k">class</span> <span class="nc">UpdateError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.InsertError"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.InsertError">[docs]</a>    <span class="k">class</span> <span class="nc">InsertError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.IntegrityError"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.IntegrityError">[docs]</a>    <span class="k">class</span> <span class="nc">IntegrityError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_uri</span><span class="o">=</span><span class="s1">&#39;:memory:&#39;</span><span class="p">,</span> <span class="n">orm_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">table_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">initialize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_kvp_orm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">debug</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sqlite</span><span class="o">=</span><span class="n">sqlite3</span><span class="p">,</span> <span class="n">orm</span><span class="o">=</span><span class="n">orm</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span> <span class="ow">or</span> <span class="n">logging</span>
+        <span class="k">if</span> <span class="n">db_uri</span> <span class="o">==</span> <span class="s1">&#39;sqlite://&#39;</span><span class="p">:</span>
+            <span class="n">db_uri</span> <span class="o">=</span> <span class="s1">&#39;:memory:&#39;</span>
+        <span class="k">elif</span> <span class="n">db_uri</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;sqlite:///&#39;</span><span class="p">):</span>
+            <span class="n">db_uri</span> <span class="o">=</span> <span class="n">db_uri</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;sqlite:///&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span> <span class="o">=</span> <span class="n">db_uri</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sqlite</span> <span class="o">=</span> <span class="n">sqlite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orm</span> <span class="o">=</span> <span class="n">orm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_prefix</span> <span class="o">=</span> <span class="n">table_prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_orms</span><span class="p">(</span>
+            <span class="n">orm_specs</span><span class="o">=</span><span class="n">orm_specs</span><span class="p">,</span>
+            <span class="n">table_prefix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">table_prefix</span><span class="p">,</span>
+            <span class="n">include_kvp_orm</span><span class="o">=</span><span class="n">include_kvp_orm</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">initialize</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SqliteDAO.generate_key"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.generate_key">[docs]</a>    <span class="k">def</span> <span class="nf">generate_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="n">_dao_utils</span><span class="o">.</span><span class="n">generate_key</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_orms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orm_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">table_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">include_kvp_orm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">orm_specs</span> <span class="o">=</span> <span class="n">orm_specs</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="n">common_orm_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;logger&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">,</span>
+                             <span class="s1">&#39;table_prefix&#39;</span><span class="p">:</span> <span class="n">table_prefix</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">include_kvp_orm</span><span class="p">:</span>
+            <span class="n">orm_specs</span> <span class="o">+=</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;kvp&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_kvp_fields</span><span class="p">()}</span>
+            <span class="p">]</span>
+        <span class="n">orms</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">orm_spec</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]:</span> <span class="bp">self</span><span class="o">.</span><span class="n">orm</span><span class="o">.</span><span class="n">ORM</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="n">common_orm_kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">orm_spec</span><span class="p">})</span>
+            <span class="k">for</span> <span class="n">orm_spec</span> <span class="ow">in</span> <span class="n">orm_specs</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">orms</span>
+
+    <span class="k">def</span> <span class="nf">_generate_kvp_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;TEXT&#39;</span><span class="p">,</span> <span class="s1">&#39;primary_key&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;JSON&#39;</span><span class="p">},</span>
+            <span class="o">**</span><span class="n">_dao_utils</span><span class="o">.</span><span class="n">generate_timestamp_fields</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_connection</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span>
+
+<div class="viewcode-block" id="SqliteDAO.create_connection"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.create_connection">[docs]</a>    <span class="k">def</span> <span class="nf">create_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sqlite</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span><span class="p">)</span>
+        <span class="n">connection</span><span class="o">.</span><span class="n">row_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sqlite</span><span class="o">.</span><span class="n">Row</span>
+        <span class="k">return</span> <span class="n">connection</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.initialize"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_tables</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.ensure_tables"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.ensure_tables">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">orm_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">orms</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">orm_</span><span class="o">.</span><span class="n">create_table</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.create_ent"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.create_ent">[docs]</a>    <span class="k">def</span> <span class="nf">create_ent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ent_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_ents</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="n">ent_type</span><span class="p">,</span> <span class="n">ents</span><span class="o">=</span><span class="p">[</span><span class="n">ent</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.save_ents"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.save_ents">[docs]</a>    <span class="k">def</span> <span class="nf">save_ents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ent_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ents</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">saved_ents</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ent_orm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orms</span><span class="p">[</span><span class="n">ent_type</span><span class="p">]</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ent</span> <span class="ow">in</span> <span class="n">ents</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">saved_ent</span> <span class="o">=</span> <span class="n">ent_orm</span><span class="o">.</span><span class="n">save_object</span><span class="p">(</span>
+                        <span class="n">obj</span><span class="o">=</span><span class="n">ent</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">ent_orm</span><span class="o">.</span><span class="n">IntegrityError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">IntegrityError</span><span class="p">()</span> <span class="kn">from</span> <span class="nn">exc</span>
+                <span class="k">except</span> <span class="n">ent_orm</span><span class="o">.</span><span class="n">InsertError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">InsertError</span><span class="p">()</span> <span class="kn">from</span> <span class="nn">exc</span>
+                <span class="n">saved_ents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">saved_ent</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">saved_ents</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.get_ent"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.get_ent">[docs]</a>    <span class="k">def</span> <span class="nf">get_ent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ent_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">ent_orm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orms</span><span class="p">[</span><span class="n">ent_type</span><span class="p">]</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">key</span><span class="p">}]}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ent_orm</span><span class="o">.</span><span class="n">query_objects</span><span class="p">(</span>
+                <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.query_ents"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.query_ents">[docs]</a>    <span class="k">def</span> <span class="nf">query_ents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ent_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Query ents.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ent_type</span>
+<span class="sd">            query: a query dict of this form: ::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &#39;filters&#39;: [</span>
+<span class="sd">                        {&#39;field&#39;: &#39;some_field&#39;, &#39;op&#39;: &#39;=&#39;, &#39;arg&#39;: &#39;some_arg&#39;}</span>
+<span class="sd">                        # other filters...</span>
+<span class="sd">                    ],</span>
+<span class="sd">                    &#39;limit&#39;: 100,</span>
+<span class="sd">                    &#39;order_by&#39;: [</span>
+<span class="sd">                        {&#39;field&#39;: &#39;some_field&#39;, &#39;direction&#39;: &#39;ASC&#39;},</span>
+<span class="sd">                        {&#39;field&#39;: &#39;some_other_field&#39;, &#39;direction&#39;: &#39;DESC&#39;},</span>
+<span class="sd">                    ]</span>
+<span class="sd">                }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ent_orm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orms</span><span class="p">[</span><span class="n">ent_type</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ent_orm</span><span class="o">.</span><span class="n">query_objects</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.update_ents"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.update_ents">[docs]</a>    <span class="k">def</span> <span class="nf">update_ents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ent_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">updates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">ent_orm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orms</span><span class="p">[</span><span class="n">ent_type</span><span class="p">]</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ent_orm</span><span class="o">.</span><span class="n">update_objects</span><span class="p">(</span>
+                <span class="n">updates</span><span class="o">=</span><span class="n">updates</span><span class="p">,</span>
+                <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                <span class="n">connection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.save_kvps"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.save_kvps">[docs]</a>    <span class="k">def</span> <span class="nf">save_kvps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kvps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_ents</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;kvp&#39;</span><span class="p">,</span> <span class="n">ents</span><span class="o">=</span><span class="n">kvps</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.create_kvp"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.create_kvp">[docs]</a>    <span class="k">def</span> <span class="nf">create_kvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kvp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_ent</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;kvp&#39;</span><span class="p">,</span> <span class="n">ent</span><span class="o">=</span><span class="n">kvp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.query_kvps"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.query_kvps">[docs]</a>    <span class="k">def</span> <span class="nf">query_kvps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_ents</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;kvp&#39;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.get_kvp"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.get_kvp">[docs]</a>    <span class="k">def</span> <span class="nf">get_kvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ent</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;kvp&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.update_kvp"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.update_kvp">[docs]</a>    <span class="k">def</span> <span class="nf">update_kvp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">where_prev_value</span><span class="o">=...</span><span class="p">):</span>
+        <span class="n">kvp_orm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orms</span><span class="p">[</span><span class="s1">&#39;kvp&#39;</span><span class="p">]</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">key</span><span class="p">}]</span>
+        <span class="k">if</span> <span class="n">where_prev_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="o">...</span><span class="p">:</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">where_prev_value</span><span class="p">})</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">update_result</span> <span class="o">=</span> <span class="n">kvp_orm</span><span class="o">.</span><span class="n">update_objects</span><span class="p">(</span>
+                <span class="n">query</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="n">filters</span><span class="p">},</span> <span class="n">updates</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">new_value</span><span class="p">},</span>
+                <span class="n">connection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span>
+            <span class="p">)</span>
+            <span class="k">assert</span> <span class="n">update_result</span><span class="p">[</span><span class="s1">&#39;rowcount&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">UpdateError</span><span class="p">()</span> <span class="kn">from</span> <span class="nn">exc</span></div>
+
+<div class="viewcode-block" id="SqliteDAO.flush"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.sqlite_dao.SqliteDAO.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,411 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.workers.batching_worker &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>jobman.workers.batching_worker</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jobman.workers.batching_worker</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">.base_worker</span> <span class="k">import</span> <span class="n">BaseWorker</span>
+
+
+<div class="viewcode-block" id="BatchingWorker"><a class="viewcode-back" href="../../../api/jobman.workers.html#jobman.workers.batching_worker.BatchingWorker">[docs]</a><span class="k">class</span> <span class="nc">BatchingWorker</span><span class="p">(</span><span class="n">BaseWorker</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">batchable_filters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_batchable_wait</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">target_batch_time</span><span class="o">=</span><span class="p">(</span><span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span><span class="p">),</span>
+                 <span class="n">default_job_time</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="mi">60</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batchable_filters</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">batchable_filters</span> <span class="ow">or</span> <span class="p">[])</span>
+            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_batchable_filters</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_batchable_wait</span> <span class="o">=</span> <span class="n">max_batchable_wait</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_batch_time</span> <span class="o">=</span> <span class="n">target_batch_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_job_time</span> <span class="o">=</span> <span class="n">default_job_time</span>
+
+    <span class="k">def</span> <span class="nf">_get_default_batchable_filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">job_spec_has_batchable</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_spec&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;batchable&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">job_spec_has_batchable</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BatchingWorker.tick"><a class="viewcode-back" href="../../../api/jobman.workers.html#jobman.workers.batching_worker.BatchingWorker.tick">[docs]</a>    <span class="k">def</span> <span class="nf">tick</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_engine</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_job_engine_states</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_executed_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mark_jobs_as_batchable</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_batchable_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_submit_pending_batch_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_submit_pending_jobs</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_process_executed_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executed_job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">process_fn</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_process_executed_job</span>
+        <span class="k">if</span> <span class="n">executed_job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_batch&#39;</span><span class="p">):</span>
+            <span class="n">process_fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_executed_batch_job</span>
+        <span class="n">process_fn</span><span class="p">(</span><span class="n">executed_job</span><span class="o">=</span><span class="n">executed_job</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="n">save</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_process_executed_batch_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executed_job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">subjob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_batch_subjobs</span><span class="p">(</span><span class="n">batch_job</span><span class="o">=</span><span class="n">executed_job</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_executed_job</span><span class="p">(</span><span class="n">executed_job</span><span class="o">=</span><span class="n">subjob</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_complete_job</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">executed_job</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="n">save</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_batch_subjobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">subjob_keys</span> <span class="o">=</span> <span class="n">batch_job</span><span class="p">[</span><span class="s1">&#39;batch_meta&#39;</span><span class="p">][</span><span class="s1">&#39;subjob_keys&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">query_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;IN&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">subjob_keys</span><span class="p">}]</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">_mark_jobs_as_batchable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">batch_candidates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_claim_batch_candidates</span><span class="p">()</span>
+        <span class="n">worker_jobs_to_update</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">batch_candidates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">worker_job</span> <span class="o">=</span> <span class="n">candidate</span><span class="p">[</span><span class="s1">&#39;worker_job&#39;</span><span class="p">]</span>
+            <span class="n">worker_job</span><span class="p">[</span><span class="s1">&#39;batchable&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_is_batchable</span><span class="p">(</span>
+                <span class="n">job</span><span class="o">=</span><span class="n">candidate</span><span class="p">[</span><span class="s1">&#39;jobman_job&#39;</span><span class="p">])</span>
+            <span class="n">worker_job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span>
+            <span class="n">worker_jobs_to_update</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">worker_job</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">worker_jobs_to_update</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_claim_batch_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">claimed_worker_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">claim_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span><span class="p">),</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;batchable&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;IS&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">})</span>
+        <span class="n">jobman_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_related_jobman_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">claimed_worker_jobs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">worker_job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]:</span> <span class="p">{</span>
+                <span class="s1">&#39;worker_job&#39;</span><span class="p">:</span> <span class="n">worker_job</span><span class="p">,</span>
+                <span class="s1">&#39;jobman_job&#39;</span><span class="p">:</span> <span class="n">jobman_jobs</span><span class="p">[</span><span class="n">worker_job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">worker_job</span> <span class="ow">in</span> <span class="n">claimed_worker_jobs</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_job_is_batchable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">filter_</span><span class="p">(</span><span class="n">job</span><span class="p">)</span> <span class="k">for</span> <span class="n">filter_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">batchable_filters</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_process_batchable_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">batchable_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_claim_batchable_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batchify_jobs</span><span class="p">(</span><span class="n">batchable_jobs</span><span class="o">=</span><span class="n">batchable_jobs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_claim_batchable_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">age_threshold</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_batchable_wait</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">claim_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;batchable&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span><span class="p">),</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;modified&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">age_threshold</span><span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">_batchify_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchable_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">subjob_partitions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_batch_subjob_partitions</span><span class="p">(</span>
+            <span class="n">batchable_jobs</span><span class="o">=</span><span class="n">batchable_jobs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">subjob_partition</span> <span class="ow">in</span> <span class="n">subjob_partitions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_make_batch_job</span><span class="p">(</span><span class="n">subjobs</span><span class="o">=</span><span class="n">subjob_partition</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_batch_subjob_partitions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchable_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">partitions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">current_partition</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">current_partition_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">keyed_jobman_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_related_jobman_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">batchable_jobs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">batchable_job</span> <span class="ow">in</span> <span class="n">batchable_jobs</span><span class="p">:</span>
+            <span class="n">jobman_job</span> <span class="o">=</span> <span class="n">keyed_jobman_jobs</span><span class="p">[</span><span class="n">batchable_job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span>
+            <span class="n">current_partition</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batchable_job</span><span class="p">)</span>
+            <span class="n">current_partition_time</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job_time</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">jobman_job</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_partition_time</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_batch_time</span><span class="p">:</span>
+                <span class="n">partitions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_partition</span><span class="p">)</span>
+                <span class="n">current_partition</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">current_partition_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">current_partition</span><span class="p">:</span>
+            <span class="n">partitions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_partition</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">partitions</span>
+
+    <span class="k">def</span> <span class="nf">_get_job_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">job_time</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">][</span><span class="s1">&#39;resources&#39;</span><span class="p">][</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">job_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">job_time</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_job_time</span>
+
+    <span class="k">def</span> <span class="nf">_make_batch_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subjobs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">batch_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">generate_key</span><span class="p">()</span>
+        <span class="n">patched_subjobs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="o">**</span><span class="n">subjob</span><span class="p">,</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;PENDING_BATCH&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;parent_batch_key&#39;</span><span class="p">:</span> <span class="n">batch_key</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">subjob</span> <span class="ow">in</span> <span class="n">subjobs</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">patched_subjobs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">batch_key</span><span class="p">,</span>
+            <span class="s1">&#39;batch_meta&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;subjob_keys&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">subjob</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">subjob</span> <span class="ow">in</span> <span class="n">subjobs</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;is_batch&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">_submit_pending_batch_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pending_batch_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_claim_pending_batch_jobs</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">pending_batch_jobs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">engine_meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submit_batch_job_to_engine</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+                <span class="n">job</span><span class="p">[</span><span class="s1">&#39;engine_meta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">engine_meta</span>
+                <span class="n">job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span>
+            <span class="k">except</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">SubmissionError</span><span class="p">:</span>
+                <span class="n">job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">FAILED</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;SubmissionError&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">pending_batch_jobs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_claim_pending_batch_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">claim_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span><span class="p">),</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;is_batch&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+            <span class="p">]</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">_submit_batch_job_to_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">worker_subjobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_batch_subjobs</span><span class="p">(</span><span class="n">batch_job</span><span class="o">=</span><span class="n">job</span><span class="p">)</span>
+        <span class="n">jobman_subjobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_related_jobman_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">worker_subjobs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">submit_batch_job</span><span class="p">(</span>
+            <span class="n">batch_job</span><span class="o">=</span><span class="n">job</span><span class="p">,</span>
+            <span class="n">subjobs</span><span class="o">=</span><span class="n">jobman_subjobs</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+            <span class="n">extra_cfgs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfgs</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_claim_pending_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exclude_batchable_jobs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span>
+                <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">exclude_batchable_jobs</span><span class="p">:</span>
+            <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;batchable&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;! =&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">claim_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="n">filters</span><span class="p">,</span>
+            <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="p">})</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

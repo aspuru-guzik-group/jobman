@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.dao.jobs_dao_mixin &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>jobman.dao.jobs_dao_mixin</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jobman.dao.jobs_dao_mixin</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">jobman</span> <span class="k">import</span> <span class="n">constants</span>
+
+
+<div class="viewcode-block" id="JobsDaoMixin"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin">[docs]</a><span class="k">class</span> <span class="nc">JobsDaoMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Common methods used by daos that work with jobs.&quot;&quot;&quot;</span>
+
+    <span class="n">JOB_STATUSES</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">JOB_STATUSES</span>
+
+<div class="viewcode-block" id="JobsDaoMixin.create_job"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.create_job">[docs]</a>    <span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a job record.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            job: a job dict. Format of dict depends on schema for DAO.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            job record from DAO.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_ent</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="n">ent</span><span class="o">=</span><span class="n">job</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobsDaoMixin.save_jobs"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.save_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">save_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save jobs to DAO.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            jobs: A list of job dicts.</span>
+<span class="sd">            replace: If True will overrwrite existing records. If False will</span>
+<span class="sd">                raise errors for key collisions.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            saved jobs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_ents</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="n">ents</span><span class="o">=</span><span class="n">jobs</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobsDaoMixin.query_jobs"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">query_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;query DAO for jobs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query: A query dict per</span>
+<span class="sd">                :meth:`jobman.dao.sqlite_dao.SqliteDAO.query_ents`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a list of job records matching query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_ents</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobsDaoMixin.update_jobs"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.update_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">update_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">updates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update jobs which match a query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query: A query dict per :meth:`query_jobs`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a dict with a &#39;rowcount&#39; item indicating how many records were</span>
+<span class="sd">                updated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_ents</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="n">updates</span><span class="o">=</span><span class="n">updates</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobsDaoMixin.claim_jobs"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.claim_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">claim_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Claim jobs which match a query.</span>
+
+<span class="sd">        Sets status to :attr:`JOB_STATUSES.CLAIMED`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query: A query dict per :meth:`query_jobs`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a list of claimed jobs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">jobs_to_claim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+        <span class="n">job_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs_to_claim</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_jobs</span><span class="p">(</span>
+            <span class="n">updates</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">CLAIMED</span><span class="p">,</span>
+                <span class="s1">&#39;modified&#39;</span><span class="p">:</span> <span class="n">now</span>
+            <span class="p">},</span>
+            <span class="n">query</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;modified&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">now</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;IN&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">job_keys</span><span class="p">}</span>
+                <span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">claimed_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">CLAIMED</span><span class="p">),</span>
+                <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;IN&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">job_keys</span><span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="n">claimed_jobs</span></div>
+
+<div class="viewcode-block" id="JobsDaoMixin.get_job"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_job">[docs]</a>    <span class="k">def</span> <span class="nf">get_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a job that has the given key.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            key: job key</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            job_record</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ents</span><span class="p">(</span><span class="n">ent_type</span><span class="o">=</span><span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="JobsDaoMixin.get_jobs_for_status"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_jobs_for_status">[docs]</a>    <span class="k">def</span> <span class="nf">get_jobs_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get jobs that have a given status.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            status: job status</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            job_records</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)]</span>
+        <span class="p">})</span></div>
+
+<div class="viewcode-block" id="JobsDaoMixin.generate_status_filter"><a class="viewcode-back" href="../../../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.generate_status_filter">[docs]</a>    <span class="k">def</span> <span class="nf">generate_status_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate a status filter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            status: job status</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            status_filter_dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">status</span><span class="p">}</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

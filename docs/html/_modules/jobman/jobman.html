@@ -1,0 +1,734 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.jobman &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>jobman.jobman</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jobman.jobman</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">collections.abc</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">debug_utils</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">dot_spec_loader</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">logging_utils</span>
+<span class="kn">from</span> <span class="nn">.workers.base_worker</span> <span class="k">import</span> <span class="n">BaseWorker</span>
+
+
+<div class="viewcode-block" id="CfgParams"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.CfgParams">[docs]</a><span class="k">class</span> <span class="nc">CfgParams</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;JobMan Config Parameters&quot;&quot;&quot;</span>
+
+    <span class="n">auto_initialize</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="sd">&quot;&quot;&quot;If True then create jobman db and initialize sources/engines.&quot;&quot;&quot;</span>
+
+    <span class="n">dao</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="sd">&quot;&quot;&quot;An instance of a JobManDAO. Usually only used for testing.&quot;&quot;&quot;</span>
+
+    <span class="n">db_uri</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="sd">&quot;&quot;&quot;A database uri.</span>
+
+<span class="sd">    Currently can only use Sqlite uris. For example,</span>
+<span class="sd">    &#39;sqlite://&#39; for an in-memory db, or &#39;sqlite:////absolute/path/to/db.sqlite&#39;</span>
+<span class="sd">    for a file-based db.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">debug</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="sd">&quot;&quot;&quot;set to True to operate in debug mode. Logs more verbose statements.&quot;&quot;&quot;</span>
+
+    <span class="n">label</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="sd">&quot;&quot;&quot;A label to identify this jobman instance. Useful for logging.&quot;&quot;&quot;</span>
+
+    <span class="n">logging_cfg</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="sd">&quot;&quot;&quot;logging config, per :meth:`jobman.utils.logging_utils.generate_logger`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">source_specs</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="sd">&quot;&quot;&quot;A dict of keyed source specs.</span>
+
+<span class="sd">    A source spec is a dict with this shape:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">           {</span>
+<span class="sd">               # a dot_spec path to a source class</span>
+<span class="sd">               &#39;source_class&#39;: &#39;jobman.sources.dir_source:DirSource&#39;</span>
+<span class="sd">               # a dict of params to pass as kwargs when instantiating the</span>
+<span class="sd">               # source.</span>
+<span class="sd">               &#39;source_params&#39;: {</span>
+<span class="sd">                   &#39;root_path&#39;: self.root_path</span>
+<span class="sd">               }</span>
+<span class="sd">           }</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">worker_specs</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="sd">&quot;&quot;&quot;A dict of keyed worker specs.</span>
+
+<span class="sd">    A worker spec is a dict with this shape:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">           {</span>
+<span class="sd">               # a dot_spec path to a worker class</span>
+<span class="sd">               &#39;worker_class&#39;: &#39;jobman.workers.base_worker:BaseWorker&#39;</span>
+<span class="sd">               # a dict of params to pass as kwargs when instantiating the</span>
+<span class="sd">               # worker.</span>
+<span class="sd">               &#39;worker_params&#39;: {</span>
+<span class="sd">                    # a spec for the worker&#39;s engine.</span>
+<span class="sd">                    &#39;engine_spec&#39;: {</span>
+<span class="sd">                        &#39;engine_class&#39;: (</span>
+<span class="sd">                            &#39;jobman.engines.local_engine:LocalEngine&#39;</span>
+<span class="sd">                        ),</span>
+<span class="sd">                        &#39;engine_params&#39;: {</span>
+<span class="sd">                            &#39;scratch_dir&#39;: self.scratch_dir,</span>
+<span class="sd">                            # This is usually where engine configs go.</span>
+<span class="sd">                            &#39;cfg&#39;: {</span>
+<span class="sd">                                &#39;MY_EXE&#39;: &#39;/my/cluster/path/to/my_exe&#39;,</span>
+<span class="sd">                                # other cluster-specific params...</span>
+<span class="sd">                            }</span>
+<span class="sd">                        }</span>
+<span class="sd">                    },</span>
+<span class="sd">                    # other worker params...</span>
+<span class="sd">               }</span>
+<span class="sd">           }</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CfgParams.get_cfg_infos"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.CfgParams.get_cfg_infos">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_cfg_infos</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="n">infos</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;get_cfg_infos&#39;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">infos</span></div></div>
+
+
+<div class="viewcode-block" id="JobMan"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.JobMan">[docs]</a><span class="k">class</span> <span class="nc">JobMan</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="JobMan.SubmissionError"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.JobMan.SubmissionError">[docs]</a>    <span class="k">class</span> <span class="nc">SubmissionError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="n">job_spec_defaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;entrypoint&#39;</span><span class="p">:</span> <span class="s1">&#39;./entrypoint.sh&#39;</span><span class="p">}</span>
+    <span class="sd">&quot;&quot;&quot;Default job_spec values.&quot;&quot;&quot;</span>
+
+    <span class="n">JOB_STATUSES</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">JOB_STATUSES</span>
+
+<div class="viewcode-block" id="JobMan.from_cfg"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.JobMan.from_cfg">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cfg</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a JobMan instance from a cfg.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cfg: can be an object or dict. Keys or attrs per</span>
+<span class="sd">                 :class:`CfgParams`.</span>
+<span class="sd">            overrides: dict of cfg overrides</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            JobMan instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">kwargs_from_cfg</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">CfgParams</span><span class="o">.</span><span class="n">get_cfg_infos</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">kwargs_from_cfg</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">dot_spec_loader</span><span class="o">.</span><span class="n">get_attr_or_item</span><span class="p">(</span>
+                    <span class="n">obj</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">param</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">kwargs_from_cfg</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">(</span><span class="n">overrides</span> <span class="ow">or</span> <span class="p">{}),</span>
+            <span class="s1">&#39;cfg&#39;</span><span class="p">:</span> <span class="n">cfg</span>
+        <span class="p">}</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="o">...</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">JobMan</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">job_spec_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">worker_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dao</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">db_uri</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auto_initialize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">logging_cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">debug</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Central JobMan object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            label: per :attr:`CfgParams.label` .</span>
+<span class="sd">            cfg: cfg object or dict.</span>
+<span class="sd">            source_specs: per :attr:`CfgParams.source_specs` .</span>
+<span class="sd">            job_spec_defaults: per :attr:`job_spec_defaults` .</span>
+<span class="sd">            worker_specs: per :attr:`CfgParams.worker_specs` .</span>
+<span class="sd">            dao: per :attr:`CfgParams.dao` .</span>
+<span class="sd">            db_uri: per :attr:`CfgParams.db_uri` .</span>
+<span class="sd">            auto_initialize: per :attr:`CfgParams.auto_initialize` .</span>
+<span class="sd">            logging_cfg: per :attr:`CfgParams.logging_cfg` .</span>
+<span class="sd">            debug: per :attr:`CfgParams.debug` .</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;JOBMAN_DEBUG&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_logger</span><span class="p">(</span><span class="n">logging_cfg</span><span class="o">=</span><span class="n">logging_cfg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_specs</span> <span class="o">=</span> <span class="n">source_specs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_specs</span> <span class="o">=</span> <span class="n">worker_specs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span> <span class="o">=</span> <span class="n">dao</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">db_uri</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span> <span class="k">else</span> <span class="n">db_uri</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job_spec_defaults</span> <span class="o">=</span> <span class="n">job_spec_defaults</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_spec_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kvps</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">auto_initialize</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_generate_logger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logging_cfg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logging_cfg</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="p">(</span><span class="n">logging_cfg</span> <span class="ow">or</span> <span class="p">{})}</span>
+        <span class="n">default_name</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
+        <span class="p">)</span>
+        <span class="n">logging_cfg</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">default_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="n">logging_cfg</span><span class="p">[</span><span class="s1">&#39;add_stream_handler&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logging_cfg</span><span class="p">[</span><span class="s1">&#39;level&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;DEBUG&#39;</span>
+        <span class="k">return</span> <span class="n">logging_utils</span><span class="o">.</span><span class="n">generate_logger</span><span class="p">(</span><span class="n">logging_cfg</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JobMan.initialize"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.JobMan.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize dao, sources, and workers.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_dao</span><span class="p">(</span>
+            <span class="n">db_uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span><span class="p">,</span>
+            <span class="n">initialize</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_specs_to_sources</span><span class="p">(</span>
+            <span class="n">source_specs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">source_specs</span><span class="p">,</span>
+            <span class="n">initialize</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_specs_to_workers</span><span class="p">(</span>
+            <span class="n">worker_specs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_specs</span><span class="p">,</span>
+            <span class="n">initialize</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_debug_locals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span> <span class="n">debug_utils</span><span class="o">.</span><span class="n">debug_locals</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">_generate_dao</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_uri</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialize</span><span class="o">=...</span><span class="p">):</span>
+        <span class="n">db_uri</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">db_uri</span> <span class="ow">or</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/jobman.sqlite.db&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">.dao.jobman_sqlite_dao</span> <span class="k">import</span> <span class="n">JobmanSqliteDAO</span>
+        <span class="n">dao_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;db_uri&#39;</span><span class="p">:</span> <span class="n">db_uri</span><span class="p">,</span>
+            <span class="s1">&#39;logger&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">initialize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="o">...</span><span class="p">:</span>
+            <span class="n">dao_kwargs</span><span class="p">[</span><span class="s1">&#39;initialize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">initialize</span>
+        <span class="k">return</span> <span class="n">JobmanSqliteDAO</span><span class="p">(</span><span class="o">**</span><span class="n">dao_kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_source_specs_to_sources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialize</span><span class="o">=...</span><span class="p">):</span>
+        <span class="n">sources</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">source_key</span><span class="p">,</span> <span class="n">source_spec</span> <span class="ow">in</span> <span class="p">(</span><span class="n">source_specs</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">sources</span><span class="p">[</span><span class="n">source_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_spec_to_source</span><span class="p">(</span>
+                <span class="n">source_key</span><span class="o">=</span><span class="n">source_key</span><span class="p">,</span>
+                <span class="n">source_spec</span><span class="o">=</span><span class="n">source_spec</span><span class="p">,</span>
+                <span class="n">initialize</span><span class="o">=</span><span class="n">initialize</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">sources</span>
+
+    <span class="k">def</span> <span class="nf">_source_spec_to_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initialize</span><span class="o">=...</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_spec</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">source_class</span> <span class="o">=</span> <span class="n">source_spec</span><span class="p">[</span><span class="s1">&#39;source_class&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_class</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">source_class</span> <span class="o">=</span> <span class="n">dot_spec_loader</span><span class="o">.</span><span class="n">load_from_dot_spec</span><span class="p">(</span><span class="n">source_class</span><span class="p">)</span>
+            <span class="n">source_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">source_key</span><span class="p">,</span>
+                <span class="s1">&#39;jobman&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+                <span class="o">**</span><span class="p">(</span><span class="n">source_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;source_params&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}),</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">initialize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="o">...</span><span class="p">:</span>
+                <span class="n">source_kwargs</span><span class="p">[</span><span class="s1">&#39;initialize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">initialize</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">source_class</span><span class="p">(</span><span class="o">**</span><span class="n">source_kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">source_spec</span>
+            <span class="n">source</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">source_key</span>
+            <span class="n">source</span><span class="o">.</span><span class="n">jobman</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="k">if</span> <span class="n">initialize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="o">...</span><span class="p">:</span>
+                <span class="n">source</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">source</span>
+
+    <span class="k">def</span> <span class="nf">_worker_specs_to_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_specs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initialize</span><span class="o">=...</span><span class="p">):</span>
+        <span class="n">workers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">worker_key</span><span class="p">,</span> <span class="n">worker_spec</span> <span class="ow">in</span> <span class="p">(</span><span class="n">worker_specs</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">workers</span><span class="p">[</span><span class="n">worker_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker_spec_to_worker</span><span class="p">(</span>
+                <span class="n">worker_key</span><span class="o">=</span><span class="n">worker_key</span><span class="p">,</span>
+                <span class="n">worker_spec</span><span class="o">=</span><span class="n">worker_spec</span><span class="p">,</span>
+                <span class="n">initialize</span><span class="o">=</span><span class="n">initialize</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">workers</span>
+
+    <span class="k">def</span> <span class="nf">_worker_spec_to_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">worker_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initialize</span><span class="o">=...</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">worker_spec</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">worker_class</span> <span class="o">=</span> <span class="n">worker_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;worker_class&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">BaseWorker</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">worker_class</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">worker_class</span> <span class="o">=</span> <span class="n">dot_spec_loader</span><span class="o">.</span><span class="n">load_from_dot_spec</span><span class="p">(</span><span class="n">worker_class</span><span class="p">)</span>
+            <span class="n">worker_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">worker_key</span><span class="p">,</span>
+                <span class="s1">&#39;db_uri&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">db_uri</span><span class="p">,</span>
+                <span class="o">**</span><span class="p">(</span><span class="n">worker_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;worker_params&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">initialize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="o">...</span><span class="p">:</span>
+                <span class="n">worker_kwargs</span><span class="p">[</span><span class="s1">&#39;initialize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">initialize</span>
+            <span class="n">worker</span> <span class="o">=</span> <span class="n">worker_class</span><span class="p">(</span><span class="o">**</span><span class="n">worker_kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">worker</span> <span class="o">=</span> <span class="n">worker_spec</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">worker_key</span>
+            <span class="k">if</span> <span class="n">initialize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="o">...</span><span class="p">:</span>
+                <span class="n">worker</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">:</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">cfgs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">])</span>
+        <span class="n">worker</span><span class="o">.</span><span class="n">jobman</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">worker</span>
+
+<div class="viewcode-block" id="JobMan.tick"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.JobMan.tick">[docs]</a>    <span class="k">def</span> <span class="nf">tick</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tick JobMan components.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_workers</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_running_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_process_executed_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_submit_pending_jobs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_sources</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_tick_workers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span> <span class="n">worker</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>  <span class="c1"># noqa</span>
+
+    <span class="k">def</span> <span class="nf">_update_running_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">running_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_jobs_for_status</span><span class="p">(</span>
+            <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">running_jobs</span><span class="p">:</span> <span class="k">return</span>  <span class="c1"># noqa</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_job_worker_states</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">running_jobs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">running_jobs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_job_worker_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">jobs</span><span class="p">:</span> <span class="k">return</span>  <span class="c1"># noqa</span>
+        <span class="n">jobs_by_worker_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group_jobs_by_worker_key</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="n">jobs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">worker_key</span><span class="p">,</span> <span class="n">jobs_for_worker_key</span> <span class="ow">in</span> <span class="n">jobs_by_worker_key</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_job_worker_states_for_worker</span><span class="p">(</span>
+                <span class="n">jobs</span><span class="o">=</span><span class="n">jobs_for_worker_key</span><span class="p">,</span> <span class="n">worker</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">[</span><span class="n">worker_key</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_group_jobs_by_worker_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">jobs_by_worker</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
+            <span class="n">jobs_by_worker</span><span class="p">[</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;worker_key&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jobs_by_worker</span>
+
+    <span class="k">def</span> <span class="nf">_update_job_worker_states_for_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">worker</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">worker_metas</span> <span class="o">=</span> <span class="p">{</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]:</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;worker_meta&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">}</span>
+        <span class="n">worker_states</span> <span class="o">=</span> <span class="n">worker</span><span class="o">.</span><span class="n">get_keyed_states</span><span class="p">(</span><span class="n">keyed_metas</span><span class="o">=</span><span class="n">worker_metas</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
+            <span class="n">worker_state</span> <span class="o">=</span> <span class="n">worker_states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">worker_state</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_is_orphaned</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">):</span>
+                    <span class="n">job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">EXECUTED</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">job</span><span class="p">[</span><span class="s1">&#39;worker_state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">worker_state</span>
+                <span class="n">job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">worker_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_job_is_orphaned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_job_age</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">submission_grace_period</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_job_age</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">job</span><span class="p">[</span><span class="s1">&#39;created&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_process_executed_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">claimed_executed_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">claim_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">EXECUTED</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="mi">100</span>
+        <span class="p">})</span>
+        <span class="k">for</span> <span class="n">executed_job</span> <span class="ow">in</span> <span class="n">claimed_executed_jobs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_process_executed_job</span><span class="p">(</span><span class="n">executed_job</span><span class="o">=</span><span class="n">executed_job</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">claimed_executed_jobs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_process_executed_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executed_job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_has_completed_checkpoint</span><span class="p">(</span><span class="n">executed_job</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_complete_job</span><span class="p">(</span><span class="n">executed_job</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="n">save</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="s2">&quot;No completed checkpoint file found for job.&quot;</span>
+                        <span class="s2">&quot; job_dir was: &#39;</span><span class="si">{job_dir}</span><span class="s2">&#39;.&quot;</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">job_dir</span><span class="o">=</span><span class="p">(</span><span class="n">executed_job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;job_spec&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dir&#39;</span><span class="p">))</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;warning: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">error</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fail_job</span><span class="p">(</span><span class="n">executed_job</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="p">[</span><span class="n">error</span><span class="p">],</span> <span class="n">save</span><span class="o">=</span><span class="n">save</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_job_has_completed_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">][</span><span class="s1">&#39;dir&#39;</span><span class="p">],</span>
+            <span class="n">constants</span><span class="o">.</span><span class="n">CHECKPOINT_FILE_NAMES</span><span class="p">[</span><span class="s1">&#39;completed&#39;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_complete_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">COMPLETED</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="p">[</span><span class="n">job</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_fail_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">job</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">FAILED</span>
+        <span class="n">job</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">errors</span>
+        <span class="k">if</span> <span class="n">save</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="p">[</span><span class="n">job</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_submit_pending_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tallies</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">claimed_pending_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">claim_jobs</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">generate_status_filter</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span><span class="p">)</span>
+            <span class="p">],</span>
+            <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="mi">100</span>
+        <span class="p">})</span>
+        <span class="n">unsubmittable_jobs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">claimed_pending_jobs</span><span class="p">:</span>
+            <span class="n">tallies</span><span class="p">[</span><span class="s1">&#39;visited&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">submitted</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">worker</span><span class="o">.</span><span class="n">can_accept_job</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_submit_job_to_worker</span><span class="p">(</span>
+                                <span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">,</span> <span class="n">worker</span><span class="o">=</span><span class="n">worker</span><span class="p">)</span>
+                            <span class="n">submitted</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+                    <span class="k">except</span> <span class="n">worker</span><span class="o">.</span><span class="n">IncompatibleJobError</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">submitted</span><span class="p">:</span>
+                    <span class="n">tallies</span><span class="p">[</span><span class="s1">&#39;submitted&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">unsubmittable_jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+            <span class="k">except</span> <span class="bp">self</span><span class="o">.</span><span class="n">SubmissionError</span><span class="p">:</span>
+                <span class="n">tallies</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;SubmissionError&#39;</span><span class="p">)</span>
+        <span class="n">tallies</span><span class="p">[</span><span class="s1">&#39;unsubmittable&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unsubmittable_jobs</span><span class="p">)</span>
+        <span class="n">unsubmittable_job_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">unsubmittable_jobs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">update_jobs</span><span class="p">(</span>
+            <span class="n">updates</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span><span class="p">},</span>
+            <span class="n">query</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;IN&#39;</span><span class="p">,</span> <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="n">unsubmittable_job_keys</span><span class="p">}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">tallies</span>
+
+    <span class="k">def</span> <span class="nf">_submit_job_to_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">worker</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">worker_meta</span> <span class="o">=</span> <span class="n">worker</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">)</span>
+            <span class="n">job</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s1">&#39;worker_key&#39;</span><span class="p">:</span> <span class="n">worker</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
+                <span class="s1">&#39;worker_meta&#39;</span><span class="p">:</span> <span class="n">worker_meta</span><span class="p">,</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span>
+            <span class="p">})</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="p">[</span><span class="n">job</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">job</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">FAILED</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">save_jobs</span><span class="p">(</span><span class="n">jobs</span><span class="o">=</span><span class="p">[</span><span class="n">job</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">SubmissionError</span><span class="p">()</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+    <span class="k">def</span> <span class="nf">_tick_sources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sources</span><span class="o">.</span><span class="n">values</span><span class="p">():</span> <span class="n">source</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>  <span class="c1"># noqa</span>
+
+<div class="viewcode-block" id="JobMan.submit_job_dir"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.JobMan.submit_job_dir">[docs]</a>    <span class="k">def</span> <span class="nf">submit_job_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_meta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">job_spec_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">job_spec_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Submit a job dir.</span>
+
+<span class="sd">        Creates a job_spec for dir. Attempts to read job_spec file from dir</span>
+<span class="sd">        if provided.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            job_dir: absolute path to job_dir</span>
+<span class="sd">            source_key: per</span>
+<span class="sd">                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key`</span>
+<span class="sd">            source_meta: per</span>
+<span class="sd">                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta`</span>
+<span class="sd">            job_spec_defaults: default values for job_spec that will be</span>
+<span class="sd">                generated for dir.</span>
+<span class="sd">            job_spec_overrides: job_spec value overrides. Will be set after any</span>
+<span class="sd">                job_spec values are read from job_dir.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            return per :meth:`submit_job_spec`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_job_spec</span><span class="p">(</span>
+            <span class="n">job_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_job_spec_for_job_dir</span><span class="p">(</span>
+                <span class="n">job_dir</span><span class="o">=</span><span class="n">job_dir</span><span class="p">,</span>
+                <span class="n">defaults</span><span class="o">=</span><span class="n">job_spec_defaults</span><span class="p">,</span>
+                <span class="n">overrides</span><span class="o">=</span><span class="n">job_spec_overrides</span>
+            <span class="p">),</span>
+            <span class="n">source_key</span><span class="o">=</span><span class="n">source_key</span><span class="p">,</span>
+            <span class="n">source_meta</span><span class="o">=</span><span class="n">source_meta</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_job_spec_for_job_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                       <span class="n">overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;dir&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">job_dir</span><span class="p">),</span>
+            <span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">job_spec_defaults</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">defaults</span> <span class="ow">or</span> <span class="p">{})},</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_load_job_spec_from_job_dir</span><span class="p">(</span><span class="n">job_dir</span><span class="o">=</span><span class="n">job_dir</span><span class="p">),</span>
+            <span class="o">**</span><span class="p">(</span><span class="n">overrides</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_load_job_spec_from_job_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">job_spec</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">job_spec_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">job_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">constants</span><span class="o">.</span><span class="n">JOB_SPEC_FILE_NAME</span>
+        <span class="k">if</span> <span class="n">job_spec_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">job_spec_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">job_spec</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">job_spec</span>
+
+<div class="viewcode-block" id="JobMan.submit_job_spec"><a class="viewcode-back" href="../../api/jobman.html#jobman.jobman.JobMan.submit_job_spec">[docs]</a>    <span class="k">def</span> <span class="nf">submit_job_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">source_meta</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Submit a job spec.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            job_spec: per</span>
+<span class="sd">                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.job_spec`</span>
+<span class="sd">            source_key: per</span>
+<span class="sd">                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key`</span>
+<span class="sd">            source_meta: per</span>
+<span class="sd">                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta`</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            return job record per</span>
+<span class="sd">                :class:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">create_job</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;job_spec&#39;</span><span class="p">:</span> <span class="n">job_spec</span><span class="p">,</span>
+                <span class="s1">&#39;source_key&#39;</span><span class="p">:</span> <span class="n">source_key</span><span class="p">,</span>
+                <span class="s1">&#39;source_meta&#39;</span><span class="p">:</span> <span class="n">source_meta</span><span class="p">,</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">JOB_STATUSES</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span>
+            <span class="p">})</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">SubmissionError</span><span class="p">()</span> <span class="kn">from</span> <span class="nn">exc</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

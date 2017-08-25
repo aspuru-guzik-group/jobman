@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.batch_builders package &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="jobman package" href="jobman.html"/>
+        <link rel="next" title="jobman.dao package" href="jobman.dao.html"/>
+        <link rel="prev" title="jobman package" href="jobman.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="jobman.html">jobman package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">jobman.batch_builders package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.batch_builders.base_batch_builder">jobman.batch_builders.base_batch_builder module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.batch_builders.bash_batch_builder">jobman.batch_builders.bash_batch_builder module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-jobman.batch_builders.slurm_batch_builder">jobman.batch_builders.slurm_batch_builder module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.dao.html">jobman.dao package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.engines.html">jobman.engines package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.sources.html">jobman.sources package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.utils.html">jobman.utils package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jobman.workers.html">jobman.workers package</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../api.html">API Documentation</a> &raquo;</li>
+        
+          <li><a href="jobman.html">jobman package</a> &raquo;</li>
+        
+      <li>jobman.batch_builders package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <!-- User defined GitHub URL -->
+              <a href="https://github.com/aspuru-guzik-group/jobman/blob/master/docs/sphinx/api/jobman.batch_builders.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-jobman.batch_builders">
+<span id="jobman-batch-builders-package"></span><h1>jobman.batch_builders package<a class="headerlink" href="#module-jobman.batch_builders" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-jobman.batch_builders.base_batch_builder">
+<span id="jobman-batch-builders-base-batch-builder-module"></span><h2>jobman.batch_builders.base_batch_builder module<a class="headerlink" href="#module-jobman.batch_builders.base_batch_builder" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.batch_builders.base_batch_builder.BaseBatchBuilder">
+<em class="property">class </em><code class="descclassname">jobman.batch_builders.base_batch_builder.</code><code class="descname">BaseBatchBuilder</code><a class="reference internal" href="../_modules/jobman/batch_builders/base_batch_builder.html#BaseBatchBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.batch_builders.base_batch_builder.BaseBatchBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="jobman.batch_builders.base_batch_builder.BaseBatchBuilder.ENTRYPOINT_NAME">
+<code class="descname">ENTRYPOINT_NAME</code><em class="property"> = 'entrypoint.sh'</em><a class="headerlink" href="#jobman.batch_builders.base_batch_builder.BaseBatchBuilder.ENTRYPOINT_NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.batch_builders.base_batch_builder.BaseBatchBuilder.SUBJOBS_DIR_NAME">
+<code class="descname">SUBJOBS_DIR_NAME</code><em class="property"> = 'subjobs'</em><a class="headerlink" href="#jobman.batch_builders.base_batch_builder.BaseBatchBuilder.SUBJOBS_DIR_NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="jobman.batch_builders.base_batch_builder.BaseBatchBuilder.build_batch_jobdir">
+<code class="descname">build_batch_jobdir</code><span class="sig-paren">(</span><em>batch_job=None</em>, <em>subjobs=None</em>, <em>dest=None</em>, <em>extra_cfgs=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/batch_builders/base_batch_builder.html#BaseBatchBuilder.build_batch_jobdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.batch_builders.base_batch_builder.BaseBatchBuilder.build_batch_jobdir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.batch_builders.base_batch_builder.BaseBatchBuilder.entrypoint_path">
+<code class="descname">entrypoint_path</code><a class="headerlink" href="#jobman.batch_builders.base_batch_builder.BaseBatchBuilder.entrypoint_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.batch_builders.base_batch_builder.BaseBatchBuilder.std_log_file_names">
+<code class="descname">std_log_file_names</code><em class="property"> = {'stdout': 'stdout', 'stderr': 'stderr'}</em><a class="headerlink" href="#jobman.batch_builders.base_batch_builder.BaseBatchBuilder.std_log_file_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.batch_builders.bash_batch_builder">
+<span id="jobman-batch-builders-bash-batch-builder-module"></span><h2>jobman.batch_builders.bash_batch_builder module<a class="headerlink" href="#module-jobman.batch_builders.bash_batch_builder" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.batch_builders.bash_batch_builder.BashBatchBuilder">
+<em class="property">class </em><code class="descclassname">jobman.batch_builders.bash_batch_builder.</code><code class="descname">BashBatchBuilder</code><span class="sig-paren">(</span><em>*args</em>, <em>default_preamble=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/batch_builders/bash_batch_builder.html#BashBatchBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.batch_builders.bash_batch_builder.BashBatchBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.batch_builders.base_batch_builder.BaseBatchBuilder" title="jobman.batch_builders.base_batch_builder.BaseBatchBuilder"><code class="xref py py-class docutils literal"><span class="pre">jobman.batch_builders.base_batch_builder.BaseBatchBuilder</span></code></a></p>
+<dl class="exception">
+<dt id="jobman.batch_builders.bash_batch_builder.BashBatchBuilder.CfgSpecAggregationError">
+<em class="property">exception </em><code class="descname">CfgSpecAggregationError</code><a class="reference internal" href="../_modules/jobman/batch_builders/bash_batch_builder.html#BashBatchBuilder.CfgSpecAggregationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.batch_builders.bash_batch_builder.BashBatchBuilder.CfgSpecAggregationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="jobman.batch_builders.bash_batch_builder.BashBatchBuilder.CfgSpecMergeError">
+<em class="property">exception </em><code class="descname">CfgSpecMergeError</code><a class="reference internal" href="../_modules/jobman/batch_builders/bash_batch_builder.html#BashBatchBuilder.CfgSpecMergeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.batch_builders.bash_batch_builder.BashBatchBuilder.CfgSpecMergeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.batch_builders.bash_batch_builder.BashBatchBuilder.DEFAULT_PREAMBLE">
+<code class="descname">DEFAULT_PREAMBLE</code><em class="property"> = 'PARALLEL=${PARALLEL:-/bin/bash}'</em><a class="headerlink" href="#jobman.batch_builders.bash_batch_builder.BashBatchBuilder.DEFAULT_PREAMBLE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="jobman.batch_builders.bash_batch_builder.BashBatchBuilder.InvalidPreambleError">
+<em class="property">exception </em><code class="descname">InvalidPreambleError</code><span class="sig-paren">(</span><em>msg=None</em>, <em>preamble=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/batch_builders/bash_batch_builder.html#BashBatchBuilder.InvalidPreambleError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.batch_builders.bash_batch_builder.BashBatchBuilder.InvalidPreambleError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jobman.batch_builders.bash_batch_builder.BashBatchBuilder.subjob_commands_path">
+<code class="descname">subjob_commands_path</code><a class="headerlink" href="#jobman.batch_builders.bash_batch_builder.BashBatchBuilder.subjob_commands_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-jobman.batch_builders.slurm_batch_builder">
+<span id="jobman-batch-builders-slurm-batch-builder-module"></span><h2>jobman.batch_builders.slurm_batch_builder module<a class="headerlink" href="#module-jobman.batch_builders.slurm_batch_builder" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jobman.batch_builders.slurm_batch_builder.SlurmBatchBuilder">
+<em class="property">class </em><code class="descclassname">jobman.batch_builders.slurm_batch_builder.</code><code class="descname">SlurmBatchBuilder</code><span class="sig-paren">(</span><em>*args</em>, <em>time_fudge_factor=2.0</em>, <em>default_subjob_time=600</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jobman/batch_builders/slurm_batch_builder.html#SlurmBatchBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jobman.batch_builders.slurm_batch_builder.SlurmBatchBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#jobman.batch_builders.bash_batch_builder.BashBatchBuilder" title="jobman.batch_builders.bash_batch_builder.BashBatchBuilder"><code class="xref py py-class docutils literal"><span class="pre">jobman.batch_builders.bash_batch_builder.BashBatchBuilder</span></code></a></p>
+<dl class="attribute">
+<dt id="jobman.batch_builders.slurm_batch_builder.SlurmBatchBuilder.DEFAULT_PREAMBLE">
+<code class="descname">DEFAULT_PREAMBLE</code><em class="property"> = '\nSRUN=&quot;srun --exclusive --nodes=1 --ntasks=1&quot;\n# the --exclusive to srun make srun use distinct CPUs for each job step\n# --nodes=1 --ntasks=1 allocates a single core to each task\n\nPARALLEL=&quot;parallel --delay .2 -j $SLURM_NTASKS --joblog runtask.log \\\n    --resume&quot;\n# --delay .2 prevents overloading the controlling node\n# -j is the number of tasks parallel runs so we set it to $SLURM_NTASKS\n# --joblog makes parallel create a log of tasks that it has already run\n# --resume makes parallel use the joblog to resume from where it has\n#   left off\n# The combination of --joblog and --resume allow jobs to be resubmitted\n# if necessary and continue from where they left off.\n'</em><a class="headerlink" href="#jobman.batch_builders.slurm_batch_builder.SlurmBatchBuilder.DEFAULT_PREAMBLE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="jobman.dao.html" class="btn btn-neutral float-right" title="jobman.dao package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="jobman.html" class="btn btn-neutral" title="jobman package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

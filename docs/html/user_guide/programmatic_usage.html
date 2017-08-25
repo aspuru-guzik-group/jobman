@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Programmatic Usage &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="Jobman User Guide" href="index.html"/>
+        <link rel="next" title="API Documentation" href="../api.html"/>
+        <link rel="prev" title="Components" href="components.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Jobman User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="components.html">Components</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Programmatic Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#submitting-jobs">Submitting Jobs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#querying-jobs">Querying Jobs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#updating-jobs">Updating Jobs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Jobman User Guide</a> &raquo;</li>
+        
+      <li>Programmatic Usage</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <!-- User defined GitHub URL -->
+              <a href="https://github.com/aspuru-guzik-group/jobman/blob/master/docs/sphinx/user_guide/programmatic_usage.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="programmatic-usage">
+<h1>Programmatic Usage<a class="headerlink" href="#programmatic-usage" title="Permalink to this headline">¶</a></h1>
+<p>You can use Jobman in your own programs.</p>
+<p>This kind of usage is useful for things like:</p>
+<ol class="arabic simple">
+<li>Making custom job submission daemons.</li>
+<li>Running Jobman itself in parallel on a cluster.</li>
+<li>Integrating Jobman with an external workflow system.</li>
+</ol>
+<div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>Configuration is important for programmatic usage. For example, configuration
+ensures that every external program that accesses Jobman is using the same
+databases and directories.</p>
+<p>Jobman provides a utility to create a JobMan instance from a config:</p>
+<p>The config can be a python module, a dictionary, or a python object. Jobman
+will try to look up config parameters as dictionary keys or attributes, per
+<a class="reference internal" href="../api/jobman.utils.html#jobman.utils.dot_spec_loader.get_attrs_or_items" title="jobman.utils.dot_spec_loader.get_attrs_or_items"><code class="xref py py-meth docutils literal"><span class="pre">jobman.utils.dot_spec_loader.get_attrs_or_items()</span></code></a>.</p>
+<p>Example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">jobman.jobman</span> <span class="k">import</span> <span class="n">JobMan</span>
+<span class="n">my_cfg</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;my_label&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;db_uri&#39;</span><span class="p">:</span> <span class="s1">&#39;sqlite://&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;auto_initialize&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">my_jobman</span> <span class="o">=</span> <span class="n">JobMan</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">my_cfg</span><span class="p">,</span>
+    <span class="n">overrides</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;label_override&#39;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;label:&quot;</span><span class="p">,</span> <span class="n">my_jobman</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;db_uri:&quot;</span><span class="p">,</span> <span class="n">my_jobman</span><span class="o">.</span><span class="n">db_uri</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre><span></span>label: label_override
+db_uri: sqlite://
+</pre></div>
+</div>
+<p>Config parameters are documented in <a class="reference internal" href="../api/jobman.html#jobman.jobman.CfgParams" title="jobman.jobman.CfgParams"><code class="xref py py-class docutils literal"><span class="pre">jobman.jobman.CfgParams</span></code></a>.</p>
+</div>
+<div class="section" id="submitting-jobs">
+<h2>Submitting Jobs<a class="headerlink" href="#submitting-jobs" title="Permalink to this headline">¶</a></h2>
+<p>There are two primary ways to submit jobs directly to JobMan:</p>
+<ol class="arabic simple">
+<li>As job_specs, via <a class="reference internal" href="../api/jobman.html#jobman.jobman.JobMan.submit_job_spec" title="jobman.jobman.JobMan.submit_job_spec"><code class="xref py py-meth docutils literal"><span class="pre">jobman.jobman.JobMan.submit_job_spec()</span></code></a></li>
+<li>As job dirs, via <a class="reference internal" href="../api/jobman.html#jobman.jobman.JobMan.submit_job_dir" title="jobman.jobman.JobMan.submit_job_dir"><code class="xref py py-meth docutils literal"><span class="pre">jobman.jobman.JobMan.submit_job_dir()</span></code></a></li>
+</ol>
+</div>
+<div class="section" id="querying-jobs">
+<h2>Querying Jobs<a class="headerlink" href="#querying-jobs" title="Permalink to this headline">¶</a></h2>
+<p>You may want to query JobMan for the state of a job.</p>
+<p>The primary methods for querying are:</p>
+<ol class="arabic simple">
+<li><a class="reference internal" href="../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_job" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_job"><code class="xref py py-meth docutils literal"><span class="pre">jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_job()</span></code></a></li>
+<li><a class="reference internal" href="../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs"><code class="xref py py-meth docutils literal"><span class="pre">jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs()</span></code></a></li>
+</ol>
+</div>
+<div class="section" id="updating-jobs">
+<h2>Updating Jobs<a class="headerlink" href="#updating-jobs" title="Permalink to this headline">¶</a></h2>
+<p>You may want to update jobs in JobMan’s db.</p>
+<p>The primary methods for updating are:</p>
+<ol class="arabic simple">
+<li><a class="reference internal" href="../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.save_jobs" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin.save_jobs"><code class="xref py py-meth docutils literal"><span class="pre">jobman.dao.jobs_dao_mixin.JobsDaoMixin.save_jobs()</span></code></a></li>
+<li><a class="reference internal" href="../api/jobman.dao.html#jobman.dao.jobs_dao_mixin.JobsDaoMixin.update_jobs" title="jobman.dao.jobs_dao_mixin.JobsDaoMixin.update_jobs"><code class="xref py py-meth docutils literal"><span class="pre">jobman.dao.jobs_dao_mixin.JobsDaoMixin.update_jobs()</span></code></a></li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../api.html" class="btn btn-neutral float-right" title="API Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="components.html" class="btn btn-neutral" title="Components" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jobman.engines.base_bash_engine &mdash; Jobman 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="Jobman 0.0.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Jobman
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/index.html">Jobman User Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Jobman</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>jobman.engines.base_bash_engine</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jobman.engines.base_bash_engine</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+
+<span class="kn">from</span> <span class="nn">.base_engine</span> <span class="k">import</span> <span class="n">BaseEngine</span>
+
+
+<div class="viewcode-block" id="BaseBashEngine"><a class="viewcode-back" href="../../../api/jobman.engines.html#jobman.engines.base_bash_engine.BaseBashEngine">[docs]</a><span class="k">class</span> <span class="nc">BaseBashEngine</span><span class="p">(</span><span class="n">BaseEngine</span><span class="p">):</span>
+    <span class="n">ENGINE_ENTRYPOINT_TPL</span> <span class="o">=</span> <span class="s1">&#39;JOBMAN.ENTRYPOINT.sh&#39;</span>
+
+    <span class="n">DEFAULT_STD_LOG_FILE_NAMES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">log_name</span><span class="p">:</span> <span class="n">log_name</span> <span class="k">for</span> <span class="n">log_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;stdout&#39;</span><span class="p">,</span> <span class="s1">&#39;stderr&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_write_engine_entrypoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">entrypoint_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_engine_entrypoint_content</span><span class="p">(</span>
+            <span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="n">extra_cfgs</span><span class="p">)</span>
+        <span class="n">entrypoint_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">][</span><span class="s1">&#39;dir&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ENGINE_ENTRYPOINT_TPL</span><span class="p">)</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">entrypoint_path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">entrypoint_content</span><span class="p">)</span>
+        <span class="n">entrypoint_path</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="mo">0o755</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">entrypoint_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_generate_engine_entrypoint_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+            <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            #!/bin/bash</span>
+
+<span class="sd">            {preamble}</span>
+<span class="sd">            pushd &quot;{jobdir}&quot; &gt; /dev/null &amp;&amp; {job_entrypoint}</span>
+<span class="sd">            RESULT=$?</span>
+<span class="sd">            if [ $RESULT -eq 0 ]; then</span>
+<span class="sd">                touch {completed_checkpoint}</span>
+<span class="sd">            else</span>
+<span class="sd">                touch {failed_checkpoint}</span>
+<span class="sd">            fi</span>
+<span class="sd">            popd &gt; /dev/null</span>
+<span class="sd">            exit $RESULT</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">preamble</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_generate_engine_entrypoint_preamble</span><span class="p">(</span>
+                <span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="n">extra_cfgs</span><span class="p">),</span>
+            <span class="n">jobdir</span><span class="o">=</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">][</span><span class="s1">&#39;dir&#39;</span><span class="p">],</span>
+            <span class="n">job_entrypoint</span><span class="o">=</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">][</span><span class="s1">&#39;entrypoint&#39;</span><span class="p">],</span>
+            <span class="n">completed_checkpoint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CHECKPOINT_FILE_NAMES</span><span class="p">[</span><span class="s1">&#39;completed&#39;</span><span class="p">],</span>
+            <span class="n">failed_checkpoint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CHECKPOINT_FILE_NAMES</span><span class="p">[</span><span class="s1">&#39;failed&#39;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_generate_engine_entrypoint_preamble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">preamble</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+            <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            # start preamble</span>
+<span class="sd">            # engine_preamble</span>
+<span class="sd">            {engine_preamble}</span>
+<span class="sd">            # env_vars_for_cfg_specs</span>
+<span class="sd">            {env_vars_for_cfg_specs}</span>
+<span class="sd">            # end preamble</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">engine_preamble</span><span class="o">=</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">resolve_cfg_item</span><span class="p">(</span>
+                    <span class="n">key</span><span class="o">=</span><span class="s1">&#39;ENGINE_PREAMBLE&#39;</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">})</span>
+                <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+            <span class="p">),</span>
+            <span class="n">env_vars_for_cfg_specs</span><span class="o">=</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_generate_env_vars_for_cfg_specs</span><span class="p">(</span>
+                    <span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="n">extra_cfgs</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">preamble</span>
+
+    <span class="k">def</span> <span class="nf">_generate_env_vars_for_cfg_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">resolved_cfgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolve_job_cfg_specs</span><span class="p">(</span>
+            <span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">,</span> <span class="n">extra_cfgs</span><span class="o">=</span><span class="n">extra_cfgs</span><span class="p">)</span>
+        <span class="n">env_var_blocks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_kvp_to_env_var_block</span><span class="p">(</span><span class="n">kvp</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">v</span><span class="p">})</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">resolved_cfgs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">block</span> <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">env_var_blocks</span> <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span>
+
+    <span class="k">def</span> <span class="nf">_kvp_to_env_var_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kvp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+            <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            read -d &#39;&#39; {key} &lt;&lt; EOF</span>
+<span class="sd">            {value}</span>
+<span class="sd">            EOF</span>
+<span class="sd">            export {key}=${key}</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="n">kvp</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span>
+            <span class="n">value</span><span class="o">=</span><span class="n">kvp</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_std_log_redirects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">std_log_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_std_log_paths</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">)</span>
+        <span class="n">stdout_redirect</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;stdout&#39;</span> <span class="ow">in</span> <span class="n">std_log_paths</span><span class="p">:</span>
+            <span class="n">stdout_redirect</span> <span class="o">=</span> <span class="s1">&#39;&gt;&gt; </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">std_log_paths</span><span class="p">[</span><span class="s1">&#39;stdout&#39;</span><span class="p">]</span>
+        <span class="n">stderr_redirect</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;stderr&#39;</span> <span class="ow">in</span> <span class="n">std_log_paths</span><span class="p">:</span>
+            <span class="n">stderr_redirect</span> <span class="o">=</span> <span class="s1">&#39;2&gt;&gt; </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">std_log_paths</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;stdout_redirect&#39;</span><span class="p">:</span> <span class="n">stdout_redirect</span><span class="p">,</span>
+                <span class="s1">&#39;stderr_redirect&#39;</span><span class="p">:</span> <span class="n">stderr_redirect</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_get_std_log_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">log_file_names_w_defaults</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_STD_LOG_FILE_NAMES</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;std_log_file_names&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">log_key</span><span class="p">:</span> <span class="p">(</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">][</span><span class="s1">&#39;dir&#39;</span><span class="p">],</span> <span class="n">log_file_name</span><span class="p">)</span><span class="o">.</span><span class="n">absolute</span><span class="p">())</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">log_key</span><span class="p">,</span> <span class="n">log_file_name</span> <span class="ow">in</span> <span class="n">log_file_names_w_defaults</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_get_std_log_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">std_log_contents</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">log_name</span><span class="p">,</span> <span class="n">log_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_std_log_paths</span><span class="p">(</span><span class="n">job</span><span class="o">=</span><span class="n">job</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">log_content</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">log_content</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">log_content</span> <span class="o">=</span> <span class="s2">&quot;COULD NOT READ LOG &#39;</span><span class="si">{log_name}</span><span class="s2">&#39;: </span><span class="si">{exc}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">log_name</span><span class="o">=</span><span class="n">log_name</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+            <span class="n">std_log_contents</span><span class="p">[</span><span class="n">log_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_content</span>
+        <span class="k">return</span> <span class="n">std_log_contents</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
