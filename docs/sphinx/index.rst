@@ -33,13 +33,13 @@ Quickstart
 
 #. Install:
 
-   #. Option A: pip install:
+   Option A: pip install:
 
       .. parsed-literal ::
 
         pip install git+\ |repo_url|\ 
 
-   #. Option B: git clone:
+   Option B: git clone:
 
       #. Clone:
 
@@ -111,7 +111,7 @@ Quickstart
 
 #. Run Jobman as a Daemon:
 
-   HERE!
+   @TODO!
 
 ===============
 Getting Started
@@ -120,7 +120,7 @@ Getting Started
 .. toctree::
    :maxdepth: 1
 
-   user_guide
+   user_guide/index.rst
    examples
 
 

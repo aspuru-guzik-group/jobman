@@ -1,5 +1,6 @@
 from .jobs_dao_mixin import JobsDaoMixin
 from .sqlite_dao import SqliteDAO
+from . import utils as _dao_utils
 
 
 class WorkerSqliteDAO(JobsDaoMixin, SqliteDAO):
@@ -24,7 +25,7 @@ class WorkerSqliteDAO(JobsDaoMixin, SqliteDAO):
     def _generate_job_fields(self, extra_job_fields=None):
         return {
             'key': {'type': 'TEXT', 'primary_key': True,
-                    'default': self.generate_key},
+                    'default': _dao_utils.generate_key},
             'status': {'type': 'TEXT'},
             'is_batch': {'type': 'INTEGER'},
             'batch_meta': {'type': 'JSON'},
@@ -32,6 +33,6 @@ class WorkerSqliteDAO(JobsDaoMixin, SqliteDAO):
             'parent_batch_key': {'type': 'TEXT'},
             'engine_meta': {'type': 'JSON'},
             'engine_state': {'type': 'JSON'},
-            **self._generate_timestamp_fields(),
+            **_dao_utils.generate_timestamp_fields(),
             **(extra_job_fields or {}),
         }

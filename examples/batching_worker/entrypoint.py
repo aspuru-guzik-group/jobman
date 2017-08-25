@@ -13,7 +13,7 @@ class Entrypoint(object):
         self.mem_db_uri = 'sqlite://'
         self.jobman = JobMan(
             label='batching_jobman',
-            jobman_db_uri=self.mem_db_uri,
+            db_uri=self.mem_db_uri,
             worker_specs={
                 'batching_worker': {
                     'worker_class': (

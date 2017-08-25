@@ -1,5 +1,6 @@
 from .jobs_dao_mixin import JobsDaoMixin
 from .sqlite_dao import SqliteDAO
+from . import utils as _dao_utils
 
 
 class JobmanSqliteDAO(JobsDaoMixin, SqliteDAO):
@@ -14,13 +15,14 @@ class JobmanSqliteDAO(JobsDaoMixin, SqliteDAO):
 
     def _generate_orm_specs(self):
         return [
-            {'name': 'job', 'fields': self._generate_job_fields()},
+            {'name': 'job', 'fields': self.generate_job_fields()},
         ]
 
-    def _generate_job_fields(self):
+    def generate_job_fields(self):
+        """Define fields for JobMan job records."""
         return {
             'key': {'type': 'TEXT', 'primary_key': True,
-                    'default': self.generate_key},
+                    'default': _dao_utils.generate_key},
             'job_spec': {'type': 'JSON'},
             'status': {'type': 'TEXT'},
             'batchable': {'type': 'INTEGER'},
@@ -31,7 +33,7 @@ class JobmanSqliteDAO(JobsDaoMixin, SqliteDAO):
             'source_meta': {'type': 'JSON'},
             'source_tag': {'type': 'TEXT'},
             'purgeable': {'type': 'INTEGER'},
-            **self._generate_timestamp_fields()
+            **_dao_utils.generate_timestamp_fields()
         }
 
     def generate_source_key_filter(self, source_key=None):

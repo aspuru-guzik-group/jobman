@@ -12,7 +12,7 @@ def generate_default_config_content():
         label = 'my_jobman'
 
         db_file = os.path.join(this_dir, 'jobman.db.sqlite')
-        jobman_db_uri = 'sqlite:///' + db_file
+        db_uri = 'sqlite:///' + db_file
 
         source_specs = {
             'my_dir_source': {

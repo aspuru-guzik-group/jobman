@@ -13,14 +13,92 @@ from .utils import logging_utils
 from .workers.base_worker import BaseWorker
 
 
+class CfgParams:
+    """JobMan Config Parameters"""
+
+    auto_initialize = True
+    """If True then create jobman db and initialize sources/engines."""
+
+    dao = ...
+    """An instance of a JobManDAO. Usually only used for testing."""
+
+    db_uri = ...
+    """A database uri.
+
+    Currently can only use Sqlite uris. For example,
+    'sqlite://' for an in-memory db, or 'sqlite:////absolute/path/to/db.sqlite'
+    for a file-based db.
+    """
+
+    label = ...
+    """A label to identify this jobman instance. Useful for logging."""
+
+    source_specs = ...
+    """A dict of keyed source specs.
+
+    A source spec is a dict with this shape:
+
+        ::
+
+           {
+               # a dot_spec path to a source class
+               'source_class': 'jobman.sources.dir_source:DirSource'
+               # a dict of params to pass as kwargs when instantiating the
+               # source.
+               'source_params': {
+                   'root_path': self.root_path
+               }
+           }
+
+    """
+
+    worker_specs = ...
+    """A dict of keyed worker specs.
+
+    A worker spec is a dict with this shape:
+
+        ::
+
+           {
+               # a dot_spec path to a worker class
+               'worker_class': 'jobman.workers.base_worker:BaseWorker'
+               # a dict of params to pass as kwargs when instantiating the
+               # worker.
+               'worker_params': {
+                    # a spec for the worker's engine.
+                    'engine_spec': {
+                        'engine_class': (
+                            'jobman.engines.local_engine:LocalEngine'
+                        ),
+                        'engine_params': {
+                            'scratch_dir': self.scratch_dir,
+                            # This is usually where engine configs go.
+                            'cfg': {
+                                'MY_EXE': '/my/cluster/path/to/my_exe',
+                                # other cluster-specific params...
+                            }
+                        }
+                    },
+                    # other worker params...
+               }
+           }
+
+    """
+
+    @classmethod
+    def get_cfg_infos(cls):
+        infos = {
+            k: v for k, v in cls.__dict__.items()
+            if not k.startswith('_') and k != 'get_cfg_infos'
+        }
+        return infos
+
+
 class JobMan(object):
+    """Central JobMan object."""
+
     class SubmissionError(Exception):
         pass
-
-    CFG_PARAMS = [
-        'dao', 'jobman_db_uri', 'label', 'source_specs', 'worker_specs',
-        'default_job_time',
-    ]
 
     job_spec_defaults = {'entrypoint': './entrypoint.sh'}
 
@@ -28,18 +106,24 @@ class JobMan(object):
 
     @classmethod
     def from_cfg(cls, cfg=None, overrides=None):
-        kwargs_from_cfg = dot_spec_loader.get_attrs_or_items(
-            obj=cfg, keys=cls.CFG_PARAMS)
+        kwargs_from_cfg = {}
+        for param, default in CfgParams.get_cfg_infos().items():
+            try:
+                kwargs_from_cfg[param] = dot_spec_loader.get_attr_or_item(
+                    obj=cfg, key=param, default=default)
+            except KeyError:
+                pass
         kwargs = {
             **kwargs_from_cfg,
             **(overrides or {}),
             'cfg': cfg
         }
+        kwargs = {k: v for k, v in kwargs.items() if v is not ...}
         return JobMan(**kwargs)
 
     def __init__(self, label=None, cfg=None, source_specs=None,
                  job_spec_defaults=None, worker_specs=None, dao=None,
-                 jobman_db_uri=None, initialize=True, logging_cfg=None,
+                 db_uri=None, auto_initialize=True, logging_cfg=None,
                  debug=None):
         self.label = label
         self.debug = debug or os.environ.get('JOBMAN_DEBUG')
@@ -48,10 +132,10 @@ class JobMan(object):
         self.source_specs = source_specs
         self.worker_specs = worker_specs
         self.dao = dao
-        self.jobman_db_uri = self.dao.db_uri if self.dao else jobman_db_uri
+        self.db_uri = self.dao.db_uri if self.dao else db_uri
         self.job_spec_defaults = job_spec_defaults or self.job_spec_defaults
         self._kvps = {}
-        if initialize:
+        if auto_initialize:
             self.initialize()
 
     def _generate_logger(self, logging_cfg=None):
@@ -67,7 +151,7 @@ class JobMan(object):
 
     def initialize(self):
         self.dao = self.dao or self._generate_dao(
-            jobman_db_uri=self.jobman_db_uri,
+            db_uri=self.db_uri,
             initialize=True
         )
         self.sources = self._source_specs_to_sources(
@@ -82,14 +166,14 @@ class JobMan(object):
     def _debug_locals(self):
         if self.debug: debug_utils.debug_locals(logger=self.logger)  # noqa
 
-    def _generate_dao(self, jobman_db_uri=None, initialize=...):
-        jobman_db_uri = (
-            jobman_db_uri or
+    def _generate_dao(self, db_uri=None, initialize=...):
+        db_uri = (
+            db_uri or
             os.path.expanduser('~/jobman.sqlite.db')
         )
         from .dao.jobman_sqlite_dao import JobmanSqliteDAO
         dao_kwargs = {
-            'db_uri': jobman_db_uri,
+            'db_uri': db_uri,
             'logger': self.logger
         }
         if initialize is not ...:
@@ -318,6 +402,8 @@ class JobMan(object):
 
     def submit_job_dir(self, job_dir=None, source_key=None, source_meta=None,
                        job_spec_defaults=None, job_spec_overrides=None):
+        """Submit a job dir.
+        """
         return self.submit_job_spec(
             job_spec=self._generate_job_spec_for_job_dir(
                 job_dir=job_dir,
@@ -347,6 +433,8 @@ class JobMan(object):
 
     def submit_job_spec(self, job_spec=None, source_key=None,
                         source_meta=None):
+        """Submit a job_spec.
+        """
         try:
             return self.dao.create_job(job={
                 'job_spec': job_spec,

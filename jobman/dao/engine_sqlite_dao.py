@@ -1,4 +1,5 @@
 from .sqlite_dao import SqliteDAO
+from . import utils as _dao_utils
 
 
 class EngineSqliteDAO(SqliteDAO):
@@ -23,9 +24,9 @@ class EngineSqliteDAO(SqliteDAO):
     def _generate_job_fields(self, extra_job_fields=None):
         return {
             'key': {'type': 'TEXT', 'primary_key': True,
-                    'default': self.generate_key},
+                    'default': _dao_utils.generate_key},
             'status': {'type': 'TEXT'},
-            **self._generate_timestamp_fields(),
+            **_dao_utils.generate_timestamp_fields(),
             **(extra_job_fields or {}),
         }
 

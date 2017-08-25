@@ -101,9 +101,9 @@ def get_attr_or_item(obj=None, key=None, default=...):
     return DotSpecLoader.get_attr_or_item(obj=obj, key=key)
 
 
-def get_attrs_or_items(obj=None, keys=None):
+def get_attrs_or_items(obj=None, keys=None, default=None):
     result = {}
     for key in keys:
-        try: result[key] = get_attr_or_item(obj=obj, key=key, default=None)  # noqa
+        try: result[key] = get_attr_or_item(obj=obj, key=key, default=default)  # noqa
         except: pass  # noqa
     return result

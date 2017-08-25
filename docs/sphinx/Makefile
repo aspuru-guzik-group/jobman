@@ -8,6 +8,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
+SRC_DIR 			= $(ROOT_DIR)/../../jobman
 
 # Non-standard: output html files to a dir above this one, to expose
 # them to github pages.
@@ -241,7 +242,7 @@ livehtml:
 
 .PHONY: apidoc
 apidoc:
-	sphinx-apidoc -fMT $(ROOT_DIR)/../mc -o $(ROOT_DIR)/api \
-		$(ROOT_DIR)/../mc/**/tests $(ROOT_DIR)/../mc/**/**/tests
+	sphinx-apidoc -fMT $(SRC_DIR) -o $(ROOT_DIR)/api \
+		$(SRC_DIR)/**/tests 
 	@echo
 	@echo "Build finished. The generated .rst files are in $(ROOT_DIR)/api."

@@ -17,7 +17,7 @@ class Entrypoint(object):
 
         self.upstream_jobman = JobMan(
             label='upstream',
-            jobman_db_uri=self.mem_db_uri,
+            db_uri=self.mem_db_uri,
             worker_specs={
                 'inbox_worker': {
                     'worker_params': {
@@ -35,7 +35,7 @@ class Entrypoint(object):
         )
         self.downstream_jobman = JobMan(
             label='downstream',
-            jobman_db_uri=self.mem_db_uri,
+            db_uri=self.mem_db_uri,
             source_specs={
                 'my_root': {
                     'source_class': 'jobman.sources.dir_source:DirSource',

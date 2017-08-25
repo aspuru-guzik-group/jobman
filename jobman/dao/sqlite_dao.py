@@ -1,10 +1,9 @@
 import logging
 import os
 import sqlite3
-import time
-import uuid
 
 from . import orm
+from . import utils as _dao_utils
 
 
 class SqliteDAO(object):
@@ -30,9 +29,11 @@ class SqliteDAO(object):
         self.sqlite = sqlite
         self.orm = orm
         self.table_prefix = table_prefix
-        self.orms = self._generate_orms(orm_specs=orm_specs,
-                                        table_prefix=self.table_prefix,
-                                        include_kvp_orm=include_kvp_orm)
+        self.orms = self._generate_orms(
+            orm_specs=orm_specs,
+            table_prefix=self.table_prefix,
+            include_kvp_orm=include_kvp_orm
+        )
         self._connection = None
         if initialize:
             self.ensure_db()
@@ -57,28 +58,8 @@ class SqliteDAO(object):
         return {
             'key': {'type': 'TEXT', 'primary_key': True},
             'value': {'type': 'JSON'},
-            **self._generate_timestamp_fields()
+            **_dao_utils.generate_timestamp_fields()
         }
-
-    def _generate_timestamp_fields(self):
-        return {
-            'created': {'type': 'INTEGER',
-                        'default': self.generate_timestamp},
-            'modified': {'type': 'INTEGER',
-                         'auto_update': self.generate_timestamp}
-        }
-
-    @classmethod
-    def generate_key(cls):
-        return cls.generate_uuid()
-
-    @classmethod
-    def generate_uuid(cls, *args, **kwargs):
-        return str(uuid.uuid4())
-
-    @classmethod
-    def generate_timestamp(cls, *args, **kwargs):
-        return int(time.time())
 
     @property
     def connection(self):
