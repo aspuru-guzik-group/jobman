@@ -1,4 +1,5 @@
 import collections
+import logging
 import time
 
 from jobman.utils import dot_spec_loader
@@ -13,7 +14,8 @@ class BaseWorker(object):
         pass
 
     def __init__(self, key=None, initialize=True, db_uri=None, dao=None,
-                 engine_spec=None, acceptance_fn_spec=None):
+                 engine_spec=None, acceptance_fn_spec=None, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
         self.key = key
         self.db_uri = db_uri
         if dao:

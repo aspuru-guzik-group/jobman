@@ -48,46 +48,47 @@ class BatchingWorker(BaseWorker):
         })
 
     def _mark_jobs_as_batchable(self):
-        with self.dao.get_lock():
-            batch_candidates = self._get_batch_candidates()
-            worker_jobs_to_update = []
-            for key, candidate in batch_candidates.items():
-                worker_job = candidate['worker_job']
-                worker_job['batchable'] = self._job_is_batchable(
-                    job=candidate['jobman_job'])
-                worker_jobs_to_update.append(worker_job)
-            self.dao.save_jobs(jobs=worker_jobs_to_update)
+        batch_candidates = self._claim_batch_candidates()
+        worker_jobs_to_update = []
+        for key, candidate in batch_candidates.items():
+            worker_job = candidate['worker_job']
+            worker_job['batchable'] = self._job_is_batchable(
+                job=candidate['jobman_job'])
+            worker_job['status'] = self.JOB_STATUSES.PENDING
+            worker_jobs_to_update.append(worker_job)
+        self.dao.save_jobs(jobs=worker_jobs_to_update)
 
-    def _get_batch_candidates(self):
-        candidate_worker_jobs = self.dao.query_jobs(query={
+    def _claim_batch_candidates(self):
+        claimed_worker_jobs = self.dao.claim_jobs(query={
             'filters': [
-                {'field': 'status', 'op': '=', 'arg': 'PENDING'},
+                self.dao.generate_status_filter(
+                    status=self.JOB_STATUSES.PENDING),
                 {'field': 'batchable', 'op': 'IS', 'arg': None}
             ]
         })
-        jobman_jobs = self._get_related_jobman_jobs(jobs=candidate_worker_jobs)
+        jobman_jobs = self._get_related_jobman_jobs(jobs=claimed_worker_jobs)
         return {
             worker_job['key']: {
                 'worker_job': worker_job,
                 'jobman_job': jobman_jobs[worker_job['key']]
             }
-            for worker_job in candidate_worker_jobs
+            for worker_job in claimed_worker_jobs
         }
 
     def _job_is_batchable(self, job=None):
         return any(filter_(job) for filter_ in self.batchable_filters)
 
     def _process_batchable_jobs(self):
-        with self.dao.get_lock():
-            batchable_jobs = self._get_batchable_jobs()
-            self._batchify_jobs(batchable_jobs=batchable_jobs)
+        batchable_jobs = self._claim_batchable_jobs()
+        self._batchify_jobs(batchable_jobs=batchable_jobs)
 
-    def _get_batchable_jobs(self):
+    def _claim_batchable_jobs(self):
         age_threshold = time.time() - self.max_batchable_wait
-        return self.dao.query_jobs(query={
+        return self.dao.claim_jobs(query={
             'filters': [
                 {'field': 'batchable', 'op': '=', 'arg': 1},
-                self.dao.generate_status_filter(status='PENDING'),
+                self.dao.generate_status_filter(
+                    status=self.JOB_STATUSES.PENDING),
                 {'field': 'modified', 'op': '>=', 'arg': age_threshold}
             ]
         })
@@ -139,7 +140,7 @@ class BatchingWorker(BaseWorker):
                 'subjob_keys': [subjob['key'] for subjob in subjobs]
             },
             'is_batch': 1,
-            'status': 'PENDING'
+            'status': self.JOB_STATUSES.PENDING
         })
 
     def _submit_pending_batch_jobs(self):
@@ -173,7 +174,10 @@ class BatchingWorker(BaseWorker):
         )
 
     def _claim_pending_jobs(self, exclude_batchable_jobs=True):
-        filters = [self.dao.generate_status_filter(status='PENDING')]
+        filters = [
+            self.dao.generate_status_filter(
+                status=self.JOB_STATUSES.PENDING)
+        ]
         if exclude_batchable_jobs:
             filters.append({'field': 'batchable', 'op': '! =', 'arg': 1})
         return self.dao.claim_jobs(query={
