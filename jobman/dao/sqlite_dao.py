@@ -38,6 +38,8 @@ class SqliteDAO(object):
         if initialize:
             self.initialize()
 
+    def generate_key(self): return _dao_utils.generate_key()
+
     def _generate_orms(self, orm_specs=None, table_prefix=None,
                        include_kvp_orm=None):
         orm_specs = orm_specs or []
@@ -108,6 +110,24 @@ class SqliteDAO(object):
             return None
 
     def query_ents(self, ent_type=None, query=None):
+        """Query ents.
+
+        Args:
+            ent_type
+            query: a query dict of this form: ::
+
+                {
+                    'filters': [
+                        {'field': 'some_field', 'op': '=', 'arg': 'some_arg'}
+                        # other filters...
+                    ],
+                    'limit': 100,
+                    'order_by': [
+                        {'field': 'some_field', 'direction': 'ASC'},
+                        {'field': 'some_other_field', 'direction': 'DESC'},
+                    ]
+                }
+        """
         ent_orm = self.orms[ent_type]
         return ent_orm.query_objects(query=query, connection=self.connection)
 

@@ -30,8 +30,15 @@ class CfgParams:
     for a file-based db.
     """
 
+    debug = ...
+    """set to True to operate in debug mode. Logs more verbose statements."""
+
     label = ...
     """A label to identify this jobman instance. Useful for logging."""
+
+    logging_cfg = ...
+    """logging config, per :meth:`jobman.utils.logging_utils.generate_logger`
+    """
 
     source_specs = ...
     """A dict of keyed source specs.
@@ -95,17 +102,28 @@ class CfgParams:
 
 
 class JobMan(object):
-    """Central JobMan object."""
 
     class SubmissionError(Exception):
         pass
 
     job_spec_defaults = {'entrypoint': './entrypoint.sh'}
+    """Default job_spec values."""
 
     JOB_STATUSES = constants.JOB_STATUSES
 
     @classmethod
     def from_cfg(cls, cfg=None, overrides=None):
+        """Create a JobMan instance from a cfg.
+
+        Args:
+            cfg: can be an object or dict. Keys or attrs per
+                 :class:`CfgParams`.
+            overrides: dict of cfg overrides
+
+        Returns:
+            JobMan instance
+        """
+
         kwargs_from_cfg = {}
         for param, default in CfgParams.get_cfg_infos().items():
             try:
@@ -125,6 +143,20 @@ class JobMan(object):
                  job_spec_defaults=None, worker_specs=None, dao=None,
                  db_uri=None, auto_initialize=True, logging_cfg=None,
                  debug=None):
+        """Central JobMan object.
+
+        Args:
+            label: per :attr:`CfgParams.label` .
+            cfg: cfg object or dict.
+            source_specs: per :attr:`CfgParams.source_specs` .
+            job_spec_defaults: per :attr:`job_spec_defaults` .
+            worker_specs: per :attr:`CfgParams.worker_specs` .
+            dao: per :attr:`CfgParams.dao` .
+            db_uri: per :attr:`CfgParams.db_uri` .
+            auto_initialize: per :attr:`CfgParams.auto_initialize` .
+            logging_cfg: per :attr:`CfgParams.logging_cfg` .
+            debug: per :attr:`CfgParams.debug` .
+        """
         self.label = label
         self.debug = debug or os.environ.get('JOBMAN_DEBUG')
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
@@ -150,6 +182,7 @@ class JobMan(object):
         return logging_utils.generate_logger(logging_cfg)
 
     def initialize(self):
+        """Initialize dao, sources, and workers."""
         self.dao = self.dao or self._generate_dao(
             db_uri=self.db_uri,
             initialize=True
@@ -247,6 +280,7 @@ class JobMan(object):
         return worker
 
     def tick(self):
+        """Tick JobMan components."""
         self._tick_workers()
         self._update_running_jobs()
         self._process_executed_jobs()
@@ -403,6 +437,23 @@ class JobMan(object):
     def submit_job_dir(self, job_dir=None, source_key=None, source_meta=None,
                        job_spec_defaults=None, job_spec_overrides=None):
         """Submit a job dir.
+
+        Creates a job_spec for dir. Attempts to read job_spec file from dir
+        if provided.
+
+        Args:
+            job_dir: absolute path to job_dir
+            source_key: per
+                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key`
+            source_meta: per
+                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta`
+            job_spec_defaults: default values for job_spec that will be
+                generated for dir.
+            job_spec_overrides: job_spec value overrides. Will be set after any
+                job_spec values are read from job_dir.
+
+        Returns:
+            return per :meth:`submit_job_spec`.
         """
         return self.submit_job_spec(
             job_spec=self._generate_job_spec_for_job_dir(
@@ -433,7 +484,19 @@ class JobMan(object):
 
     def submit_job_spec(self, job_spec=None, source_key=None,
                         source_meta=None):
-        """Submit a job_spec.
+        """Submit a job spec.
+
+        Args:
+            job_spec: per
+                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.job_spec`
+            source_key: per
+                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_key`
+            source_meta: per
+                :attr:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema.source_meta`
+
+        Returns:
+            return job record per
+                :class:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.JobSchema`
         """
         try:
             return self.dao.create_job(job={

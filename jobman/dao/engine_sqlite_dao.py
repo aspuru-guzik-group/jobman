@@ -1,40 +1,29 @@
+from .jobs_dao_mixin import JobsDaoMixin
 from .sqlite_dao import SqliteDAO
 from . import utils as _dao_utils
 
 
-class EngineSqliteDAO(SqliteDAO):
+class EngineSqliteDAO(JobsDaoMixin, SqliteDAO):
+
+    class JobSchema(_dao_utils.TimestampedSchemaMixin, _dao_utils.Schema):
+        """Fields for job records."""
+
+        key = {'type': 'TEXT', 'primary_key': True,
+               'default': _dao_utils.generate_key}
+        status = {'type': 'TEXT'}
+
     def __init__(self, table_prefix=None, extra_job_fields=None, **kwargs):
         super().__init__(
-            orm_specs=self._generate_orm_specs(
-                extra_job_fields=extra_job_fields
-            ),
+            orm_specs=self._generate_orm_specs(extra_job_fields),
             table_prefix=table_prefix,
             **kwargs
         )
 
     def _generate_orm_specs(self, extra_job_fields=None):
-        return [
-            {
-                'name': 'job',
-                'fields': self._generate_job_fields(
-                    extra_job_fields=extra_job_fields)
-            },
-        ]
-
-    def _generate_job_fields(self, extra_job_fields=None):
-        return {
-            'key': {'type': 'TEXT', 'primary_key': True,
-                    'default': _dao_utils.generate_key},
-            'status': {'type': 'TEXT'},
-            **_dao_utils.generate_timestamp_fields(),
-            **(extra_job_fields or {}),
-        }
-
-    def create_job(self, job=None):
-        return self.create_ent(ent_type='job', ent=job)
-
-    def save_jobs(self, jobs=None, replace=True):
-        return self.save_ents(ent_type='job', ents=jobs, replace=replace)
-
-    def query_jobs(self, query=None):
-        return self.query_ents(ent_type='job', query=query)
+        return [{
+            'name': 'job',
+            'fields': {
+                **self.JobSchema.get_field_infos(),
+                **(extra_job_fields or {}),
+            }
+        }]

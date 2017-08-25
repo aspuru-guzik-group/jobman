@@ -53,9 +53,6 @@ There are two primary ways to submit jobs directly to JobMan:
 #. As job_specs, via :meth:`jobman.jobman.JobMan.submit_job_spec`
 #. As job dirs, via :meth:`jobman.jobman.JobMan.submit_job_dir`
 
-See the documentation for those methods for more details.
-
-
 =============
 Querying Jobs
 =============
@@ -63,11 +60,16 @@ You may want to query JobMan for the state of a job.
 
 The primary methods for querying are:
 
-#. :meth:`jobman.dao.jobman_sqlite_dao.JobmanSqliteDAO.get_job`
+#. :meth:`jobman.dao.jobs_dao_mixin.JobsDaoMixin.get_job`
 #. :meth:`jobman.dao.jobs_dao_mixin.JobsDaoMixin.query_jobs`
-
-See the documentation for those methods for more details.
 
 =============
 Updating Jobs
 =============
+
+You may want to update jobs in JobMan's db.
+
+The primary methods for updating are:
+
+#. :meth:`jobman.dao.jobs_dao_mixin.JobsDaoMixin.save_jobs`
+#. :meth:`jobman.dao.jobs_dao_mixin.JobsDaoMixin.update_jobs`

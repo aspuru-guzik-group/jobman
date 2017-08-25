@@ -49,6 +49,14 @@ jobman\.dao\.sqlite\_dao module
     :undoc-members:
     :show-inheritance:
 
+jobman\.dao\.utils module
+-------------------------
+
+.. automodule:: jobman.dao.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 jobman\.dao\.worker\_sqlite\_dao module
 ---------------------------------------
 
