@@ -1,5 +1,5 @@
 import collections
-import os
+from pathlib import Path
 import textwrap
 import unittest
 from unittest.mock import call, MagicMock, patch
@@ -184,11 +184,8 @@ class _GenerateEngineEntrypointCmdTestCase(BaseTestCase):
 
     def test_returns_expected_cmd(self):
         expected_cmd = (
-            'pushd {entrypoint_dir} > /dev/null'
-            ' && {entrypoint_path} {stdout_redirect} {stderr_redirect};'
-            ' popd > /dev/null;'
+            '{entrypoint_path} {stdout_redirect} {stderr_redirect}'
         ).format(
-            entrypoint_dir=os.path.dirname(self.entrypoint_path),
             entrypoint_path=self.entrypoint_path,
             **self.engine._get_std_log_redirects(job=self.job)
         )
@@ -226,7 +223,9 @@ class _GetStdLogPathsTestCase(BaseTestCase):
         }
         result = self.engine._get_std_log_paths(job=self.job)
         expected_paths = {
-            log_key: os.path.join(self.job['job_spec']['dir'], log_file_name)
+            log_key: str(
+                Path(self.job['job_spec']['dir'], log_file_name).absolute()
+            )
             for log_key, log_file_name in ({
                 **self.engine.DEFAULT_STD_LOG_FILE_NAMES,
                 **self.job['job_spec'].get('std_log_file_names', {}),

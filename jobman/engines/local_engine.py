@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from jobman.dao.engine_sqlite_dao import EngineSqliteDAO
 from .base_bash_engine import BaseBashEngine
 
@@ -49,11 +47,8 @@ class LocalEngine(BaseBashEngine):
     def _generate_engine_entrypoint_cmd(self, entrypoint_path=None, job=None,
                                         extra_cfgs=None):
         cmd = (
-            'pushd {entrypoint_dir} > /dev/null &&'
-            ' {entrypoint_path} {stdout_redirect} {stderr_redirect};'
-            ' popd > /dev/null;'
+            '{entrypoint_path} {stdout_redirect} {stderr_redirect}'
         ).format(
-            entrypoint_dir=Path(entrypoint_path).parent.absolute(),
             entrypoint_path=entrypoint_path,
             **self._get_std_log_redirects(job=job)
         )

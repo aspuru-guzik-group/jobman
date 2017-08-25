@@ -36,7 +36,7 @@ class SqliteDAO(object):
         )
         self._connection = None
         if initialize:
-            self.ensure_db()
+            self.initialize()
 
     def _generate_orms(self, orm_specs=None, table_prefix=None,
                        include_kvp_orm=None):
@@ -72,7 +72,7 @@ class SqliteDAO(object):
         connection.row_factory = self.sqlite.Row
         return connection
 
-    def ensure_db(self):
+    def initialize(self):
         self.ensure_tables()
 
     def ensure_tables(self):
